@@ -474,10 +474,20 @@ function startMigrationBackupThenOpen() {
     e.preventDefault();
     const fd = new FormData(e.target);
     if (fd.get('passphrase') !== fd.get('passphraseConfirm')) { showToast(t('Les mots de passe ne correspondent pas.')); return; }
+    // Ouvert ICI, synchroniquement, AVANT le moindre await : exportEncryptedBackup() enchaîne des
+    // dizaines de lectures IndexedDB (une par store, voir exportAllData()), largement assez long
+    // pour que Safari/iOS révoque le geste utilisateur nécessaire à window.open() — cet onglet
+    // resterait alors bloqué en silence, précisément sur la plateforme visée par cette bannière.
+    // On garde une référence à l'onglet vide et on ne le navigue qu'une fois l'export terminé,
+    // plutôt que d'appeler window.open() après l'await. opener mis à null manuellement (au lieu de
+    // 'noopener' sur window.open) pour pouvoir quand même garder cette référence.
+    const tab = window.open('', '_blank');
+    if (tab) tab.opener = null;
     await exportEncryptedBackup(fd.get('passphrase'));
     showToast(t('Sauvegarde chiffrée exportée.'));
     modal.close();
-    window.open(DJIGNAN_URL, '_blank', 'noopener');
+    if (tab) tab.location.href = DJIGNAN_URL;
+    else window.open(DJIGNAN_URL, '_blank', 'noopener'); // tentative de repli si même l'onglet vide a été bloqué
   });
 }
 
