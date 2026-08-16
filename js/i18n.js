@@ -1086,7 +1086,15 @@ const EN = {
   'Afficher en %': 'Show as %',
   'Budget vs réel — tendance annuelle': 'Budget vs actual — yearly trend',
 
-  // ---------- Bannière d'annonce de la nouvelle version (Djignan Financial System) ----------
-  'Une nouvelle version de cette application existe : {name}.': 'A new version of this app is available: {name}.',
-  'La découvrir': 'Check it out',
+  // ---------- Bannière d'annonce de la nouvelle version (Djignan Financial System) : pousse une
+  // sauvegarde locale avant de basculer, car le stockage n'est PAS partagé entre GeoFinance et
+  // Djignan sur mobile (chaque PWA installée sur iOS a son propre bac à sable) ----------
+  'Une nouvelle version de cette application existe : {name}. Sur mobile, vos données ne se transfèrent pas automatiquement — faites une sauvegarde pour les retrouver sans tout ressaisir.':
+    'A new version of this app is available: {name}. On mobile, your data doesn\'t transfer automatically — back it up to get it back without re-entering everything.',
+  'Sauvegarder puis découvrir Djignan': 'Back up, then check out Djignan',
+  "J'ai déjà une sauvegarde": 'I already have a backup',
+  'Choisissez un mot de passe pour chiffrer votre sauvegarde. Conservez-le : vous en aurez besoin pour importer cette sauvegarde dans Djignan.':
+    'Choose a password to encrypt your backup. Keep it safe: you\'ll need it to import this backup into Djignan.',
+  'Chiffrer, exporter et ouvrir Djignan': 'Encrypt, export and open Djignan',
+  'Sauvegarder avant de basculer vers Djignan': 'Back up before switching to Djignan',
 };

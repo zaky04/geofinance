@@ -9,7 +9,7 @@ import { STORES, dbAdd, dbPut, dbDelete, dbGetAll, getSetting, setSetting, DEFAU
 import { initLockScreen, isBiometricAvailable, registerBiometric, isPinConfigured } from './auth.js';
 import { bus, EVENTS, appState, notifyDataChanged } from './state.js';
 import { uuid, escapeHtml, openModal, showToast, confirmDialog, CURRENCIES } from './utils.js';
-import { checkWeeklyBackupReminder } from './backup.js';
+import { checkWeeklyBackupReminder, exportEncryptedBackup } from './backup.js';
 import { checkWeeklyCloudBackupReminder, checkCloudStaleness } from './firebase-sync.js';
 import { seedDemoData, clearDemoData } from './demo-data.js';
 import { maybeShowInstallPrompt } from './install-prompt.js';
@@ -450,6 +450,37 @@ async function maybeShowOnboarding() {
     nouvelle version (Djignan Financial System, djignan-finance) existe désormais avec de nouvelles
     fonctionnalités. Fermeture mémorisée via setSetting pour ne plus jamais la réafficher une fois
     lue — pas une bannière qui revient nous harceler à chaque déverrouillage. */
+const DJIGNAN_URL = 'https://zaky04.github.io/djignan-finance/';
+
+/** Ouvre une petite modale demandant un mot de passe de chiffrement, exporte une sauvegarde locale
+    (exportEncryptedBackup, backup.js — même fichier que le rappel hebdomadaire existant), puis
+    ouvre Djignan dans un nouvel onglet une fois l'export réellement terminé. Le lien n'est donc
+    jamais ouvert "à vide" : sur PC, GeoFinance et Djignan partagent déjà la même IndexedDB (même
+    origine zaky04.github.io) donc rien de plus n'est nécessaire là — mais sur iOS, chaque PWA
+    "Ajoutée à l'écran d'accueil" a un bac à sable de stockage isolé (voir CLAUDE.md du dépôt pro) :
+    cette sauvegarde est ce que l'utilisateur importera sur Djignan (écran de restauration au
+    premier lancement) pour retrouver ses données sans tout ressaisir à la main. Si l'utilisateur
+    utilise déjà la sauvegarde cloud (Google), il peut l'ignorer et se reconnecter directement avec
+    le même compte sur Djignan — ce bouton n'est qu'un raccourci pour qui n'a jamais activé le cloud.*/
+function startMigrationBackupThenOpen() {
+  const modal = openModal(`
+    <p style="margin:0 0 12px;font-size:13px;color:var(--text-muted);">${t('Choisissez un mot de passe pour chiffrer votre sauvegarde. Conservez-le : vous en aurez besoin pour importer cette sauvegarde dans Djignan.')}</p>
+    <form id="migration-export-form">
+      <div class="form-row"><label>${t('Mot de passe')}</label><input type="password" name="passphrase" required minlength="6" autofocus></div>
+      <div class="form-row"><label>${t('Confirmer le mot de passe')}</label><input type="password" name="passphraseConfirm" required minlength="6"></div>
+      <button type="submit" class="btn btn-primary btn-block">${t('Chiffrer, exporter et ouvrir Djignan')}</button>
+    </form>`, { title: t('Sauvegarder avant de basculer vers Djignan') });
+  modal.el.querySelector('#migration-export-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    if (fd.get('passphrase') !== fd.get('passphraseConfirm')) { showToast(t('Les mots de passe ne correspondent pas.')); return; }
+    await exportEncryptedBackup(fd.get('passphrase'));
+    showToast(t('Sauvegarde chiffrée exportée.'));
+    modal.close();
+    window.open(DJIGNAN_URL, '_blank', 'noopener');
+  });
+}
+
 async function renderMigrationBanner() {
   const container = document.getElementById('migration-banner');
   if (!container) return;
@@ -457,10 +488,15 @@ async function renderMigrationBanner() {
   if (dismissed) { container.hidden = true; container.innerHTML = ''; return; }
   container.hidden = false;
   container.innerHTML = `
-    <p class="alert alert-info" style="margin:0;justify-content:space-between;">
-      <span>${t('Une nouvelle version de cette application existe : {name}.', { name: '<strong>Djignan Financial System</strong>' })} <a href="https://zaky04.github.io/djignan-finance/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">${t('La découvrir')}</a></span>
-      <button type="button" class="icon-btn" id="migration-banner-close" aria-label="${t('Fermer')}" style="flex-shrink:0;">✕</button>
+    <p class="alert alert-info" style="margin:0;flex-wrap:wrap;gap:8px 16px;justify-content:space-between;">
+      <span>${t('Une nouvelle version de cette application existe : {name}. Sur mobile, vos données ne se transfèrent pas automatiquement — faites une sauvegarde pour les retrouver sans tout ressaisir.', { name: '<strong>Djignan Financial System</strong>' })}</span>
+      <span style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+        <button type="button" class="btn btn-primary" id="migration-banner-backup" style="padding:6px 14px;">${t('Sauvegarder puis découvrir Djignan')}</button>
+        <a href="${DJIGNAN_URL}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;font-size:12.5px;">${t("J'ai déjà une sauvegarde")}</a>
+        <button type="button" class="icon-btn" id="migration-banner-close" aria-label="${t('Fermer')}">✕</button>
+      </span>
     </p>`;
+  container.querySelector('#migration-banner-backup').addEventListener('click', startMigrationBackupThenOpen);
   container.querySelector('#migration-banner-close').addEventListener('click', async () => {
     await setSetting('migrationBannerDismissed', true);
     container.hidden = true;
