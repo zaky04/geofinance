@@ -13,11 +13,15 @@
      "Failed to fetch" (confirmé en le reproduisant : import/export local ET cloud étaient
      concernés, pas seulement Firebase). Domaines gstatic/googleapis/firebase* : sauvegarde cloud
      optionnelle via Google (voir firebase-sync.js) — chargés/appelés uniquement si l'utilisateur
-     active cette fonctionnalité, jamais sur le chemin par défaut. frame-src accueille la fenêtre
-     de connexion Google. frame-ancestors est volontairement absent : cette directive n'a aucun
-     effet via <meta> (elle exige un en-tête HTTP, hors de portée d'un site 100% statique sur
-     GitHub Pages). -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com https://www.googleapis.com; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self' data: https://open.er-api.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com; frame-src https://*.firebaseapp.com https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
+     active cette fonctionnalité, jamais sur le chemin par défaut. accounts.google.com dans
+     script-src/connect-src : Google Identity Services (accounts.google.com/gsi/client), remplace
+     depuis le 16 août le mécanisme signInWithPopup/signInWithRedirect de Firebase — celui-ci
+     dépendait d'un pont de stockage tiers entre ce site et l'authDomain Firebase qui échoue sur les
+     navigateurs mobiles à stockage cloisonné (auth/missing-initial-state, voir CLAUDE.md) ; Google
+     Identity Services contourne ce pont entièrement. frame-ancestors est volontairement absent :
+     cette directive n'a aucun effet via <meta> (elle exige un en-tête HTTP, hors de portée d'un
+     site 100% statique sur GitHub Pages). -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com https://www.googleapis.com https://accounts.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self' data: https://open.er-api.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://accounts.google.com; frame-src https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="GeoFinance System — gestion complète de vos finances personnelles, 100% locale et hors-ligne.">
 <meta name="theme-color" content="#0B1220" media="(prefers-color-scheme: dark)">

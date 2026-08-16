@@ -23,3 +23,17 @@ export const firebaseConfig = {
     message clair ("fonctionnalité pas encore configurée") plutôt que d'échouer silencieusement
     ou avec une erreur réseau confuse au moment de la connexion. */
 export const isFirebaseConfigured = Object.values(firebaseConfig).every((v) => v && v !== 'REPLACE_ME');
+
+/** ID du client OAuth Google auto-créé par Firebase quand le fournisseur Google a été activé
+    (Firebase Console > Authentication > Sign-in method > Google > "Configuration du SDK Web" —
+    identique à celui visible dans Google Cloud Console > APIs et services > Identifiants > "Web
+    client (auto created by Google Service)"). Utilisé directement par Google Identity Services
+    (firebase-sync.js) — voir CLAUDE.md pour le contexte : signInWithPopup/signInWithRedirect de
+    Firebase dépendent d'un pont de stockage tiers entre ce site et geofinance-backup.firebaseapp.com
+    qui échoue sur les navigateurs mobiles à stockage cloisonné (Safari, Chrome/Android). Google
+    Identity Services contourne ce pont entièrement en récupérant un jeton d'accès directement,
+    échangé ensuite contre une session Firebase via signInWithCredential — pas secret, même
+    raisonnement que firebaseConfig ci-dessus. IMPORTANT : ce client OAuth doit avoir
+    `https://zaky04.github.io` dans ses "Authorized JavaScript origins" (Google Cloud Console >
+    Identifiants > ce client) pour que Google Identity Services accepte les appels depuis ce site. */
+export const googleClientId = '868830301244-a57es0a6hebp31s5ppnp2d14p7nfk49h.apps.googleusercontent.com';

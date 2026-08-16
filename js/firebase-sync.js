@@ -19,47 +19,106 @@
    les justificatifs photo en base64 dépassent vite cette limite en usage réel.
    ========================================================================== */
 
-import { firebaseConfig, isFirebaseConfigured } from './firebase-config.js';
+import { firebaseConfig, isFirebaseConfigured, googleClientId } from './firebase-config.js';
 import { buildEncryptedPayload, decryptPayload, deserializeReceiptsForImport, markBackupDone } from './backup.js';
 import { importAllData, getSetting, setSetting } from './db.js';
 import { openModal, showToast, confirmDialog, formatDate } from './utils.js';
 import { notifyDataChanged } from './state.js';
-import { isStandalone } from './install-prompt.js';
 import { t } from './i18n.js';
 
-/* Signalé par l'auteur (16 août) : signInWithRedirect() échouait de façon systématique et
-   reproductible sur mobile (iPhone icône + Safari + Chrome, Android) — la connexion Google
-   réussissait bien côté serveur (confirmée via Firebase Console > Authentication > Users) mais
-   getRedirectResult() ne retrouvait jamais le résultat côté client, alors que signInWithPopup
-   fonctionnait de façon fiable sur PC. Cause la plus probable : la navigation complète vers Google
-   et retour expose le round-trip à l'éviction mémoire du navigateur/OS en arrière-plan sur mobile
-   (contrairement à une popup, où l'onglet d'origine ne quitte jamais le premier plan) — la
-   persistance de l'état de redirection ne survit pas de façon fiable à ce cycle. Ancienne
-   hypothèse ("popup carrément non fonctionnel sur mobile") : vraie UNIQUEMENT pour une PWA
-   installée en plein écran (display-mode: standalone), où il n'existe littéralement aucune fenêtre
-   de navigateur dans laquelle ouvrir une popup — mais PAS pour un onglet mobile normal (Safari/
-   Chrome), où window.open() fonctionne comme sur desktop. On ne force donc plus la redirection que
-   pour le cas standalone réellement bloquant ; partout ailleurs (y compris mobile en onglet normal),
-   la popup est tentée en premier, avec repli automatique sur la redirection déjà en place
-   ci-dessous si elle échoue vraiment (POPUP_FALLBACK_CODES). */
-function shouldPreferRedirect() {
-  return isStandalone();
+/* ==========================================================================
+   16 août 2026 — Connexion Google réécrite : Google Identity Services au lieu
+   de signInWithPopup/signInWithRedirect de Firebase.
+
+   Diagnostic complet mené avec l'auteur : signInWithRedirect() échouait de façon
+   systématique sur mobile (iPhone icône + Safari + Chrome, Android) — la connexion
+   Google réussissait bien côté serveur (Firebase Console > Authentication > Users
+   montrait un horodatage de connexion à jour) mais getRedirectResult() ne retrouvait
+   jamais le résultat côté client. Firebase a fini par renvoyer l'erreur explicite
+   "auth/missing-initial-state" : "signInWithRedirect in a storage-partitioned browser
+   environment". Cause racine confirmée : le mécanisme popup/redirect de Firebase
+   dépend d'un pont de stockage tiers entre ce site (zaky04.github.io) et le domaine
+   d'authentification (geofinance-backup.firebaseapp.com), via une iframe intégrée.
+   Les navigateurs mobiles modernes (Safari depuis longtemps, Chrome/Android de plus
+   en plus) cloisonnent le stockage tiers par site — cette iframe ne voit donc pas le
+   même stockage selon qu'elle est chargée en tant qu'iframe intégrée (avant le départ
+   vers Google) ou en page complète (au retour) : l'état initial est introuvable. Ce
+   pont casse AUSSI signInWithPopup dès qu'il doit y recourir en interne, pas
+   seulement signInWithRedirect — donc aucun réglage popup/redirect de Firebase seul
+   ne pouvait définitivement corriger le problème.
+
+   Solution retenue : contourner entièrement ce pont. Google Identity Services (la
+   bibliothèque moderne de Google, accounts.google.com/gsi/client) récupère un jeton
+   d'accès Google directement via son propre mécanisme OAuth (compatible FedCM,
+   conçu précisément pour fonctionner sans dépendre du stockage tiers), puis ce jeton
+   est échangé contre une session Firebase via signInWithCredential() — sans jamais
+   passer par le pont iframe/storage de Firebase. Popup ouverte par Google Identity
+   Services elle-même (pas par Firebase), toujours dans le même clic utilisateur
+   (voir warmUpGoogleSignIn()) pour éviter le blocage de popup déjà rencontré.
+
+   Limite restante, non résolue par ce changement (aucune solution JS ne le peut) :
+   une PWA installée en plein écran (icône sur l'écran d'accueil, display-mode:
+   standalone) ne peut littéralement ouvrir AUCUNE fenêtre de navigateur — ni popup
+   Firebase, ni popup Google Identity Services. Dans ce contexte précis, la sauvegarde
+   locale chiffrée (import/export) reste le seul chemin de migration fiable — voir la
+   bannière de migration (renderMigrationBanner(), app.js sur cette branche). Mais
+   cette limite ne concernait qu'une minorité des échecs rapportés : la plupart avaient
+   lieu dans un onglet Safari/Chrome normal, où ce nouveau mécanisme fonctionne comme
+   sur desktop. */
+
+let gsiPromise = null;
+function ensureGoogleIdentityServices() {
+  if (gsiPromise) return gsiPromise;
+  gsiPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error(t("Échec du chargement du service de connexion Google.")));
+    document.head.appendChild(script);
+  });
+  return gsiPromise;
 }
-const POPUP_FALLBACK_CODES = new Set([
-  'auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/operation-not-supported-in-this-environment', 'auth/cancelled-popup-request',
-]);
+
+let tokenClient = null;
+// { resolve, reject } de l'appel signInWithGoogle() en cours — le callback du tokenClient (créé une
+// seule fois, voir ensureTokenClient()) est partagé entre tous les appels futurs, donc il ne peut pas
+// fermer directement sur les resolve/reject d'un appel précis : il lit ce pointeur mutable à chaque
+// déclenchement, mis à jour par signInWithGoogle() juste avant de démarrer le flux.
+let pendingSignIn = null;
+
+async function ensureTokenClient() {
+  await ensureGoogleIdentityServices();
+  if (tokenClient) return tokenClient;
+  tokenClient = window.google.accounts.oauth2.initTokenClient({
+    client_id: googleClientId,
+    scope: 'email profile',
+    callback: async (tokenResponse) => {
+      const pending = pendingSignIn;
+      pendingSignIn = null;
+      if (!pending) return; // pas d'appel signInWithGoogle() en cours (ne devrait pas arriver)
+      if (tokenResponse.error) { pending.reject(new Error(tokenResponse.error)); return; }
+      try {
+        const { authMod } = await ensureFirebase();
+        const credential = authMod.GoogleAuthProvider.credential(null, tokenResponse.access_token);
+        const result = await authMod.signInWithCredential(firebaseAuth, credential);
+        pending.resolve(result.user);
+      } catch (err) {
+        pending.reject(err);
+      }
+    },
+    error_callback: (err) => {
+      const pending = pendingSignIn;
+      pendingSignIn = null;
+      if (pending) pending.reject(new Error(err?.type || 'popup_failed_to_open'));
+    },
+  });
+  return tokenClient;
+}
 
 // À ajuster si une version plus récente est disponible au moment du déploiement
 // (voir firebase.google.com/docs/web/setup) — sans build, la version est figée ici.
-// v10.14.1 -> v12.17.1 (16 août 2026) : signalé par l'auteur, une connexion Google RÉELLEMENT
-// réussie côté serveur (confirmée via Firebase Console > Authentication > Users, horodatage de
-// connexion à jour) n'était jamais retrouvée côté client par getRedirectResult() — l'app restait
-// bloquée sur "Se connecter avec Google" malgré une connexion Google authentique et acceptée. Cause
-// confirmée client-side (config/CSP/domaine autorisé tous vérifiés intacts, aucun rapport avec ça).
-// Plusieurs versions majeures du SDK sont sorties depuis 10.14.1, avec des correctifs connus autour
-// de la fiabilité de getRedirectResult()/de la persistance IndexedDB sur mobile — l'API modulaire
-// utilisée ici (getAuth, signInWithRedirect, getRedirectResult, onAuthStateChanged, getFirestore...)
-// est stable depuis v9, donc ce saut de version ne devrait rien casser côté appels utilisés.
 const SDK_VERSION = '12.17.1';
 
 let sdkPromise = null;
@@ -68,7 +127,8 @@ let firebaseDb = null;
 
 /** Charge le SDK Firebase et initialise l'app — mémoïsé, un seul chargement réseau même si
     appelé plusieurs fois. Renvoie les sous-modules auth/firestore (les fonctions dont on a
-    besoin, ex. signInWithPopup, doc, setDoc — l'API modulaire de Firebase les expose ainsi). */
+    besoin, ex. GoogleAuthProvider, signInWithCredential, doc, setDoc — l'API modulaire de Firebase
+    les expose ainsi). */
 function ensureFirebase() {
   if (sdkPromise) return sdkPromise;
   sdkPromise = (async () => {
@@ -96,56 +156,32 @@ function waitForAuthReady(authMod) {
   });
 }
 
-/** Renvoie l'utilisateur connecté (flux popup, résolu tout de suite) ou `null` (flux redirection :
-    la page navigue vers Google puis revient sur l'app — l'appelant n'a rien à faire d'autre,
-    handlePendingRedirect() complète la connexion au rechargement, voir renderCloudBackupSection). */
+/** Déclenche le flux de connexion Google via Google Identity Services (voir le commentaire d'en-tête
+    du fichier) : ouvre la popup OAuth de Google elle-même (pas celle de Firebase), récupère un jeton
+    d'accès, l'échange contre une session Firebase. Résout avec l'utilisateur Firebase, ou rejette
+    (jamais de retour `null` façon "flux redirection" — il n'y a plus de redirection du tout). Doit
+    être appelée directement depuis un handler de clic (pas après un premier `await` non préchargé) :
+    voir warmUpGoogleSignIn(), qui prépare tokenClient à l'avance pour que requestAccessToken() reste
+    dans le même geste utilisateur que le clic. */
 export async function signInWithGoogle() {
-  const { authMod } = await ensureFirebase();
-  const provider = new authMod.GoogleAuthProvider();
-  if (shouldPreferRedirect()) {
-    await setSetting('cloudRedirectPending', true);
-    await authMod.signInWithRedirect(firebaseAuth, provider);
-    return null;
-  }
-  try {
-    const result = await authMod.signInWithPopup(firebaseAuth, provider);
-    return result.user;
-  } catch (err) {
-    if (!POPUP_FALLBACK_CODES.has(err.code)) throw err;
-    await setSetting('cloudRedirectPending', true);
-    await authMod.signInWithRedirect(firebaseAuth, provider);
-    return null;
-  }
+  const client = await ensureTokenClient(); // déjà mémoïsé si warmUpGoogleSignIn() a tourné avant
+  return new Promise((resolve, reject) => {
+    pendingSignIn = { resolve, reject };
+    client.requestAccessToken();
+  });
 }
 
-/** À appeler après ensureFirebase() si un cloudRedirectPending est en cours : complète la
-    connexion démarrée par signInWithRedirect() avant que la page ne navigue vers Google.
-    Sans effet (retourne vite) s'il n'y a en fait aucune redirection en attente. */
-async function handlePendingRedirect(authMod) {
-  if (!(await getSetting('cloudRedirectPending', false))) return;
-  try {
-    const result = await authMod.getRedirectResult(firebaseAuth);
-    if (result?.user) await setSetting('cloudBackupWasSignedIn', true);
-  } finally {
-    await setSetting('cloudRedirectPending', false);
-  }
-}
-
-/** Précharge le SDK Firebase en arrière-plan, sans attendre ni faire échouer l'appelant en cas
-    d'erreur (hors-ligne, etc.) — à appeler dès qu'un bouton "Se connecter avec Google" devient
-    visible (pas à chaque démarrage de l'app, toujours dans le respect du chargement paresseux :
-    seulement quand l'UI concernée est réellement affichée). Corrige un problème concret signalé
-    par l'auteur sur mobile : signInWithGoogle() appelait jusqu'ici ensureFirebase() (chargement
-    réseau du SDK depuis gstatic.com) APRÈS le clic de l'utilisateur, avant de tenter
-    signInWithPopup() — sur un réseau mobile plus lent, ce délai suffit à faire perdre au navigateur
-    la notion de "geste utilisateur direct" nécessaire pour autoriser window.open(), donc la popup
-    se faisait bloquer (perçue comme une popup non sollicitée), déclenchant le repli vers
-    signInWithRedirect() — qui échoue lui-même de façon distincte et confirmée
-    (auth/missing-initial-state, cloisonnement du stockage tiers sur mobile, voir CLAUDE.md). En
-    préchargeant le SDK dès l'affichage du bouton, le SDK est déjà prêt au moment du clic : la popup
-    s'ouvre alors dans le même tick que le geste utilisateur, sans le délai qui la faisait échouer. */
-export function warmUpFirebaseSdk() {
+/** Précharge Google Identity Services + le SDK Firebase en arrière-plan, sans attendre ni faire
+    échouer l'appelant en cas d'erreur (hors-ligne, etc.) — à appeler dès qu'un bouton "Se connecter
+    avec Google" devient visible (pas à chaque démarrage de l'app, toujours dans le respect du
+    chargement paresseux : seulement quand l'UI concernée est réellement affichée). Sans ce
+    préchargement, signInWithGoogle() devrait attendre le chargement réseau du script GSI avant de
+    pouvoir appeler requestAccessToken() — sur mobile, ce délai suffit à faire perdre au navigateur la
+    notion de "geste utilisateur direct" nécessaire pour autoriser l'ouverture d'une fenêtre, donc la
+    popup se ferait bloquer (déjà rencontré avec l'ancien mécanisme signInWithPopup de Firebase). */
+export function warmUpGoogleSignIn() {
   ensureFirebase().catch(() => {});
+  ensureTokenClient().catch(() => {});
 }
 
 export async function signOutGoogle() {
@@ -153,40 +189,11 @@ export async function signOutGoogle() {
   await authMod.signOut(firebaseAuth);
 }
 
-/** Regroupe la séquence "compléter une redirection Google en attente puis attendre l'état de
-    connexion réel" — utilisée par renderCloudBackupSection() (Paramètres), checkCloudStaleness() et
-    checkPendingCloudRedirect() ci-dessous : les trois ont exactement le même besoin (savoir si un
-    utilisateur est connecté, y compris juste après un retour de signInWithRedirect()). Renvoie
-    l'utilisateur Firebase ou null. */
+/** Renvoie l'utilisateur Firebase actuellement connecté, ou `null`. Utilisée par
+    renderCloudBackupSection() (Paramètres) et checkCloudStaleness() ci-dessous. */
 export async function resolveCloudUser() {
   const { authMod } = await ensureFirebase();
-  await handlePendingRedirect(authMod);
   return waitForAuthReady(authMod);
-}
-
-/** À appeler dès que possible après le déverrouillage (onUnlocked(), app.js) : jusqu'ici, un retour
-    de signInWithRedirect() (mobile/PWA installée) n'était traité que passivement, quand l'utilisateur
-    pensait à rouvrir Paramètres — potentiellement bien après le retour réel, et l'éventuel échec de
-    getRedirectResult() (result vide, erreur Firebase) était avalé sans aucun signal visible : la
-    section Paramètres retombait juste sur "Se connecter avec Google" sans dire pourquoi. Ne charge le
-    SDK Firebase que si une redirection est réellement en attente (cloudRedirectPending) — jamais pour
-    un utilisateur qui n'a pas touché à cette fonctionnalité, même principe de chargement paresseux que
-    le reste de ce fichier. Résultat toujours rendu visible (succès, échec silencieux, ou erreur avec
-    son message réel) pour permettre un vrai diagnostic la prochaine fois que ça se reproduit. */
-export async function checkPendingCloudRedirect() {
-  if (!isFirebaseConfigured) return;
-  if (!(await getSetting('cloudRedirectPending', false))) return;
-  try {
-    const user = await resolveCloudUser();
-    if (user) {
-      await setSetting('cloudBackupWasSignedIn', true);
-      showToast(t('Connecté à Google ({email}).', { email: user.email || user.displayName || '' }));
-    } else {
-      showToast(t("La connexion à Google n'a pas abouti (aucun utilisateur retourné). Réessayez depuis Paramètres."));
-    }
-  } catch (err) {
-    showToast(t('Échec de la connexion Google : {message}', { message: err.message || String(err) }));
-  }
 }
 
 // Firestore refuse un document de plus de ~1 048 487 octets. Avec l'historique de transactions
@@ -451,11 +458,10 @@ export async function renderCloudBackupSection(container) {
 
   const lastCloudBackupAt = await getSetting('lastCloudBackupAt');
   let user = null;
-  // Ne charge le SDK au chargement des Paramètres que si une connexion précédente est connue, OU
-  // qu'un retour de redirection Google est en attente (flux mobile/PWA installée, voir
-  // shouldPreferRedirect()) — sinon un utilisateur qui n'a jamais touché à cette fonctionnalité
-  // ne déclenche jamais le chargement réseau du SDK Firebase rien qu'en ouvrant ses Paramètres.
-  if (await getSetting('cloudBackupWasSignedIn', false) || await getSetting('cloudRedirectPending', false)) {
+  // Ne charge le SDK au chargement des Paramètres que si une connexion précédente est connue —
+  // sinon un utilisateur qui n'a jamais touché à cette fonctionnalité ne déclenche jamais le
+  // chargement réseau du SDK Firebase rien qu'en ouvrant ses Paramètres.
+  if (await getSetting('cloudBackupWasSignedIn', false)) {
     try {
       user = await resolveCloudUser();
       if (!user) await setSetting('cloudBackupWasSignedIn', false);
@@ -464,9 +470,10 @@ export async function renderCloudBackupSection(container) {
     }
   } else {
     // Ce visiteur n'a jamais utilisé la fonctionnalité : le bouton "Se connecter avec Google" est
-    // sur le point d'être affiché plus bas — précharge le SDK dès maintenant en arrière-plan pour
-    // que le clic à venir déclenche signInWithPopup() sans délai réseau (voir warmUpFirebaseSdk()).
-    warmUpFirebaseSdk();
+    // sur le point d'être affiché plus bas — précharge Google Identity Services + le SDK Firebase
+    // dès maintenant en arrière-plan pour que le clic à venir ouvre la popup sans délai réseau
+    // (voir warmUpGoogleSignIn()).
+    warmUpGoogleSignIn();
   }
 
   container.innerHTML = `
@@ -490,7 +497,6 @@ export async function renderCloudBackupSection(container) {
     btn.textContent = t('Connexion…');
     try {
       const user = await signInWithGoogle();
-      if (!user) return; // flux redirection : la page va naviguer vers Google, rien d'autre à faire ici
       await setSetting('cloudBackupWasSignedIn', true);
       showToast(t('Connecté.'));
       await renderCloudBackupSection(container);
