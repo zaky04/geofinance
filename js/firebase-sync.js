@@ -131,6 +131,23 @@ async function handlePendingRedirect(authMod) {
   }
 }
 
+/** Précharge le SDK Firebase en arrière-plan, sans attendre ni faire échouer l'appelant en cas
+    d'erreur (hors-ligne, etc.) — à appeler dès qu'un bouton "Se connecter avec Google" devient
+    visible (pas à chaque démarrage de l'app, toujours dans le respect du chargement paresseux :
+    seulement quand l'UI concernée est réellement affichée). Corrige un problème concret signalé
+    par l'auteur sur mobile : signInWithGoogle() appelait jusqu'ici ensureFirebase() (chargement
+    réseau du SDK depuis gstatic.com) APRÈS le clic de l'utilisateur, avant de tenter
+    signInWithPopup() — sur un réseau mobile plus lent, ce délai suffit à faire perdre au navigateur
+    la notion de "geste utilisateur direct" nécessaire pour autoriser window.open(), donc la popup
+    se faisait bloquer (perçue comme une popup non sollicitée), déclenchant le repli vers
+    signInWithRedirect() — qui échoue lui-même de façon distincte et confirmée
+    (auth/missing-initial-state, cloisonnement du stockage tiers sur mobile, voir CLAUDE.md). En
+    préchargeant le SDK dès l'affichage du bouton, le SDK est déjà prêt au moment du clic : la popup
+    s'ouvre alors dans le même tick que le geste utilisateur, sans le délai qui la faisait échouer. */
+export function warmUpFirebaseSdk() {
+  ensureFirebase().catch(() => {});
+}
+
 export async function signOutGoogle() {
   const { authMod } = await ensureFirebase();
   await authMod.signOut(firebaseAuth);
@@ -445,6 +462,11 @@ export async function renderCloudBackupSection(container) {
     } catch {
       // Hors-ligne ou service indisponible : reste affiché comme déconnecté, pas d'erreur bloquante.
     }
+  } else {
+    // Ce visiteur n'a jamais utilisé la fonctionnalité : le bouton "Se connecter avec Google" est
+    // sur le point d'être affiché plus bas — précharge le SDK dès maintenant en arrière-plan pour
+    // que le clic à venir déclenche signInWithPopup() sans délai réseau (voir warmUpFirebaseSdk()).
+    warmUpFirebaseSdk();
   }
 
   container.innerHTML = `
