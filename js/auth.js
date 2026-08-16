@@ -307,8 +307,19 @@ export function initLockScreen({ onUnlock }) {
       renderDots(expectedLength);
       if (buffer.length === expectedLength) {
         if (buffer === firstEntry) {
-          await setupPin(buffer);
-          onUnlock();
+          try {
+            await setupPin(buffer);
+            onUnlock();
+          } catch (err) {
+            // Filet de sécurité : une erreur ici (ex. IndexedDB indisponible) laissait jusqu'ici le
+            // clavier silencieusement mort — dots remplis, rien d'autre — sans le moindre signal pour
+            // l'utilisateur ni pour le diagnostic. handleDigit() est appelée « fire-and-forget » par
+            // le clic (voir plus bas), donc toute exception non rattrapée ici devenait une rejection
+            // de promesse non gérée, invisible dans l'UI.
+            console.error('[auth] Échec setupPin/onUnlock :', err);
+            shakeError(err.message || t('Une erreur est survenue. Réessayez.'));
+            setTimeout(clearBuffer, 400);
+          }
         } else {
           shakeError(t('Les codes ne correspondent pas. Recommencez.'));
           setTimeout(enterSetupMode, 700);
@@ -337,6 +348,14 @@ export function initLockScreen({ onUnlock }) {
             }
             setTimeout(clearBuffer, 400);
           }
+        } catch (err) {
+          // Même filet de sécurité que pour setupPin() ci-dessus, côté déverrouillage cette fois :
+          // sans ce catch, une exception dans verifyPin() (ou dans onUnlock() s'il levait de façon
+          // synchrone) laissait l'utilisateur bloqué sur l'écran de code, dots remplis, sans aucune
+          // réaction.
+          console.error('[auth] Échec verifyPin/onUnlock :', err);
+          shakeError(err.message || t('Une erreur est survenue. Réessayez.'));
+          setTimeout(clearBuffer, 400);
         } finally {
           verifying = false;
         }
@@ -382,7 +401,15 @@ export function initLockScreen({ onUnlock }) {
       return;
     }
     const digit = key.dataset.key;
-    if (digit !== undefined) handleDigit(digit);
+    if (digit === undefined) return;
+    // Filet de sécurité final : handleDigit() est asynchrone mais appelée sans await depuis un
+    // handler d'événement synchrone — n'importe quelle exception qu'un futur changement laisserait
+    // échapper malgré les try/catch internes ci-dessus deviendrait sinon une rejection de promesse
+    // non gérée, invisible dans l'UI (le symptôme exact qu'on cherche à éliminer ici).
+    handleDigit(digit).catch((err) => {
+      console.error('[auth] Erreur inattendue dans handleDigit :', err);
+      shakeError(t('Une erreur est survenue. Réessayez.'));
+    });
   });
 
   (async function boot() {
