@@ -1085,4 +1085,8 @@ const EN = {
   'Épargne nette mensuelle': 'Monthly net savings',
   'Afficher en %': 'Show as %',
   'Budget vs réel — tendance annuelle': 'Budget vs actual — yearly trend',
+
+  // ---------- Bannière d'annonce de la nouvelle version (Djignan Financial System) ----------
+  'Une nouvelle version de cette application existe : {name}.': 'A new version of this app is available: {name}.',
+  'La découvrir': 'Check it out',
 };

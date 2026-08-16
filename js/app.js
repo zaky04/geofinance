@@ -446,6 +446,28 @@ async function maybeShowOnboarding() {
 /** Bandeau permanent affiché tant que isDemoModeActive est vrai (voir demo-data.js) — visible sur
     toutes les vues, pas seulement le tableau de bord, pour qu'il soit impossible de manquer qu'on
     explore des données fictives et pas ses propres finances. */
+/** Bannière d'annonce : ce dépôt (geofinance, gratuit) continue de fonctionner tel quel, mais une
+    nouvelle version (Djignan Financial System, djignan-finance) existe désormais avec de nouvelles
+    fonctionnalités. Fermeture mémorisée via setSetting pour ne plus jamais la réafficher une fois
+    lue — pas une bannière qui revient nous harceler à chaque déverrouillage. */
+async function renderMigrationBanner() {
+  const container = document.getElementById('migration-banner');
+  if (!container) return;
+  const dismissed = await getSetting('migrationBannerDismissed', false);
+  if (dismissed) { container.hidden = true; container.innerHTML = ''; return; }
+  container.hidden = false;
+  container.innerHTML = `
+    <p class="alert alert-info" style="margin:0;justify-content:space-between;">
+      <span>${t('Une nouvelle version de cette application existe : {name}.', { name: '<strong>Djignan Financial System</strong>' })} <a href="https://zaky04.github.io/djignan-finance/" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">${t('La découvrir')}</a></span>
+      <button type="button" class="icon-btn" id="migration-banner-close" aria-label="${t('Fermer')}" style="flex-shrink:0;">✕</button>
+    </p>`;
+  container.querySelector('#migration-banner-close').addEventListener('click', async () => {
+    await setSetting('migrationBannerDismissed', true);
+    container.hidden = true;
+    container.innerHTML = '';
+  });
+}
+
 async function renderDemoModeBanner() {
   const container = document.getElementById('demo-mode-banner');
   if (!container) return;
@@ -496,6 +518,7 @@ async function onUnlocked() {
   await generateDueRecurring();
   navigateTo('dashboard');
   applyShortcutParams();
+  await renderMigrationBanner();
   await renderDemoModeBanner();
   await maybeShowOnboarding();
   maybeShowInstallPrompt();
