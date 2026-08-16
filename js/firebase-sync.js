@@ -24,16 +24,26 @@ import { buildEncryptedPayload, decryptPayload, deserializeReceiptsForImport, ma
 import { importAllData, getSetting, setSetting } from './db.js';
 import { openModal, showToast, confirmDialog, formatDate } from './utils.js';
 import { notifyDataChanged } from './state.js';
-import { isStandalone, isIOS, isAndroid } from './install-prompt.js';
+import { isStandalone } from './install-prompt.js';
 import { t } from './i18n.js';
 
-/* signInWithPopup est notoirement peu fiable sur mobile, et carrément non fonctionnel dans une
-   PWA installée en plein écran (display-mode: standalone) : il n'y a pas de fenêtre de navigateur
-   dans laquelle ouvrir la popup, donc le clic "Se connecter" ne fait rien de visible. On préfère
-   signInWithRedirect (navigation de page complète, retour automatique après connexion) sur mobile/
-   standalone d'emblée, et en repli si la popup échoue quand même ailleurs. */
+/* Signalé par l'auteur (16 août) : signInWithRedirect() échouait de façon systématique et
+   reproductible sur mobile (iPhone icône + Safari + Chrome, Android) — la connexion Google
+   réussissait bien côté serveur (confirmée via Firebase Console > Authentication > Users) mais
+   getRedirectResult() ne retrouvait jamais le résultat côté client, alors que signInWithPopup
+   fonctionnait de façon fiable sur PC. Cause la plus probable : la navigation complète vers Google
+   et retour expose le round-trip à l'éviction mémoire du navigateur/OS en arrière-plan sur mobile
+   (contrairement à une popup, où l'onglet d'origine ne quitte jamais le premier plan) — la
+   persistance de l'état de redirection ne survit pas de façon fiable à ce cycle. Ancienne
+   hypothèse ("popup carrément non fonctionnel sur mobile") : vraie UNIQUEMENT pour une PWA
+   installée en plein écran (display-mode: standalone), où il n'existe littéralement aucune fenêtre
+   de navigateur dans laquelle ouvrir une popup — mais PAS pour un onglet mobile normal (Safari/
+   Chrome), où window.open() fonctionne comme sur desktop. On ne force donc plus la redirection que
+   pour le cas standalone réellement bloquant ; partout ailleurs (y compris mobile en onglet normal),
+   la popup est tentée en premier, avec repli automatique sur la redirection déjà en place
+   ci-dessous si elle échoue vraiment (POPUP_FALLBACK_CODES). */
 function shouldPreferRedirect() {
-  return isStandalone() || isIOS() || isAndroid();
+  return isStandalone();
 }
 const POPUP_FALLBACK_CODES = new Set([
   'auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/operation-not-supported-in-this-environment', 'auth/cancelled-popup-request',
