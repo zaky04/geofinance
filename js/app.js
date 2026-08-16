@@ -500,10 +500,10 @@ async function renderMigrationBanner() {
   container.innerHTML = `
     <p class="alert alert-info" style="margin:0;flex-wrap:wrap;gap:8px 16px;justify-content:space-between;">
       <span>${t('Une nouvelle version de cette application existe : {name}. Sur mobile, vos données ne se transfèrent pas automatiquement — faites une sauvegarde pour les retrouver sans tout ressaisir.', { name: '<strong>Djignan Financial System</strong>' })}</span>
-      <span style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+      <span style="display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;">
         <button type="button" class="btn btn-primary" id="migration-banner-backup" style="padding:6px 14px;">${t('Sauvegarder puis découvrir Djignan')}</button>
         <a href="${DJIGNAN_URL}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;font-size:12.5px;">${t("J'ai déjà une sauvegarde")}</a>
-        <button type="button" class="icon-btn" id="migration-banner-close" aria-label="${t('Fermer')}">✕</button>
+        <button type="button" class="icon-btn" id="migration-banner-close" aria-label="${t('Fermer')}" style="flex-shrink:0;">✕</button>
       </span>
     </p>`;
   container.querySelector('#migration-banner-backup').addEventListener('click', startMigrationBackupThenOpen);

@@ -2139,6 +2139,29 @@ repliés sur leur propre ligne à cette largeur. Aucune erreur console.
 
 `CACHE_VERSION` : `v76` → `v77`.
 
+### 16 août 2026 (suite) — Bandeau de migration : boutons débordant hors écran sur mobile
+
+Signalé par l'utilisateur avec deux captures (Android et iPhone) : le lien "J'ai déjà une
+sauvegarde" du bandeau de migration apparaissait tronqué au bord droit de l'écran.
+
+Cause (`renderMigrationBanner()`, `app.js`) : le `<span>` regroupant le bouton "Sauvegarder puis
+découvrir Djignan", le lien "J'ai déjà une sauvegarde" et le bouton ✕ était un flex-row sans
+`flex-wrap` et avec `flex-shrink:0` — le `<p class="alert">` parent (lui, en `flex-wrap:wrap`)
+faisait bien passer ce groupe entier à la ligne, mais À L'INTÉRIEUR de ce groupe, les 3 éléments
+restaient forcés sur une seule ligne. Sur un écran étroit (~375px), leur largeur cumulée dépasse
+le viewport — le débordement horizontal tronque silencieusement le contenu en trop (ou le rend
+inaccessible), sans jamais wrapper.
+
+→ `flex-wrap:wrap` ajouté à ce `<span>` interne (+ `flex-shrink:0` déplacé sur le bouton ✕ seul,
+pour qu'il ne s'écrase jamais). Le groupe peut désormais s'étaler sur 2-3 lignes si besoin.
+
+Testé en conditions réelles à 375px de large (parcours complet : choix de langue → création de
+PIN → tableau de bord) : bouton, lien et ✕ passent chacun à la ligne proprement, plus aucun
+élément ne dépasse la largeur du viewport (vérifié par mesure `getBoundingClientRect()` de
+chaque élément + capture d'écran).
+
+`CACHE_VERSION` : `v86` → `v87`.
+
 ## 7. Pistes prioritaires non traitées
 
 Par ordre d'impact estimé, à valider avec l'auteur avant de s'y attaquer :
