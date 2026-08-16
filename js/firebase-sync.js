@@ -41,7 +41,16 @@ const POPUP_FALLBACK_CODES = new Set([
 
 // À ajuster si une version plus récente est disponible au moment du déploiement
 // (voir firebase.google.com/docs/web/setup) — sans build, la version est figée ici.
-const SDK_VERSION = '10.14.1';
+// v10.14.1 -> v12.17.1 (16 août 2026) : signalé par l'auteur, une connexion Google RÉELLEMENT
+// réussie côté serveur (confirmée via Firebase Console > Authentication > Users, horodatage de
+// connexion à jour) n'était jamais retrouvée côté client par getRedirectResult() — l'app restait
+// bloquée sur "Se connecter avec Google" malgré une connexion Google authentique et acceptée. Cause
+// confirmée client-side (config/CSP/domaine autorisé tous vérifiés intacts, aucun rapport avec ça).
+// Plusieurs versions majeures du SDK sont sorties depuis 10.14.1, avec des correctifs connus autour
+// de la fiabilité de getRedirectResult()/de la persistance IndexedDB sur mobile — l'API modulaire
+// utilisée ici (getAuth, signInWithRedirect, getRedirectResult, onAuthStateChanged, getFirestore...)
+// est stable depuis v9, donc ce saut de version ne devrait rien casser côté appels utilisés.
+const SDK_VERSION = '12.17.1';
 
 let sdkPromise = null;
 let firebaseAuth = null;
