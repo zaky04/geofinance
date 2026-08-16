@@ -10,7 +10,7 @@ import { initLockScreen, isBiometricAvailable, registerBiometric, isPinConfigure
 import { bus, EVENTS, appState, notifyDataChanged } from './state.js';
 import { uuid, escapeHtml, openModal, showToast, confirmDialog, CURRENCIES } from './utils.js';
 import { checkWeeklyBackupReminder, exportEncryptedBackup } from './backup.js';
-import { checkWeeklyCloudBackupReminder, checkCloudStaleness } from './firebase-sync.js';
+import { checkWeeklyCloudBackupReminder, checkCloudStaleness, checkPendingCloudRedirect } from './firebase-sync.js';
 import { seedDemoData, clearDemoData } from './demo-data.js';
 import { maybeShowInstallPrompt } from './install-prompt.js';
 import { checkAndNotify, isNotificationSupported, requestNotificationPermission } from './notifications.js';
@@ -569,6 +569,13 @@ async function onUnlocked() {
   await maybeShowOnboarding();
   maybeShowInstallPrompt();
   checkAndNotify();
+  // Traite un éventuel retour de signInWithRedirect() dès que possible après le déverrouillage,
+  // plutôt que d'attendre passivement que l'utilisateur repense à rouvrir Paramètres (potentiellement
+  // bien plus tard, voire jamais — voir CLAUDE.md). Se déclenche AVANT checkCloudStaleness() ci-dessous
+  // : les deux se recoupent (même mécanisme sous-jacent), mais celui-ci est spécifiquement pour rendre
+  // visible ce qui vient de se passer (succès, échec silencieux, ou erreur avec son message réel), pas
+  // pour comparer des horodatages.
+  setTimeout(() => checkPendingCloudRedirect(), 1000);
   // En premier parmi les invites au démarrage : avertir d'une sauvegarde cloud plus récente (risque
   // de doublons/données écrasées si l'utilisateur commence à saisir sur cet appareil) prime sur les
   // simples rappels de sauvegarde ci-dessous. checkCloudStaleness() ne charge le SDK Firebase que

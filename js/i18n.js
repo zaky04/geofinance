@@ -1097,4 +1097,11 @@ const EN = {
     'Choose a password to encrypt your backup. Keep it safe: you\'ll need it to import this backup into Djignan.',
   'Chiffrer, exporter et ouvrir Djignan': 'Encrypt, export and open Djignan',
   'Sauvegarder avant de basculer vers Djignan': 'Back up before switching to Djignan',
+
+  // ---------- Diagnostic du retour de redirection Google (signInWithRedirect, mobile/PWA) : rend
+  // visible ce qui vient de se passer au lieu d'un échec silencieux (voir CLAUDE.md) ----------
+  'Connecté à Google ({email}).': 'Signed in to Google ({email}).',
+  "La connexion à Google n'a pas abouti (aucun utilisateur retourné). Réessayez depuis Paramètres.":
+    "Google sign-in didn't complete (no user returned). Try again from Settings.",
+  'Échec de la connexion Google : {message}': 'Google sign-in failed: {message}',
 };

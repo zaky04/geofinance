@@ -117,6 +117,42 @@ export async function signOutGoogle() {
   await authMod.signOut(firebaseAuth);
 }
 
+/** Regroupe la séquence "compléter une redirection Google en attente puis attendre l'état de
+    connexion réel" — utilisée par renderCloudBackupSection() (Paramètres), checkCloudStaleness() et
+    checkPendingCloudRedirect() ci-dessous : les trois ont exactement le même besoin (savoir si un
+    utilisateur est connecté, y compris juste après un retour de signInWithRedirect()). Renvoie
+    l'utilisateur Firebase ou null. */
+export async function resolveCloudUser() {
+  const { authMod } = await ensureFirebase();
+  await handlePendingRedirect(authMod);
+  return waitForAuthReady(authMod);
+}
+
+/** À appeler dès que possible après le déverrouillage (onUnlocked(), app.js) : jusqu'ici, un retour
+    de signInWithRedirect() (mobile/PWA installée) n'était traité que passivement, quand l'utilisateur
+    pensait à rouvrir Paramètres — potentiellement bien après le retour réel, et l'éventuel échec de
+    getRedirectResult() (result vide, erreur Firebase) était avalé sans aucun signal visible : la
+    section Paramètres retombait juste sur "Se connecter avec Google" sans dire pourquoi. Ne charge le
+    SDK Firebase que si une redirection est réellement en attente (cloudRedirectPending) — jamais pour
+    un utilisateur qui n'a pas touché à cette fonctionnalité, même principe de chargement paresseux que
+    le reste de ce fichier. Résultat toujours rendu visible (succès, échec silencieux, ou erreur avec
+    son message réel) pour permettre un vrai diagnostic la prochaine fois que ça se reproduit. */
+export async function checkPendingCloudRedirect() {
+  if (!isFirebaseConfigured) return;
+  if (!(await getSetting('cloudRedirectPending', false))) return;
+  try {
+    const user = await resolveCloudUser();
+    if (user) {
+      await setSetting('cloudBackupWasSignedIn', true);
+      showToast(t('Connecté à Google ({email}).', { email: user.email || user.displayName || '' }));
+    } else {
+      showToast(t("La connexion à Google n'a pas abouti (aucun utilisateur retourné). Réessayez depuis Paramètres."));
+    }
+  } catch (err) {
+    showToast(t('Échec de la connexion Google : {message}', { message: err.message || String(err) }));
+  }
+}
+
 // Firestore refuse un document de plus de ~1 048 487 octets. Avec l'historique de transactions
 // et les justificatifs photo (convertis en data URL base64 dans le payload — voir
 // serializeReceiptsForExport() dans backup.js), la sauvegarde complète dépasse vite cette limite
@@ -284,9 +320,8 @@ export async function checkCloudStaleness() {
   const timeout = setTimeout(() => { cancelled = true; }, 8000);
 
   try {
-    const { authMod, firestoreMod } = await ensureFirebase();
-    await handlePendingRedirect(authMod);
-    const user = await waitForAuthReady(authMod);
+    const { firestoreMod } = await ensureFirebase();
+    const user = await resolveCloudUser();
     if (!user || cancelled) return;
 
     const snap = await firestoreMod.getDoc(firestoreMod.doc(firebaseDb, 'backups', user.uid));
@@ -386,9 +421,7 @@ export async function renderCloudBackupSection(container) {
   // ne déclenche jamais le chargement réseau du SDK Firebase rien qu'en ouvrant ses Paramètres.
   if (await getSetting('cloudBackupWasSignedIn', false) || await getSetting('cloudRedirectPending', false)) {
     try {
-      const { authMod } = await ensureFirebase();
-      await handlePendingRedirect(authMod);
-      user = await waitForAuthReady(authMod);
+      user = await resolveCloudUser();
       if (!user) await setSetting('cloudBackupWasSignedIn', false);
     } catch {
       // Hors-ligne ou service indisponible : reste affiché comme déconnecté, pas d'erreur bloquante.
