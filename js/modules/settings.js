@@ -632,10 +632,26 @@ async function renderDashboardConfigSection(container) {
   });
 }
 
+// Coordonnées affichées dans « À propos du développeur » (Paramètres) et dans le crédit de la
+// barre latérale (index.html, mis à jour séparément — statique, pas piloté par ce fichier).
+// Téléphone volontairement absent pour l'instant (non fourni) : ajouter une ligne
+// stat-row supplémentaire ici (Téléphone / DEVELOPER_PHONE, lien tel:) le jour où il l'est.
+const DEVELOPER_NAME = 'Bibiê Adtcheko';
+const DEVELOPER_EMAIL = 'ronywest01@gmail.com';
+
+function renderDeveloperSection(container) {
+  container.innerHTML = `
+    <div class="panel" style="margin-top:16px;">
+      <div class="panel-header"><h3>${t('À propos du développeur')}</h3></div>
+      <div class="stat-row"><span class="stat-row-label">${t('Nom')}</span><span>${escapeHtml(DEVELOPER_NAME)}</span></div>
+      <div class="stat-row"><span class="stat-row-label">${t('Email')}</span><a href="mailto:${DEVELOPER_EMAIL}" style="color:var(--accent);">${escapeHtml(DEVELOPER_EMAIL)}</a></div>
+    </div>`;
+}
+
 export async function renderSettings() {
   const container = document.getElementById('settings-content');
   if (!container) return;
-  container.innerHTML = '<div id="settings-profile"></div><div id="settings-security"></div><div id="settings-notifications"></div><div id="settings-install"></div><div id="settings-update"></div><div id="settings-dashboard"></div><div id="settings-features"></div><div id="settings-language"></div><div id="settings-currency"></div><div id="settings-backup"></div><div id="settings-cloud-backup"></div><div id="settings-credit"></div>';
+  container.innerHTML = '<div id="settings-profile"></div><div id="settings-security"></div><div id="settings-notifications"></div><div id="settings-install"></div><div id="settings-update"></div><div id="settings-dashboard"></div><div id="settings-features"></div><div id="settings-language"></div><div id="settings-currency"></div><div id="settings-backup"></div><div id="settings-cloud-backup"></div><div id="settings-developer"></div>';
   await renderProfileSection(document.getElementById('settings-profile'));
   await renderSecuritySection(document.getElementById('settings-security'));
   await renderNotificationsSection(document.getElementById('settings-notifications'));
@@ -647,8 +663,7 @@ export async function renderSettings() {
   await renderCurrencySection(document.getElementById('settings-currency'));
   await renderBackupSection(document.getElementById('settings-backup'));
   await renderCloudBackupSection(document.getElementById('settings-cloud-backup'));
-  document.getElementById('settings-credit').innerHTML =
-    `<p style="text-align:center;font-size:11px;color:var(--text-faint);margin:20px 0 4px;">${t('Par {author}', { author: 'Adtcheko 5T/' })} · <a href="mailto:ronywest01@gmail.com" style="color:inherit;">${t('Contribuer / contact')}</a></p>`;
+  renderDeveloperSection(document.getElementById('settings-developer'));
 }
 
 export function initSettingsModule() {}

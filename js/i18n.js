@@ -858,7 +858,10 @@ const EN = {
   'Choisissez les panneaux affichés sur le tableau de bord (la carte « Budget mensuel alloué » et les 4 chiffres du mois restent toujours visibles).':
     'Choose the panels shown on the dashboard (the "Monthly budget allocated" card and the 4 monthly figures always stay visible).',
   'Tableau de bord mis à jour.': 'Dashboard updated.',
-  'Par {author}': 'By {author}',
+
+  // ---------- À propos du développeur (settings.js) ----------
+  'À propos du développeur': 'About the developer',
+  'Email': 'Email',
 
   // ---------- Sauvegarde cloud (firebase-sync.js) ----------
   'Non connecté.': 'Not signed in.',

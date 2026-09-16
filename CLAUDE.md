@@ -2267,6 +2267,29 @@ Testé : les 2 fichiers passent `node --check`. Pas de revérification dans le n
 
 `CACHE_VERSION` : `v88` → `v89`.
 
+### 16 septembre 2026 (suite 2) — Section « À propos du développeur » dans Paramètres
+
+Demande de l'auteur (appliquée aux deux dépôts, `djignan-finance` et celui-ci) : une vraie section
+avec son nom/email (numéro de téléphone pas encore fourni, à ajouter plus tard). Avant ce lot, seul
+un discret lien `mailto:` existait à deux endroits — bas de la barre latérale (`index.html`) et une
+ligne centrée en petits caractères en bas de Paramètres (`settings.js`, `#settings-credit`) — sous
+le nom « Adtcheko 5T/ ».
+
+→ `settings.js` : `#settings-credit` remplacé par `renderDeveloperSection()`, un vrai panneau
+(`.panel`/`.panel-header`, même convention que les autres sections de Paramètres) avec deux
+`stat-row` (Nom, Email — lien `mailto:` cliquable). Constantes `DEVELOPER_NAME`/`DEVELOPER_EMAIL` en
+tête de fichier, avec un commentaire indiquant où ajouter une ligne Téléphone le jour où l'auteur le
+fournit. Nom mis à jour partout (barre latérale comprise) : **Bibiê Adtcheko**, email inchangé
+(`ronywest01@gmail.com`). Clé `'Par {author}'` (devenue orpheline) retirée du dictionnaire ; deux
+nouvelles clés ajoutées (`'À propos du développeur'`, `'Email'`).
+
+Testé dans le navigateur (nouvelle config `geofinance-free` ajoutée à `.claude/launch.json`, port
+8124 — ce dépôt n'avait pas encore de config de preview dédiée dans ce dossier de travail) par rendu
+direct de `renderSettings()` : panneau correctement affiché en français puis en anglais après bascule
+de langue, lien `mailto:` intact dans les deux cas ; crédit de la barre latérale confirmé mis à jour.
+
+`CACHE_VERSION` : `v89` → `v90`.
+
 ## 7. Pistes prioritaires non traitées
 
 Par ordre d'impact estimé, à valider avec l'auteur avant de s'y attaquer :
