@@ -10,7 +10,7 @@
    ========================================================================== */
 
 import { STORES, dbGetAll, dbPut, dbAdd, dbDelete, logAudit } from '../db.js';
-import { uuid, formatCurrency, formatDate, escapeHtml, todayISO, openModal, confirmDialog, showToast, currencySelectHtml, wireCurrencySelect, readCurrencyValue } from '../utils.js';
+import { uuid, formatCurrency, formatDate, escapeHtml, todayISO, openModal, confirmDialog, showToast, currencySelectHtml, wireCurrencySelect, readCurrencyValue, safeNumber } from '../utils.js';
 import { notifyDataChanged } from '../state.js';
 import { t } from '../i18n.js';
 
@@ -159,7 +159,7 @@ async function openSharedExpenseModal(participants, defaultCurrency) {
     const record = {
       id: uuid(),
       description: fd.get('description').trim(),
-      amount: parseFloat(fd.get('amount')) || 0,
+      amount: safeNumber(parseFloat(fd.get('amount'))),
       currency,
       paidBy: fd.get('paidBy'),
       splitAmong,

@@ -7,7 +7,7 @@
 
 import { STORES, dbGetAll, dbAdd, dbPut, dbDelete, logAudit } from '../db.js';
 import { getEnrichedTransactions, guessCategoryId, checkUnusualExpense } from '../ledger.js';
-import { uuid, formatCurrency, formatDate, formatMonthLabel, escapeHtml, todayISO, currentMonthKey, monthKeyOffset, openModal, confirmDialog, showToast } from '../utils.js';
+import { uuid, formatCurrency, formatDate, formatMonthLabel, escapeHtml, todayISO, currentMonthKey, monthKeyOffset, openModal, confirmDialog, showToast, safeNumber } from '../utils.js';
 import { notifyDataChanged } from '../state.js';
 import { extractAmountFromImage } from '../ocr.js';
 // Aliasé en tr (pas t) : ce fichier utilise `t` comme nom de variable pour une transaction dans
@@ -78,6 +78,7 @@ export function openQuickAdd({ editTransaction = null } = {}) {
 
   let currentType = editTransaction?.type || 'expense';
   let splitMode = false;
+  let allWallets = [];
   let receiptRemoved = false;
 
   function showReceiptPreview(blob) {
@@ -165,11 +166,28 @@ export function openQuickAdd({ editTransaction = null } = {}) {
   splitAddBtn.addEventListener('click', () => { addSplitRow(); updateSplitTotal(); });
 
   async function populateWallets() {
-    const wallets = (await dbGetAll(STORES.WALLETS)).filter((w) => !w.archived);
-    const opts = wallets.map((w) => `<option value="${w.id}">${escapeHtml(w.name)} (${escapeHtml(w.currency)})</option>`).join('');
+    allWallets = (await dbGetAll(STORES.WALLETS)).filter((w) => !w.archived);
+    const opts = allWallets.map((w) => `<option value="${w.id}">${escapeHtml(w.name)} (${escapeHtml(w.currency)})</option>`).join('');
     walletSelect.innerHTML = opts || `<option value="">${tr("Créez un portefeuille d'abord")}</option>`;
-    targetWalletSelect.innerHTML = opts;
+    refreshTargetWalletOptions();
   }
+
+  // Un "transfert" applique le même montant brut aux deux portefeuilles (voir ledger.js,
+  // walletBalancesAsOf : -amt sur la source, +amt sur la cible, sans conversion). Autoriser un
+  // portefeuille cible dans une AUTRE devise créerait donc silencieusement de l'argent (100 EUR
+  // devenant 100 USD) — une dérive invisible qui ne se découvre qu'au rapprochement. On restreint
+  // la liste des cibles à la devise du portefeuille source ; un déplacement entre devises
+  // différentes doit être saisi comme deux transactions (dépense + recette) avec le vrai montant
+  // converti de chaque côté.
+  function refreshTargetWalletOptions() {
+    const source = allWallets.find((w) => w.id === walletSelect.value);
+    const prevTarget = targetWalletSelect.value;
+    const eligible = source ? allWallets.filter((w) => w.id !== source.id && w.currency === source.currency) : allWallets;
+    targetWalletSelect.innerHTML = eligible.map((w) => `<option value="${w.id}">${escapeHtml(w.name)} (${escapeHtml(w.currency)})</option>`).join('')
+      || `<option value="">${tr('Aucun autre portefeuille dans cette devise')}</option>`;
+    if (eligible.some((w) => w.id === prevTarget)) targetWalletSelect.value = prevTarget;
+  }
+  walletSelect.addEventListener('change', refreshTargetWalletOptions);
 
   async function populateCategories() {
     const all = await dbGetAll(STORES.CATEGORIES);
@@ -235,7 +253,17 @@ export function openQuickAdd({ editTransaction = null } = {}) {
     form.elements.tags.value = (editTransaction?.tags || []).join(', ');
     if (editTransaction) {
       walletSelect.value = editTransaction.walletId;
-      if (editTransaction.type === 'transfer') targetWalletSelect.value = editTransaction.targetWalletId;
+      refreshTargetWalletOptions();
+      if (editTransaction.type === 'transfer') {
+        // Un transfert existant entre devises différentes (saisi avant ce correctif, ou dont un
+        // portefeuille a changé de devise depuis) doit rester éditable — on l'ajoute explicitement
+        // à la liste au lieu de le masquer silencieusement, ce qui viderait la sélection.
+        if (![...targetWalletSelect.options].some((o) => o.value === editTransaction.targetWalletId)) {
+          const w = allWallets.find((x) => x.id === editTransaction.targetWalletId);
+          if (w) targetWalletSelect.insertAdjacentHTML('beforeend', `<option value="${w.id}">${escapeHtml(w.name)} (${escapeHtml(w.currency)})</option>`);
+        }
+        targetWalletSelect.value = editTransaction.targetWalletId;
+      }
       else categorySelect.value = editTransaction.categoryId || '';
       splitToggleRow.hidden = true;
     }
@@ -257,7 +285,7 @@ export function openQuickAdd({ editTransaction = null } = {}) {
       const rows = [...splitList.querySelectorAll('[data-split-row]')]
         .map((row) => ({
           categoryId: row.querySelector('.split-category').value,
-          amount: parseFloat(row.querySelector('.split-amount').value) || 0,
+          amount: safeNumber(parseFloat(row.querySelector('.split-amount').value)),
         }))
         .filter((r) => r.amount > 0);
       if (rows.length < 2) { showToast(tr('Ajoutez au moins deux lignes avec un montant.')); return; }
@@ -287,11 +315,15 @@ export function openQuickAdd({ editTransaction = null } = {}) {
       walletId,
       targetWalletId,
       categoryId: type !== 'transfer' ? (fd.get('categoryId') || null) : null,
-      amount: parseFloat(fd.get('amount')) || 0,
+      amount: safeNumber(parseFloat(fd.get('amount'))),
       date: fd.get('date'),
       note: (fd.get('note') || '').trim().slice(0, 140),
       tags: parseTags(fd.get('tags')),
       receiptBlob,
+      // Préserve le lien vers ses lignes sœurs : ce record remplace intégralement l'ancien
+      // (dbPut), donc omettre splitGroupId ici détacherait silencieusement une ligne scindée de
+      // son groupe dès qu'on modifie ne serait-ce que sa note ou sa date.
+      splitGroupId: editTransaction?.splitGroupId || undefined,
       reconciled: editTransaction?.reconciled || false,
       createdAt: editTransaction?.createdAt || new Date().toISOString(),
     };

@@ -10,7 +10,7 @@ import { STORES, dbGetAll, dbPut, dbAdd, dbDelete, logAudit, getSetting } from '
 import { computeCategoryActuals, computeEndOfMonthForecast, computeEnvelopeCarryover, computeAnnualCategoryActuals } from '../ledger.js';
 import {
   uuid, formatCurrency, formatDate, formatMonthLabel, formatPercent, escapeHtml, todayISO, localISODate,
-  currentMonthKey, monthKeyOffset, percentage, budgetProgressClass, openModal, confirmDialog, showToast,
+  currentMonthKey, monthKeyOffset, percentage, budgetProgressClass, openModal, confirmDialog, showToast, safeNumber,
 } from '../utils.js';
 import { notifyDataChanged } from '../state.js';
 import { t } from '../i18n.js';
@@ -139,7 +139,7 @@ async function renderMonthlyTab(container) {
   grid.querySelectorAll('[data-limit-input]').forEach((input) => {
     input.addEventListener('change', async () => {
       const categoryId = input.dataset.limitInput;
-      const limit = parseFloat(input.value) || 0;
+      const limit = safeNumber(parseFloat(input.value));
       const existing = monthBudgets.find((b) => b.categoryId === categoryId);
       const record = existing ? { ...existing, limit } : { id: uuid(), categoryId, month: monthKey, limit };
       await dbPut(STORES.BUDGETS, record);
@@ -197,7 +197,7 @@ async function renderAnnualTab(container) {
   grid.querySelectorAll('[data-limit-input]').forEach((input) => {
     input.addEventListener('change', async () => {
       const categoryId = input.dataset.limitInput;
-      const limit = parseFloat(input.value) || 0;
+      const limit = safeNumber(parseFloat(input.value));
       const existing = yearBudgets.find((b) => b.categoryId === categoryId);
       const record = existing ? { ...existing, limit } : { id: uuid(), categoryId, month: yearKey, period: 'annual', limit };
       await dbPut(STORES.BUDGETS, record);
@@ -430,11 +430,12 @@ function openRecurringModal(r = null) {
       id: r?.id || uuid(),
       type: currentType,
       name: fd.get('name').trim(),
-      amount: parseFloat(fd.get('amount')) || 0,
+      amount: safeNumber(parseFloat(fd.get('amount'))),
       walletId: fd.get('walletId'),
       categoryId: fd.get('categoryId') || null,
       frequency: fd.get('frequency'),
       nextDate: fd.get('nextDate'),
+      anchorDay: Number(fd.get('nextDate').slice(8, 10)),
       active: r?.active ?? true,
     };
     await dbPut(STORES.RECURRING, record);
@@ -570,12 +571,30 @@ async function renderRulesTab(container) {
 /* ==========================================================================
    Génération automatique des transactions dues (appelée au démarrage)
    ========================================================================== */
-function advanceDate(dateStr, frequency) {
+function advanceDate(dateStr, frequency, anchorDay) {
   const [y, m, day] = dateStr.split('-').map(Number);
-  const d = new Date(y, m - 1, day);
-  if (frequency === 'weekly') d.setDate(d.getDate() + 7);
-  else if (frequency === 'yearly') d.setFullYear(d.getFullYear() + 1);
-  else d.setMonth(d.getMonth() + 1);
+  if (frequency === 'weekly') {
+    const d = new Date(y, m - 1, day);
+    d.setDate(d.getDate() + 7);
+    return localISODate(d);
+  }
+  // Mensuel/annuel : on avance en mois/année calendaires, PAS en ajoutant à la date précédente
+  // via setMonth/setFullYear (ces derniers débordent silencieusement sur le mois suivant quand
+  // le jour d'origine — 29, 30, 31 — n'existe pas dans le mois cible, ex: 31 janvier + 1 mois
+  // devient le 3 mars au lieu du 28/29 février : un mois entier de récurrence est alors sauté et
+  // toutes les échéances suivantes restent décalées en permanence). `anchorDay` est le jour du
+  // mois voulu par l'utilisateur (ex: loyer le 31) : on clampe seulement quand le mois cible est
+  // trop court, et on revient à `anchorDay` dès que le mois suivant le permet à nouveau, comme
+  // le ferait une vraie échéance de facturation.
+  const targetDay = anchorDay ?? day;
+  let targetYear = y;
+  let targetMonth = m - 1;
+  if (frequency === 'yearly') targetYear += 1;
+  else targetMonth += 1;
+  targetYear += Math.floor(targetMonth / 12);
+  targetMonth = ((targetMonth % 12) + 12) % 12;
+  const lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+  const d = new Date(targetYear, targetMonth, Math.min(targetDay, lastDayOfTargetMonth));
   return localISODate(d);
 }
 
@@ -586,6 +605,9 @@ export async function generateDueRecurring() {
 
   for (const r of recurring) {
     if (!r.active || !r.nextDate) continue;
+    // Auto-guérison pour les récurrences créées avant l'ajout d'anchorDay : on fige le jour du
+    // mois voulu à partir de la prochaine échéance déjà enregistrée, une fois pour toutes.
+    if (r.anchorDay == null) r.anchorDay = Number(r.nextDate.slice(8, 10));
     let guard = 0;
     while (r.nextDate <= todayStr && guard < 60) {
       const tx = {
@@ -599,7 +621,7 @@ export async function generateDueRecurring() {
       };
       await dbAdd(STORES.TRANSACTIONS, tx);
       await logAudit({ entityType: 'transaction', entityId: tx.id, action: 'create', after: tx, note: t('Générée automatiquement (récurrence)') });
-      r.nextDate = advanceDate(r.nextDate, r.frequency);
+      r.nextDate = advanceDate(r.nextDate, r.frequency, r.anchorDay);
       generated = true;
       guard++;
     }

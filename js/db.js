@@ -217,6 +217,33 @@ export async function dbBulkPut(store, values) {
   });
 }
 
+/** Exécute plusieurs écritures (add/put/delete, sur un ou plusieurs stores) dans UNE SEULE
+    transaction IndexedDB : soit toutes appliquées, soit aucune. Chaque dbAdd/dbPut/dbDelete
+    "isolé" ouvre SA PROPRE transaction — un enchaînement de plusieurs appels séparés pour une même
+    opération logique (ex: enregistrer un remboursement = une ligne DEBT_PAYMENTS + une transaction
+    de portefeuille + parfois passer la dette à "soldée") peut donc laisser un état partiellement
+    écrit si l'onglet/l'appareil meurt exactement entre deux appels (fermeture forcée, coupure de
+    courant, l'OS qui tue l'onglet en arrière-plan sur mobile) — improbable par occurrence, mais
+    jamais acceptable pour un solde financier. `operations` est un tableau de
+    { store, type: 'add'|'put'|'delete', value } (value = l'id pour 'delete'). À utiliser pour tout
+    groupe d'écritures qui doivent réussir ou échouer ensemble. */
+export async function dbWriteBatch(operations) {
+  if (!operations || !operations.length) return;
+  const storeNames = [...new Set(operations.map((op) => op.store))];
+  const db = await openDatabase();
+  const t = tx(db, storeNames, 'readwrite');
+  for (const op of operations) {
+    const os = t.objectStore(op.store);
+    if (op.type === 'delete') os.delete(op.value);
+    else os[op.type](op.value);
+  }
+  await new Promise((resolve, reject) => {
+    t.oncomplete = resolve;
+    t.onerror = () => reject(t.error);
+    t.onabort = () => reject(t.error || new Error('Transaction abandonnée'));
+  });
+}
+
 /* ---------- Journal d'audit ---------- */
 export async function logAudit({ entityType, entityId, action, before = null, after = null, note = '' }) {
   await dbAdd(STORES.AUDIT_LOG, {

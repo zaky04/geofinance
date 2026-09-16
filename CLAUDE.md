@@ -120,8 +120,8 @@ Ou via `.claude/launch.json` (config `geofinance`, port 8123) avec les outils de
 | # | Sujet | Détail | Sévérité |
 |---|---|---|---|
 | 14 | `parseFlexibleNumber` (import CSV générique) mélit un séparateur de milliers pour une décimale | `"1,234,567"` (US, sans point) devient `1.234` — perte de magnitude silencieuse. Nécessite une vraie heuristique (ou un choix explicite du format par l'utilisateur), pas un correctif d'une ligne. | Moyenne-Haute |
-| 15 | `dbBulkPut`/`importAllData` non atomiques entre stores | Une ligne malformée en cours d'import (backup forgé/corrompu) peut laisser la base dans un état "moitié ancien, moitié nouveau" jamais voulu, sans indiquer à l'utilisateur quels stores ont réussi. | Moyenne |
-| 16 | `isDuplicateTransaction` (dédoublonnage import) : clé = portefeuille+date+type+montant | Deux dépenses identiques et légitimes le même jour (ex: deux cafés à 3,50€) sont silencieusement fusionnées à l'import ; les virements ne comparent pas `targetWalletId`. | Moyenne |
+| 15 | `dbBulkPut`/`importAllData` non atomiques entre stores | Une ligne malformée en cours d'import (backup forgé/corrompu) peut laisser la base dans un état "moitié ancien, moitié nouveau" jamais voulu, sans indiquer à l'utilisateur quels stores ont réussi. **Toujours ouvert** — `dbWriteBatch()` (nouvelle fonction générique, §6 du 16 septembre 2026) résout le même problème pour `debts.js` (remboursement/suppression), mais `importAllData()` elle-même n'a pas été retouchée cette passe. | Moyenne |
+| 16 | ~~`isDuplicateTransaction` (dédoublonnage import) : clé = portefeuille+date+type+montant~~ | **Résolu le 16 septembre 2026** — voir §6, la note fait maintenant partie de la clé de comparaison. Note : les virements ne comparent toujours pas `targetWalletId`, pas retouché cette passe (cas plus rare). | — |
 | 17 | `upgrade()` (`db.js`) n'ajoute jamais un index à un store déjà existant | Si une future version ajoute un index sur un store existant, les utilisateurs déjà installés ne l'obtiendront jamais (`createIndex` n'est appelé que dans la branche "store tout neuf") — bombe à retardement, pas un bug actif aujourd'hui. | Info (à surveiller) |
 | 18 | `computeEnvelopeCarryover` casse la chaîne sur un mois intermédiaire sans budget | Si janvier a un budget mais février non (bien que dépensé), le report de mars ignore complètement les dépenses de février. | Faible-Moyenne |
 | 19 | Réception d'un justificatif corrompu abandonne tout l'import | `deserializeReceiptsForImport` (`backup.js`) n'a pas de `try/catch` par ligne — une seule photo corrompue fait échouer toute la restauration au lieu de sauter ce justificatif. | Faible-Moyenne |
@@ -2161,6 +2161,80 @@ PIN → tableau de bord) : bouton, lien et ✕ passent chacun à la ligne propre
 chaque élément + capture d'écran).
 
 `CACHE_VERSION` : `v86` → `v87`.
+
+### 16 septembre 2026 — Portage de 6 correctifs de dérive de solde depuis `djignan-finance` (branche `main`)
+
+Un audit approfondi mené sur le dépôt pro (`djignan-finance`, suite à un signalement de dérive de
+solde après plusieurs mois d'usage) a trouvé plusieurs bugs de calcul et de fiabilité du stockage
+présents à l'identique dans ce dépôt (code partagé à l'origine, avant que `djignan-finance` ne reçoive
+ses propres fonctionnalités exclusives — liaison investissements-portefeuilles, règlement des
+dépenses partagées, code d'activation). Après vérification fichier par fichier (`git worktree`) que
+chaque zone touchée est structurellement identique ici, 6 correctifs portés **à l'identique** :
+
+1. **`advanceDate()` (`budgets.js`) — récurrences ancrées en fin de mois qui sautaient des
+   occurrences.** `setMonth()`/`setFullYear()` débordent silencieusement sur le mois suivant quand
+   le jour d'origine (29/30/31) n'existe pas dans le mois cible : une récurrence mensuelle posée le
+   31 janvier donnait le 3 mars au lieu du 28 février — février intégralement sauté, puis le jour
+   restait décalé en permanence. Nouveau champ `anchorDay` (fixé à la création/modification,
+   auto-guéri pour les enregistrements existants), `advanceDate()` clampe désormais au lieu de
+   déborder et revient à l'ancre dès que le mois suivant le permet. Revérifié par script isolé
+   **directement sur le code réel de ce fichier** (pas juste recopié depuis l'autre dépôt) : 14 mois
+   consécutifs depuis le 31 janvier, aucun saut ni doublon.
+2. **Transfert entre portefeuilles de devises différentes traité comme 1:1 (`transactions.js`).** Le
+   formulaire de virement listait tous les portefeuilles comme cible potentielle, y compris ceux
+   dans une autre devise — `walletBalancesAsOf` (`ledger.js`) applique pourtant le même montant brut
+   aux deux côtés, sans conversion. La liste des cibles se limite désormais à la devise de la source,
+   rafraîchie dynamiquement ; un virement multi-devises déjà existant reste éditable (sa cible
+   d'origine est ajoutée explicitement plutôt que masquée).
+3. **Modifier une ligne de transaction scindée perdait silencieusement son `splitGroupId`**
+   (`transactions.js`) — `dbPut` remplace tout l'enregistrement, et ce champ n'était jamais recopié
+   depuis `editTransaction`. Préservé désormais.
+4. **Dédoublonnage trop agressif à l'import CSV** (`backup.js`) — déjà documenté dette technique #16
+   de ce fichier (jamais corrigé jusqu'ici) : `isDuplicateTransaction` ne comparait pas la note/
+   description, fusionnant silencieusement deux dépenses réelles distinctes du même montant le même
+   jour. La note fait maintenant partie de la comparaison.
+5. **`investmentValueAsOf` (`ledger.js`) — un apport après la création sans nouvelle valorisation
+   faisait apparaître une perte fictive.** Tant qu'aucune entrée `type: 'valuation'` n'existe, la
+   fonction retombait sur `capitalInvested` (le capital initial figé), divergeant du calcul de
+   `computeMetrics()` (investments.js), qui lui calcule correctement `capitalInvested + apports -
+   retraits`. Un investissement créé à 1000 puis complété d'un apport de 500 affichait "Valeur
+   actuelle : 1000" et une perte de -500 € injustifiée. Reconstruit désormais le capital NET investi
+   à la date donnée au lieu du capital initial seul. Revérifié par script isolé sur le code réel de
+   ce fichier.
+6. **Filet de sécurité `Infinity`/`NaN` + écritures IndexedDB non atomiques.** `Number(x) || 0` (et
+   `parseFloat(...) || 0`, utilisé à ~15 points de saisie financière — transactions, dettes,
+   investissements, épargne, comptes gardés, dépenses partagées, taux de change, seuil de solde bas)
+   ne filtre pas `Infinity` (déjà documenté dette technique #17 de ce fichier, corrigé alors
+   seulement pour l'import de sauvegarde) — remplacé par `safeNumber()` (déjà présent dans
+   `utils.js`) à chaque site identifié. Et : chaque `dbAdd`/`dbPut` isolé ouvrait sa propre
+   transaction IndexedDB — un remboursement de dette (2-3 écritures séparées : `DEBT_PAYMENTS` +
+   transaction de portefeuille + parfois passage à "soldée") pouvait laisser un état partiellement
+   écrit si l'app meurt exactement entre deux appels (déjà documenté dette technique #15,
+   généralisée ici à `debts.js`). Nouvelle fonction `dbWriteBatch()` (`db.js`) — plusieurs écritures
+   dans une seule transaction IndexedDB, soit toutes appliquées, soit aucune — appliquée au
+   remboursement et à la suppression de dette dans `debts.js`.
+
+**Volontairement NON porté** : le vrai flux de règlement des dépenses partagées (créances/dettes
+générées automatiquement par `shared.js`, avec `createLinkedDebt`/`deleteDebtCascade` côté
+`debts.js`) — décision explicite pour cette passe : ce dépôt n'a pas les mêmes fondations que
+`djignan-finance` (pas de `type: 'receivable'`/`'debt'` étendu utilisé de la même façon, modèle plus
+simple), porter ce flux complet aurait demandé de reconstruire ces fondations avec plus de risque de
+régression sur un code moins régulièrement testé que le dépôt pro. `computeDailySpending`
+(`ledger.js`) non plus : ce dépôt ne lie jamais un investissement à une transaction de portefeuille
+(pas de `investmentId`/`investmentMovementType` sur `STORES.TRANSACTIONS`), donc rien à exclure —
+cette fonction n'a pas le bug équivalent ici.
+
+**Testé** : les 11 fichiers modifiés passent `node --check`. Les deux correctifs de logique pure
+(`advanceDate`, `investmentValueAsOf`) réexécutés isolément **directement depuis le code réel de ce
+dépôt** (extraction du texte de la fonction depuis le fichier puis exécution, pas une simple
+recopie du test du dépôt pro) — les deux confirment le comportement attendu. Le reste (filtrage
+devise du virement, préservation `splitGroupId`, dédoublonnage CSV avec note, écriture atomique du
+remboursement de dette) n'a pas pu être revérifié dans le navigateur cette session (l'infrastructure
+de prévisualisation locale de cette session pointait vers le mauvais répertoire) — changements
+ciblés et structurellement identiques à leurs équivalents déjà testés en direct dans le navigateur
+sur `djignan-finance`, à confirmer par l'auteur en usage réel.
+
+`CACHE_VERSION` : `v87` → `v88`.
 
 ## 7. Pistes prioritaires non traitées
 

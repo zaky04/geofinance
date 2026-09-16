@@ -220,14 +220,18 @@ export async function analyzeTransactionsCsv(file) {
   return { format: isGeoFinanceFormat ? 'geofinance' : 'generic', headerCells, rows, delimiter };
 }
 
-/** Détecte un doublon probable : même portefeuille, même date, montant quasi identique et même
-    type — cas typique d'un relevé réimporté sur une période qui chevauche un import précédent. */
+/** Détecte un doublon probable : même portefeuille, même date, montant quasi identique, même
+    type ET même note — cas typique d'un relevé réimporté sur une période qui chevauche un import
+    précédent (la ligne source est alors strictement identique, note comprise). Sans la note, deux
+    dépenses réelles et distinctes mais de même montant le même jour (ex: deux déjeuners à 15€)
+    étaient silencieusement fusionnées : la 2e disparaissait, sous-comptant les dépenses réelles. */
 function isDuplicateTransaction(existingTransactions, candidate) {
   return existingTransactions.some((t) =>
     t.walletId === candidate.walletId
     && t.date === candidate.date
     && t.type === candidate.type
     && Math.abs((t.amount || 0) - candidate.amount) < 0.005
+    && (t.note || '') === (candidate.note || '')
   );
 }
 

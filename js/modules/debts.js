@@ -3,9 +3,9 @@
    Suivi des remboursements + simulateur stratégique Avalanche / Boule de neige.
    ========================================================================== */
 
-import { STORES, dbGetAll, dbPut, dbDelete, dbAdd, logAudit, getSetting } from '../db.js';
+import { STORES, dbGetAll, dbPut, dbDelete, dbAdd, dbWriteBatch, logAudit, getSetting } from '../db.js';
 import { getExchangeRates, computeDebtHistory } from '../ledger.js';
-import { uuid, formatCurrency, formatDate, formatPercent, escapeHtml, todayISO, percentage, convertAmount, openModal, confirmDialog, showToast, currencySelectHtml, wireCurrencySelect, readCurrencyValue } from '../utils.js';
+import { uuid, formatCurrency, formatDate, formatPercent, escapeHtml, todayISO, percentage, convertAmount, openModal, confirmDialog, showToast, currencySelectHtml, wireCurrencySelect, readCurrencyValue, safeNumber } from '../utils.js';
 import { notifyDataChanged } from '../state.js';
 import { renderNetWorthTrendChart } from '../charts.js';
 // Aliasé en tr (pas t) : ce fichier utilise `t` comme nom de variable pour une transaction dans
@@ -188,9 +188,9 @@ async function openDebtModal(d = null) {
       id: d?.id || uuid(),
       type: currentType,
       personName: fd.get('personName').trim(),
-      principal: parseFloat(fd.get('principal')) || 0,
+      principal: safeNumber(parseFloat(fd.get('principal'))),
       currency,
-      interestRate: parseFloat(fd.get('interestRate')) || 0,
+      interestRate: safeNumber(parseFloat(fd.get('interestRate'))),
       startDate: fd.get('startDate') || todayISO(),
       dueDate: fd.get('dueDate') || null,
       status: d?.status || 'active',
@@ -243,9 +243,7 @@ async function openPaymentModal(d) {
     const fd = new FormData(e.target);
     const walletId = fd.get('walletId');
     if (!walletId) { showToast(tr("Créez d'abord un portefeuille en {currency}.", { currency: d.currency })); return; }
-    const payment = { id: uuid(), debtId: d.id, amount: parseFloat(fd.get('amount')) || 0, date: fd.get('date'), note: (fd.get('note') || '').trim().slice(0, 140) };
-    await dbAdd(STORES.DEBT_PAYMENTS, payment);
-    await logAudit({ entityType: 'debtPayment', entityId: payment.id, action: 'create', after: payment });
+    const payment = { id: uuid(), debtId: d.id, amount: safeNumber(parseFloat(fd.get('amount'))), date: fd.get('date'), note: (fd.get('note') || '').trim().slice(0, 140) };
 
     const paymentTxType = d.type === 'debt' ? 'expense' : 'income';
     const paymentTx = {
@@ -263,17 +261,28 @@ async function openPaymentModal(d) {
       debtPaymentId: payment.id,
       createdAt: new Date().toISOString(),
     };
-    await dbAdd(STORES.TRANSACTIONS, paymentTx);
-    await logAudit({ entityType: 'transaction', entityId: paymentTx.id, action: 'create', after: paymentTx, note: tr('Remboursement de dette/créance') });
 
-    const payments = (await dbGetAll(STORES.DEBT_PAYMENTS)).filter((p) => p.debtId === d.id);
-    const rem = remaining(d, payments);
-    if (rem <= 0.005 && d.status !== 'paid') {
-      const before = { ...d };
-      d.status = 'paid';
-      await dbPut(STORES.DEBTS, d);
-      await logAudit({ entityType: 'debt', entityId: d.id, action: 'update', before, after: d, note: tr('Soldée') });
-    }
+    const existingPayments = (await dbGetAll(STORES.DEBT_PAYMENTS)).filter((p) => p.debtId === d.id);
+    const rem = remaining(d, [...existingPayments, payment]);
+    const willBePaid = rem <= 0.005 && d.status !== 'paid';
+    const debtBefore = willBePaid ? { ...d } : null;
+    if (willBePaid) d.status = 'paid';
+
+    // Une seule transaction IndexedDB pour les trois écritures : soit toutes appliquées, soit
+    // aucune — sans ça, une interruption pile entre deux `await dbAdd` séparés pouvait laisser une
+    // ligne DEBT_PAYMENTS enregistrée sans sa transaction de portefeuille correspondante (la dette
+    // paraîtrait remboursée alors que l'argent n'aurait jamais bougé), voir dbWriteBatch (db.js).
+    const operations = [
+      { store: STORES.DEBT_PAYMENTS, type: 'add', value: payment },
+      { store: STORES.TRANSACTIONS, type: 'add', value: paymentTx },
+    ];
+    if (willBePaid) operations.push({ store: STORES.DEBTS, type: 'put', value: d });
+    await dbWriteBatch(operations);
+
+    await logAudit({ entityType: 'debtPayment', entityId: payment.id, action: 'create', after: payment });
+    await logAudit({ entityType: 'transaction', entityId: paymentTx.id, action: 'create', after: paymentTx, note: tr('Remboursement de dette/créance') });
+    if (willBePaid) await logAudit({ entityType: 'debt', entityId: d.id, action: 'update', before: debtBefore, after: d, note: tr('Soldée') });
+
     modal.close();
     showToast(tr('Remboursement enregistré.'));
     notifyDataChanged('debts');
@@ -418,9 +427,15 @@ export function initDebtsModule() {
       if (ok) {
         const payments = (await dbGetAll(STORES.DEBT_PAYMENTS)).filter((p) => p.debtId === d.id);
         const linkedTx = (await dbGetAll(STORES.TRANSACTIONS)).filter((t) => t.debtId === d.id);
-        for (const p of payments) await dbDelete(STORES.DEBT_PAYMENTS, p.id);
-        for (const t of linkedTx) await dbDelete(STORES.TRANSACTIONS, t.id);
-        await dbDelete(STORES.DEBTS, d.id);
+        // Une seule transaction IndexedDB pour toutes ces suppressions (voir dbWriteBatch, db.js) :
+        // sans ça, une interruption en cours de route pouvait laisser des remboursements/
+        // transactions orphelins (la dette supprimée mais ses mouvements de portefeuille toujours
+        // là, ou l'inverse).
+        await dbWriteBatch([
+          ...payments.map((p) => ({ store: STORES.DEBT_PAYMENTS, type: 'delete', value: p.id })),
+          ...linkedTx.map((t) => ({ store: STORES.TRANSACTIONS, type: 'delete', value: t.id })),
+          { store: STORES.DEBTS, type: 'delete', value: d.id },
+        ]);
         await logAudit({ entityType: 'debt', entityId: d.id, action: 'delete', before: d });
         notifyDataChanged('debts');
         showToast(tr('Supprimé.'), {

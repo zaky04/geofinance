@@ -7,7 +7,7 @@
    ========================================================================== */
 
 import { STORES, dbGetAll, dbPut, dbDelete, logAudit, getSetting } from '../db.js';
-import { uuid, formatCurrency, formatDate, escapeHtml, todayISO, percentage, openModal, confirmDialog, showToast, currencySelectHtml, wireCurrencySelect, readCurrencyValue } from '../utils.js';
+import { uuid, formatCurrency, formatDate, escapeHtml, todayISO, percentage, openModal, confirmDialog, showToast, currencySelectHtml, wireCurrencySelect, readCurrencyValue, safeNumber } from '../utils.js';
 import { notifyDataChanged } from '../state.js';
 import { t } from '../i18n.js';
 
@@ -75,8 +75,8 @@ async function openGoalModal(g = null) {
     const record = {
       id: g?.id || uuid(),
       name: fd.get('name').trim(),
-      targetAmount: parseFloat(fd.get('targetAmount')) || 0,
-      currentAmount: parseFloat(fd.get('currentAmount')) || 0,
+      targetAmount: safeNumber(parseFloat(fd.get('targetAmount'))),
+      currentAmount: safeNumber(parseFloat(fd.get('currentAmount'))),
       currency: readCurrencyValue(e.target),
       targetDate: fd.get('targetDate') || null,
       archived: g?.archived || false,
@@ -99,7 +99,7 @@ function openContributeModal(g) {
     </form>`, { title: t('Contribution — {name}', { name: g.name }) });
   modal.el.querySelector('#contribute-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const amount = parseFloat(new FormData(e.target).get('amount')) || 0;
+    const amount = safeNumber(parseFloat(new FormData(e.target).get('amount')));
     const before = { ...g };
     g.currentAmount = (g.currentAmount || 0) + amount;
     await dbPut(STORES.SAVINGS_GOALS, g);

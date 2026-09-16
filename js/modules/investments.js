@@ -6,7 +6,7 @@
 
 import { STORES, dbGetAll, dbPut, dbDelete, dbAdd, logAudit, getSetting } from '../db.js';
 import { investmentValueAsOf, getExchangeRates, computeInvestmentValueHistory } from '../ledger.js';
-import { uuid, formatCurrency, formatDate, formatPercent, escapeHtml, todayISO, convertAmount, openModal, confirmDialog, showToast, currencySelectHtml, wireCurrencySelect, readCurrencyValue } from '../utils.js';
+import { uuid, formatCurrency, formatDate, formatPercent, escapeHtml, todayISO, convertAmount, openModal, confirmDialog, showToast, currencySelectHtml, wireCurrencySelect, readCurrencyValue, safeNumber } from '../utils.js';
 import { notifyDataChanged } from '../state.js';
 import { renderNetWorthTrendChart } from '../charts.js';
 import { t } from '../i18n.js';
@@ -102,7 +102,7 @@ async function openInvestmentModal(inv = null) {
       name: fd.get('name').trim(),
       assetClass: fd.get('assetClass'),
       currency: readCurrencyValue(e.target),
-      capitalInvested: parseFloat(fd.get('capitalInvested')) || 0,
+      capitalInvested: safeNumber(parseFloat(fd.get('capitalInvested'))),
       createdAt: inv?.createdAt || new Date().toISOString(),
     };
     await dbPut(STORES.INVESTMENTS, record);
@@ -146,7 +146,7 @@ async function openHistoryModal(inv) {
       id: uuid(),
       investmentId: inv.id,
       type: fd.get('type'),
-      amount: parseFloat(fd.get('amount')) || 0,
+      amount: safeNumber(parseFloat(fd.get('amount'))),
       date: fd.get('date'),
       note: (fd.get('note') || '').trim().slice(0, 140),
     };

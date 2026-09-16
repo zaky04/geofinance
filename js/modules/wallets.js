@@ -4,7 +4,7 @@
 
 import { STORES, dbGetAll, dbPut, dbAdd, dbDelete, dbGetAllByIndex, logAudit, getSetting, setSetting } from '../db.js';
 import { getAllWalletBalances, computeNetWorth, computeNetWorthHistory, computeNetWorthComposition, computeMonthlyBudgetSummary, computeEndOfMonthForecast } from '../ledger.js';
-import { uuid, formatCurrency, escapeHtml, todayISO, currentMonthKey, openModal, confirmDialog, showToast, currencySelectHtml, wireCurrencySelect, readCurrencyValue } from '../utils.js';
+import { uuid, formatCurrency, escapeHtml, todayISO, currentMonthKey, openModal, confirmDialog, showToast, currencySelectHtml, wireCurrencySelect, readCurrencyValue, safeNumber } from '../utils.js';
 import { notifyDataChanged } from '../state.js';
 import { renderExpensesByCategoryChart } from '../charts.js';
 import { t } from '../i18n.js';
@@ -116,8 +116,8 @@ async function openWalletModal(wallet = null, { onDone = null } = {}) {
       name: fd.get('name').trim(),
       type: fd.get('type'),
       currency,
-      initialBalance: parseFloat(fd.get('initialBalance')) || 0,
-      lowBalanceThreshold: parseFloat(fd.get('lowBalanceThreshold')) || 0,
+      initialBalance: safeNumber(parseFloat(fd.get('initialBalance'))),
+      lowBalanceThreshold: safeNumber(parseFloat(fd.get('lowBalanceThreshold'))),
       archived: wallet?.archived || false,
       createdAt: wallet?.createdAt || new Date().toISOString(),
     };
@@ -241,7 +241,9 @@ async function renderRatesPanel() {
   panel.querySelectorAll('[data-rate-code]').forEach((input) => {
     input.addEventListener('change', async () => {
       const code = input.dataset.rateCode;
-      const value = parseFloat(input.value) || 0;
+      // safeNumber, pas juste `|| 0` : un taux Infinity/NaN ici corromprait TOUTE conversion de
+      // cette devise dans toute l'app (net worth, budgets, tout ce qui passe par convertAmount).
+      const value = safeNumber(parseFloat(input.value));
       await dbPut(STORES.EXCHANGE_RATES, { code, rateToBase: value, confirmed: true });
       // On archive le taux du jour dans l'historique AVANT d'appliquer le nouveau,
       // pour que les calculs de patrimoine passés restent basés sur le taux qui

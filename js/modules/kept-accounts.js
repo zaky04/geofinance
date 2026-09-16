@@ -8,7 +8,7 @@
    ========================================================================== */
 
 import { STORES, dbGetAll, dbPut, dbAdd, dbDelete, logAudit } from '../db.js';
-import { uuid, formatCurrency, formatDate, escapeHtml, todayISO, openModal, confirmDialog, showToast, currencySelectHtml, wireCurrencySelect, readCurrencyValue } from '../utils.js';
+import { uuid, formatCurrency, formatDate, escapeHtml, todayISO, openModal, confirmDialog, showToast, currencySelectHtml, wireCurrencySelect, readCurrencyValue, safeNumber } from '../utils.js';
 import { notifyDataChanged } from '../state.js';
 import { t } from '../i18n.js';
 
@@ -64,7 +64,7 @@ function openAccountModal(account = null) {
       id: account?.id || uuid(),
       ownerName: fd.get('ownerName').trim(),
       currency: readCurrencyValue(e.target),
-      initialBalance: parseFloat(fd.get('initialBalance')) || 0,
+      initialBalance: safeNumber(parseFloat(fd.get('initialBalance'))),
       note: (fd.get('note') || '').trim().slice(0, 140),
       archived: account?.archived || false,
       createdAt: account?.createdAt || new Date().toISOString(),
@@ -128,7 +128,7 @@ async function renderAccountDetail(container, account) {
       id: uuid(),
       accountId: account.id,
       type: entryType,
-      amount: parseFloat(fd.get('amount')) || 0,
+      amount: safeNumber(parseFloat(fd.get('amount'))),
       date: fd.get('date') || todayISO(),
       note: (fd.get('note') || '').trim().slice(0, 140),
       createdAt: new Date().toISOString(),
