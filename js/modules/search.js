@@ -243,6 +243,11 @@ export function openGlobalSearch() {
       resultsEl.innerHTML = `<div class="empty-state">${tr("Tapez pour rechercher parmi vos transactions, portefeuilles, dettes, objectifs d'épargne, investissements, comptes gardés et dépenses partagées.")}</div>`;
       return;
     }
+    // L'index (collectSearchIndex(), plusieurs lectures IndexedDB) peut encore être en cours de
+    // chargement si l'utilisateur tape très vite juste après l'ouverture (Ctrl/Cmd+K) — sans cette
+    // garde, index.filter() plantait avec un TypeError (index encore null). Le .then() qui peuple
+    // index relance runSearch() une fois prêt, donc la requête déjà tapée n'est pas perdue.
+    if (!index) return;
     const matches = index.filter((it) => norm(it.haystack).includes(q) && passesAdvancedFilters(it)).slice(0, 40);
     resultsEl.innerHTML = matches.length
       ? matches.map(resultRowHtml).join('')
@@ -259,7 +264,7 @@ export function openGlobalSearch() {
     goToView(btn.dataset.view);
   });
 
-  collectSearchIndex().then((items) => { index = items; });
+  collectSearchIndex().then((items) => { index = items; runSearch(); });
 
   setTimeout(() => input.focus(), 50);
 }

@@ -84,7 +84,11 @@ export function wireCalendarPanel(container, monthKey) {
     btn.addEventListener('click', async () => {
       const date = btn.dataset.date;
       panel.querySelectorAll('.calendar-day').forEach((b) => b.classList.toggle('is-selected', b === btn));
-      const rows = (await getEnrichedTransactions({ monthKey })).filter((t) => t.date === date && t.type === 'expense');
+      // Même filtre que computeDailySpending() (ledger.js), qui a produit le total/l'intensité de
+      // cette case : sans ça, un remboursement de dette apparaissait dans le détail du jour comme
+      // une dépense ordinaire, alors qu'il n'a jamais compté dans le total affiché sur la case
+      // elle-même — la liste ne correspondait plus au chiffre du dessus.
+      const rows = (await getEnrichedTransactions({ monthKey })).filter((t) => t.date === date && t.type === 'expense' && !t.debtId);
       detail.innerHTML = rows.length
         ? `<div class="tx-sub" style="margin-bottom:6px;">${formatDate(date)}</div>` + rows.map((t) => `
             <div class="tx-row">

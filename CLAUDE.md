@@ -2236,6 +2236,37 @@ sur `djignan-finance`, à confirmer par l'auteur en usage réel.
 
 `CACHE_VERSION` : `v87` → `v88`.
 
+### 16 septembre 2026 (suite) — 2 bugs supplémentaires portés depuis `djignan-finance`
+
+Suite de l'audit élargi (bugs/crashs, pas seulement calculs financiers) mené sur le dépôt pro. Deux
+bugs trouvés là-bas et confirmés présents ici à l'identique, portés :
+
+1. **Crash confirmé dans la recherche globale** (`search.js`). `index` (résultat de
+   `collectSearchIndex()`, plusieurs lectures IndexedDB en parallèle) démarre à `null` et n'est
+   peuplé qu'une fois la promesse résolue, mais les écouteurs de saisie sont câblés immédiatement à
+   l'ouverture de la modale. Taper vite juste après avoir ouvert la recherche (Ctrl/Cmd+K) avant que
+   l'index soit prêt déclenchait `index.filter(...)` sur `null` → `TypeError: Cannot read properties
+   of null (reading 'filter')`, non rattrapée. **Fix** : garde `if (!index) return;` dans
+   `runSearch()`, et le `.then()` qui peuple `index` relance `runSearch()` une fois prêt — la requête
+   déjà tapée n'est donc pas perdue, juste retardée.
+
+2. **Incohérence dans le calendrier des dépenses** (`reports-extras.js`). Le total/l'intensité de
+   chaque case du calendrier (`computeDailySpending`, `ledger.js`) exclut déjà les mouvements de
+   dette/créance (`!t.debtId`), mais cliquer sur une case pour afficher le détail du jour
+   (`wireCalendarPanel`) ne filtrait que par `type === 'expense'`, sans exclure ces mêmes
+   mouvements — un remboursement de dette apparaissait dans la liste comme une dépense ordinaire, et
+   la somme des lignes ne correspondait plus au total déjà affiché sur la case cliquée. **Fix** :
+   même filtre `!t.debtId` ajouté au détail du jour. Ce dépôt n'a pas de mouvements liés à un
+   investissement (pas de `investmentId`/`investmentMovementType` sur `STORES.TRANSACTIONS`, voir
+   entrée précédente) — seule la partie `debtId` du correctif du dépôt pro s'applique ici, la partie
+   investissement omise volontairement (rien à exclure).
+
+Testé : les 2 fichiers passent `node --check`. Pas de revérification dans le navigateur cette session
+(même limite que l'entrée précédente) — changements ciblés, structurellement identiques à leurs
+équivalents déjà testés en direct sur `djignan-finance`.
+
+`CACHE_VERSION` : `v88` → `v89`.
+
 ## 7. Pistes prioritaires non traitées
 
 Par ordre d'impact estimé, à valider avec l'auteur avant de s'y attaquer :
