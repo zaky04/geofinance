@@ -2290,6 +2290,21 @@ de langue, lien `mailto:` intact dans les deux cas ; crédit de la barre latéra
 
 `CACHE_VERSION` : `v89` → `v90`.
 
+### 16 septembre 2026 (suite 3) — OCR : extraction du commerçant et de la date, pas seulement le montant
+
+Même correctif que sur `djignan-finance` (voir son CLAUDE.md pour le détail complet), porté ici à
+l'identique : `extractAmountFromImage()` → `extractReceiptDataFromImage()` (`ocr.js`), renvoie
+`{ amount, merchant, date }` au lieu d'un simple nombre. `transactions.js` préremplit Note (nom du
+commerçant) et Date depuis le justificatif scanné, uniquement si ces champs sont encore à leur
+valeur par défaut (jamais d'écrasement d'une saisie déjà faite) ; la note préremplie déclenche aussi
+la suggestion automatique de catégorie existante.
+
+Testé : logique de parsing vérifiée isolément (5 cas) + chargement des deux modules confirmé sans
+erreur dans le navigateur (nouvelle config `geofinance-free` du `.claude/launch.json`, port 8124) ;
+le pipeline OCR réel complet a été testé sur `djignan-finance` (code strictement identique ici).
+
+`CACHE_VERSION` : `v90` → `v91`.
+
 ## 7. Pistes prioritaires non traitées
 
 Par ordre d'impact estimé, à valider avec l'auteur avant de s'y attaquer :

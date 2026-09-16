@@ -9,7 +9,7 @@ import { STORES, dbGetAll, dbAdd, dbPut, dbDelete, logAudit } from '../db.js';
 import { getEnrichedTransactions, guessCategoryId, checkUnusualExpense } from '../ledger.js';
 import { uuid, formatCurrency, formatDate, formatMonthLabel, escapeHtml, todayISO, currentMonthKey, monthKeyOffset, openModal, confirmDialog, showToast, safeNumber } from '../utils.js';
 import { notifyDataChanged } from '../state.js';
-import { extractAmountFromImage } from '../ocr.js';
+import { extractReceiptDataFromImage } from '../ocr.js';
 // Aliasé en tr (pas t) : ce fichier utilise `t` comme nom de variable pour une transaction dans
 // plusieurs fonctions (txRowHtml(t), reconTxRowHtml(t), et une const t locale dans le handler de
 // clic de initTransactionsModule) — voir le même piège documenté dans dashboard.js.
@@ -108,7 +108,7 @@ export function openQuickAdd({ editTransaction = null } = {}) {
     receiptScanBtn.textContent = tr('Analyse en cours…');
     receiptScanBtn.disabled = true;
     try {
-      const amount = await extractAmountFromImage(source);
+      const { amount, merchant, date } = await extractReceiptDataFromImage(source);
       if (amount != null && !splitMode) {
         form.elements.amount.value = amount.toFixed(2);
         showToast(tr("Montant détecté : {amount} — vérifiez avant d'enregistrer.", { amount: amount.toFixed(2) }));
@@ -116,6 +116,17 @@ export function openQuickAdd({ editTransaction = null } = {}) {
         showToast(tr('Montant détecté : {amount} — ajoutez-le manuellement à une ligne (mode scindé).', { amount: amount.toFixed(2) }));
       } else {
         showToast(tr('Aucun montant détecté sur cette photo, saisissez-le manuellement.'));
+      }
+      // Commerçant/date : complètent la saisie sans jamais écraser ce que l'utilisateur a déjà
+      // renseigné lui-même (note non vide, date déjà changée de la valeur par défaut du jour) —
+      // contrairement au montant, toujours écrasé puisque le toast invite explicitement à le
+      // vérifier avant d'enregistrer.
+      if (merchant && !form.elements.note.value.trim()) {
+        form.elements.note.value = merchant;
+        form.elements.note.dispatchEvent(new Event('input'));
+      }
+      if (date && form.elements.date.value === todayISO()) {
+        form.elements.date.value = date;
       }
     } catch (err) {
       console.warn('[OCR]', err);

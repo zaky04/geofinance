@@ -5,6 +5,8 @@
    Aucun appel réseau externe n'est jamais effectué, y compris hors-ligne.
    ========================================================================== */
 
+import { localISODate } from './utils.js';
+
 let scriptLoadPromise = null;
 
 function ensureTesseractScript() {
@@ -39,9 +41,50 @@ function parseAmountFromText(text) {
   return pool.reduce((max, c) => (c.value > max.value ? c : max), pool[0]).value;
 }
 
-/** Extrait le montant probable d'une photo de justificatif. Renvoie null si
-    rien de fiable n'est détecté (l'utilisateur doit alors saisir à la main). */
-export async function extractAmountFromImage(blob) {
+/** Repère le nom du commerçant : en général la toute première ligne exploitable d'un ticket
+    (en-tête, souvent en majuscules) — on prend la première ligne parmi les 5 premières qui
+    ressemble à un nom (majorité de lettres, pas juste des chiffres/symboles de mise en page)
+    plutôt qu'à du bruit OCR. */
+function parseMerchantFromText(text) {
+  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
+  for (const line of lines.slice(0, 5)) {
+    const letters = (line.match(/[A-Za-zÀ-ÖØ-öø-ÿ]/g) || []).length;
+    if (letters < 3 || line.length > 40) continue;
+    if (letters / line.length < 0.5) continue;
+    return line;
+  }
+  return null;
+}
+
+/** Repère une date JJ/MM/AAAA (ou JJ-MM-AAAA, JJ.MM.AAAA, année sur 2 chiffres) dans le texte —
+    même convention JJ/MM que parseFlexibleDate (backup.js), pas MM/JJ. Rejette toute date hors
+    d'une fenêtre plausible pour un ticket de caisse (futur, ou plus de 2 ans dans le passé) : un
+    faux positif OCR (numéro de ticket/téléphone mal lu comme une date) tombe presque toujours
+    hors de cette fenêtre, un vrai ticket est daté du jour même ou de très peu avant. */
+function parseDateFromText(text) {
+  const pattern = /\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})\b/g;
+  const now = new Date();
+  const earliest = new Date(now);
+  earliest.setFullYear(now.getFullYear() - 2);
+  let match;
+  while ((match = pattern.exec(text))) {
+    const d = parseInt(match[1], 10);
+    const m = parseInt(match[2], 10);
+    let y = parseInt(match[3], 10);
+    if (y < 100) y += y < 70 ? 2000 : 1900;
+    if (m < 1 || m > 12 || d < 1 || d > 31) continue;
+    const date = new Date(y, m - 1, d);
+    if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) continue;
+    if (date > now || date < earliest) continue;
+    return localISODate(date);
+  }
+  return null;
+}
+
+/** Extrait les infos probables d'une photo de justificatif (montant, commerçant, date) pour
+    préremplir la saisie — chaque champ est null si rien de fiable n'est détecté, l'utilisateur
+    reste toujours libre de corriger avant d'enregistrer. */
+export async function extractReceiptDataFromImage(blob) {
   await ensureTesseractScript();
   // Résolus en URL absolues nous-mêmes : dans certaines versions bundlées de
   // Tesseract.js, la résolution interne des chemins relatifs ne s'applique
@@ -63,7 +106,11 @@ export async function extractAmountFromImage(blob) {
   });
   try {
     const { data: { text } } = await worker.recognize(blob);
-    return parseAmountFromText(text);
+    return {
+      amount: parseAmountFromText(text),
+      merchant: parseMerchantFromText(text),
+      date: parseDateFromText(text),
+    };
   } finally {
     await worker.terminate();
   }
