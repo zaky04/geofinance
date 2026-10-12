@@ -5,6 +5,7 @@
    de données (bus d'événements).
    ========================================================================== */
 
+import './app-mode.js'; // en tout premier : pose .is-app avant le moindre rendu (voir app-mode.js)
 import { STORES, dbAdd, dbPut, dbDelete, dbGetAll, getSetting, setSetting, DEFAULT_CATEGORIES } from './db.js';
 import { initLockScreen, isBiometricAvailable, registerBiometric, isPinConfigured } from './auth.js';
 import { bus, EVENTS, appState, notifyDataChanged } from './state.js';

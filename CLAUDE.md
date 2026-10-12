@@ -2475,3 +2475,12 @@ racine du domaine `zaky04.github.io`, donc dans le dépôt spécial `zaky04.gith
 GitHub), **pas dans ce dépôt `geofinance`** qui ne sert que le sous-chemin `/geofinance/`. Sans ce
 fichier, l'APK fonctionne normalement mais affiche une fine barre d'adresse Chrome (Custom Tabs) au
 lieu d'un plein écran natif — cosmétique, pas bloquant pour un usage sideload.
+
+### 12 octobre 2026 — Comportement « application » une fois installée sur mobile (porté depuis Djignan)
+
+Porté tel quel depuis `djignan-finance` : `js/app-mode.js` (nouveau, dans `APP_SHELL`, importé EN PREMIER par
+`app.js`) pose `.is-app` quand l'app est lancée depuis l'écran d'accueil (PWA) ou un shell natif ; sous
+`.is-app` (fin de `styles.css`) : pas de zoom au pincement/double-tap, pas de tirer-pour-rafraîchir, pas de
+sélection ni de menu au toucher long hors champs de saisie. Navigateur normal inchangé (zoom conservé). Pour
+tout écran tactile : champs à 16 px (évite le zoom iOS à la mise au point) et `100dvh`.
+`CACHE_VERSION` : `v91` → `v92`.

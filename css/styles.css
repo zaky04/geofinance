@@ -606,3 +606,36 @@ body[data-privacy="hidden"] .hero-card-value .amount::after { color: #fff; }
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
 ::-webkit-scrollbar-track { background: transparent; }
+
+/* ==========================================================================
+   Mode « application » (voir js/app-mode.js)
+   .is-app = lancée depuis un raccourci écran d'accueil ou un APK/EXE embarqué. Dans un navigateur
+   normal, ces règles ne s'appliquent PAS : le zoom et la sélection restent disponibles.
+   ========================================================================== */
+
+/* Sur tout écran tactile (navigateur compris) : un champ à moins de 16 px fait zoomer iOS à la mise
+   au point et déforme la page, un des signes les plus « page web ». */
+@media (pointer: coarse) {
+  input, select, textarea { font-size: 16px; }
+}
+
+/* Hauteur réelle de l'écran (barres du navigateur mobile exclues), au lieu de 100vh qui les ignore. */
+@supports (height: 100dvh) {
+  .app { min-height: 100dvh; }
+}
+
+.is-app { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* Pas de « tirer pour rafraîchir » ni de rebond élastique en bout de page. */
+.is-app, .is-app body { overscroll-behavior: none; }
+
+@media (pointer: coarse) {
+  /* Pas de zoom au pincement ni au double-tap ; le défilement reste libre dans les deux axes. */
+  .is-app, .is-app body { touch-action: pan-x pan-y; }
+  .is-app * { -webkit-tap-highlight-color: transparent; }
+  /* Ni sélection de texte ni aperçu/menu au toucher long sur le contenu : on garde la saisie. */
+  .is-app body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  .is-app input, .is-app textarea, .is-app select, .is-app [contenteditable="true"], .is-app .selectable {
+    -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
+  }
+  .is-app img, .is-app svg { -webkit-user-drag: none; user-drag: none; }
+}
