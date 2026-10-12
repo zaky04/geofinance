@@ -306,19 +306,82 @@ function sanitizeImportedRow(row) {
   return row;
 }
 
+/** Clé primaire attendue par store (voir upgrade()) — sert à valider une ligne importée AVANT toute
+    écriture. */
+const STORE_KEY_PATH = { [STORES.SETTINGS]: 'key', [STORES.EXCHANGE_RATES]: 'code' };
+
+/** Champs que le code suppose toujours présents et bien typés (tri par date, sommes, devises...).
+    Une ligne qui ne les respecte pas fait planter un écran entier (ex: une transaction à date null
+    casse le tableau de bord) : un fichier de sauvegarde corrompu ou forgé est donc refusé EN ENTIER
+    plutôt que de bloquer l'app après coup. Volontairement minimal : seulement ce dont le code dépend. */
+const REQUIRED_FIELDS = {
+  [STORES.TRANSACTIONS]: { date: 'date', amount: 'number', walletId: 'string', type: 'string' },
+  [STORES.WALLETS]: { name: 'string', currency: 'string' },
+  [STORES.INVESTMENTS]: { name: 'string', currency: 'string' },
+  [STORES.INVESTMENT_ENTRIES]: { date: 'date', amount: 'number', investmentId: 'string', type: 'string' },
+  [STORES.DEBTS]: { principal: 'number', currency: 'string', personName: 'string' },
+  [STORES.DEBT_PAYMENTS]: { date: 'date', amount: 'number', debtId: 'string' },
+  [STORES.BUDGETS]: { limit: 'number' },
+  [STORES.SAVINGS_GOALS]: { name: 'string' },
+  [STORES.CATEGORIES]: { name: 'string' },
+};
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}/;
+
+function rowMatchesRequiredFields(store, row) {
+  const rules = REQUIRED_FIELDS[store];
+  if (!rules) return true;
+  return Object.entries(rules).every(([field, kind]) => {
+    const v = row[field];
+    if (kind === 'date') return typeof v === 'string' && ISO_DATE.test(v);
+    return typeof v === kind && (kind !== 'number' || Number.isFinite(v));
+  });
+}
+
+/** Importe une sauvegarde. ATOMIQUE : tout est validé d'abord, puis vidage + écriture de TOUS les
+    stores dans une seule transaction IndexedDB — soit tout est importé, soit rien ne change. Avant,
+    chaque store était vidé puis rempli séparément : une ligne sans identifiant (fichier corrompu ou
+    forgé) faisait échouer l'import en plein milieu, après avoir déjà effacé des stores entiers, et
+    laissait l'appareil avec des données à moitié anciennes, à moitié nouvelles. */
 export async function importAllData(data, { merge = false } = {}) {
-  if (!data || !data.stores) throw new Error('Fichier de sauvegarde invalide.');
+  if (!data || typeof data !== 'object' || !data.stores || typeof data.stores !== 'object') throw new Error('Fichier de sauvegarde invalide.');
+  const plan = [];
   for (const store of Object.values(STORES)) {
     let rows = data.stores[store];
     if (!rows) continue;
+    if (!Array.isArray(rows)) throw new Error('Fichier de sauvegarde invalide.');
     // Symétrique à exportAllData() : un fichier de sauvegarde (potentiellement forgé) ne doit
     // JAMAIS pouvoir poser/écraser le PIN ou les identifiants biométriques de CET appareil — la
     // seule voie légitime pour ça reste les flux internes d'auth.js (setupPin, registerBiometric).
     if (store === STORES.SETTINGS) rows = rows.filter((r) => !DEVICE_LOCAL_SETTING_KEYS.has(r?.key));
-    rows = rows.map(sanitizeImportedRow);
-    if (!merge) await dbClear(store);
-    await dbBulkPut(store, rows);
+    const keyPath = STORE_KEY_PATH[store] || 'id';
+    for (const row of rows) {
+      const key = row && typeof row === 'object' && !Array.isArray(row) ? row[keyPath] : undefined;
+      if ((typeof key !== 'string' && typeof key !== 'number') || key === '') throw new Error('Fichier de sauvegarde invalide.');
+    }
+    const cleaned = rows.map(sanitizeImportedRow);
+    if (!cleaned.every((row) => rowMatchesRequiredFields(store, row))) throw new Error('Fichier de sauvegarde invalide.');
+    plan.push({ store, rows: cleaned });
   }
+  if (!plan.length) return;
+  const db = await openDatabase();
+  const t = db.transaction(plan.map((p) => p.store), 'readwrite');
+  const done = new Promise((resolve, reject) => {
+    t.oncomplete = resolve;
+    t.onerror = () => reject(t.error);
+    t.onabort = () => reject(t.error || new Error('Import annulé.'));
+  });
+  try {
+    for (const { store, rows } of plan) {
+      const os = t.objectStore(store);
+      if (!merge) os.clear();
+      rows.forEach((row) => os.put(row));
+    }
+  } catch (err) {
+    try { t.abort(); } catch { /* déjà terminée */ }
+    done.catch(() => {});
+    throw err;
+  }
+  await done;
 }
 
 export async function wipeAllData() {

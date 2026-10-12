@@ -141,6 +141,14 @@ async function renderMonthlyTab(container) {
       const categoryId = input.dataset.limitInput;
       const limit = safeNumber(parseFloat(input.value));
       const existing = monthBudgets.find((b) => b.categoryId === categoryId);
+      if (!(limit > 0)) {
+        // Champ vidé, 0 ou négatif (le navigateur laisse taper « -100 » et déclenche quand même
+        // l'événement) : pas de budget. On retire l'enregistrement au lieu d'en garder un à 0 ou négatif.
+        if (existing) await dbDelete(STORES.BUDGETS, existing.id);
+        showToast(t('Budget mis à jour.'));
+        notifyDataChanged('budgets');
+        return;
+      }
       const record = existing ? { ...existing, limit } : { id: uuid(), categoryId, month: monthKey, limit };
       await dbPut(STORES.BUDGETS, record);
       showToast(t('Budget mis à jour.'));
@@ -199,6 +207,12 @@ async function renderAnnualTab(container) {
       const categoryId = input.dataset.limitInput;
       const limit = safeNumber(parseFloat(input.value));
       const existing = yearBudgets.find((b) => b.categoryId === categoryId);
+      if (!(limit > 0)) {
+        if (existing) await dbDelete(STORES.BUDGETS, existing.id);
+        showToast(t('Budget mis à jour.'));
+        notifyDataChanged('budgets');
+        return;
+      }
       const record = existing ? { ...existing, limit } : { id: uuid(), categoryId, month: yearKey, period: 'annual', limit };
       await dbPut(STORES.BUDGETS, record);
       showToast(t('Budget annuel mis à jour.'));
@@ -425,6 +439,7 @@ function openRecurringModal(r = null) {
     e.preventDefault();
     const fd = new FormData(form);
     if (!fd.get('walletId')) { showToast(t("Créez au moins un portefeuille avant d'ajouter une récurrence.")); return; }
+    if (!(safeNumber(parseFloat(fd.get('amount'))) > 0)) { showToast(t('Saisissez un montant supérieur à 0.')); return; }
     const before = r ? { ...r } : null;
     const record = {
       id: r?.id || uuid(),

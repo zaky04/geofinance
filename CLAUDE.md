@@ -2453,7 +2453,7 @@ philosophie du projet) qui :
   rapide) — pas de dépendance à la console.
 
 **Pour l'utiliser** : ouvrir `test/ledger.test.html` dans un navigateur (ex: servi par `serve.ps1`
-comme le reste de l'app) après tout changement dans `ledger.js`. 24 assertions, toutes vertes
+comme le reste de l'app) après tout changement dans `ledger.js`. 35 assertions, toutes vertes
 actuellement (2 ajoutées le 14 août pour couvrir la tolérance de dérive flottante, voir §6).
 
 **Piège rencontré en l'écrivant, à connaître pour la suite** : le Service Worker met en cache
@@ -2484,3 +2484,36 @@ Porté tel quel depuis `djignan-finance` : `js/app-mode.js` (nouveau, dans `APP_
 sélection ni de menu au toucher long hors champs de saisie. Navigateur normal inchangé (zoom conservé). Pour
 tout écran tactile : champs à 16 px (évite le zoom iOS à la mise au point) et `100dvh`.
 `CACHE_VERSION` : `v91` → `v92`.
+
+### 12 octobre 2026 (suite) — Correctifs de l'audit portés depuis `djignan-finance`
+
+Audit complet (fonctionnalités, bugs, sécurité) mené sur le dépôt pro ; tout ce qui s'applique à ce dépôt
+est porté à l'identique (détail et méthode dans le CLAUDE.md de `djignan-finance`, entrée « suite 4 ») :
+- **Modifier une transaction changeait sa catégorie en silence** (`transactions.js`) : `setType()` remplit
+  les catégories en asynchrone sans qu'on l'attende, la valeur d'origine était posée sur un `<select>` vide
+  puis les options arrivaient et sélectionnaient la 1re. `setType` renvoie sa promesse, l'ouverture l'attend.
+  **En plus** (propre à ce dépôt) : le record d'édition repart maintenant de `{ ...editTransaction }` ; sans
+  ça, modifier une note effaçait `debtId`/`debtPaymentId`/`sharedExpenseId` (un remboursement de dette
+  modifié se mettait à compter comme une dépense ordinaire).
+- **Montants à 0 refusés** (`min="0"` laisse passer 0) : transaction, dette, apport/dividende/retrait
+  d'investissement, mouvement de compte gardé, dépense partagée, récurrence. Une valorisation à 0 reste permise.
+- **Remboursement supérieur au restant dû refusé** (`debts.js`).
+- **Limite de budget vidée/0/négative** (`budgets.js`) : l'événement `change` part même pour « -100 » ;
+  ≤ 0 = pas de budget (enregistrement supprimé), mensuel et annuel.
+- **Import de sauvegarde atomique et validé** (`db.js`) : validation complète d'abord (clé primaire, champs
+  critiques via `REQUIRED_FIELDS`), puis UNE transaction IndexedDB multi-stores. Avant : stores vidés puis
+  remplis un à un, une ligne invalide laissait une base à moitié remplacée. ⚠️ `REQUIRED_FIELDS` doit rester
+  cohérent avec les nouveaux champs obligatoires, sinon un import légitime serait refusé.
+- **Import CSV** (`backup.js`) : dates impossibles (31 février), `1e999` lu comme 1999, montants démesurés
+  (plafond 1e12), et format GeoFinance (date illisible, montant 0, virement sans cible) refusés.
+- **Valeur d'un investissement** (`ledger.js`) : dernière valorisation + apports − retraits datés APRÈS elle.
+- **Devise par défaut** des dépenses partagées et des comptes gardés = devise de base (EUR en dur avant).
+- **Rappel de sauvegarde ignoré sur une base vide** (il s'empilait sur l'assistant du premier lancement).
+- **Données de démo** : soldes initiaux relevés (plus de portefeuille en négatif).
+Non porté car sans objet ici : partage entrant (`share_target`), portefeuilles Courant/Épargne/Bloqué,
+prêts d'investissement, suggestions de budget, exports « preuve ».
+**Tests** : `test/ledger.test.html` **35/35** (24 + 2 valeur après apport + 9 import). Fixtures de dettes avec `personName`.
+Vérifié dans le navigateur : édition conservant catégorie et lien de dette, zéro refusé, surpaiement refusé,
+budget négatif supprimé, import hostile refusé sans rien modifier, CSV hostile (2 lignes valides sur 6),
+devises par défaut XOF, 8 vues sans erreur.
+`CACHE_VERSION` : `v92` → `v93`.

@@ -42,9 +42,9 @@ export async function seedDemoData() {
   // t(...) sur les libellés génériques (pas "Orange Money", un vrai nom de marque, ni "Cousin
   // Amadou" plus bas, un nom de personne) — même principe que DEFAULT_CATEGORIES : traduit
   // seulement au moment de la création de ce jeu de données de démonstration.
-  const walletMobileMoney = { id: uuid(), name: 'Orange Money', type: 'mobile_money', currency: 'XOF', initialBalance: 42000, archived: false, createdAt: now };
+  const walletMobileMoney = { id: uuid(), name: 'Orange Money', type: 'mobile_money', currency: 'XOF', initialBalance: 80000, archived: false, createdAt: now };
   const walletBank = { id: uuid(), name: t('Compte courant'), type: 'bank', currency: 'XOF', initialBalance: 185000, archived: false, createdAt: now };
-  const walletCash = { id: uuid(), name: t('Espèces'), type: 'cash', currency: 'XOF', initialBalance: 12000, archived: false, createdAt: now };
+  const walletCash = { id: uuid(), name: t('Espèces'), type: 'cash', currency: 'XOF', initialBalance: 40000, archived: false, createdAt: now };
   await dbBulkPut(STORES.WALLETS, [walletMobileMoney, walletBank, walletCash]);
 
   // wipeUserData() ci-dessus vide aussi CATEGORIES (créées une seule fois par seedDefaultsIfNeeded()

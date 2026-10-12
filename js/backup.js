@@ -270,13 +270,18 @@ export async function importGeoFinanceCsvRows(rows) {
   for (const cols of rows) {
     const [date, type, walletName, targetWalletName, categoryName, amountStr, currency, note, reconciledStr] = cols;
     if (!['income', 'expense', 'transfer'].includes(type)) continue;
+    // Même exigences que la saisie normale : vraie date, montant strictement positif et raisonnable.
+    const cleanDate = parseFlexibleDate(date);
+    const cleanAmount = safeNumber(parseFloat(amountStr));
+    if (!cleanDate || !(cleanAmount > 0 && cleanAmount < MAX_IMPORTED_AMOUNT)) continue;
     const wallet = findOrCreateWallet(walletName, currency);
     if (!wallet) continue;
     const targetWallet = type === 'transfer' ? findOrCreateWallet(targetWalletName, currency) : null;
+    if (type === 'transfer' && (!targetWallet || targetWallet.id === wallet.id)) continue;
     const category = findOrCreateCategory(categoryName, type);
     const tx = {
       id: uuid(), type, walletId: wallet.id, targetWalletId: targetWallet?.id || null,
-      categoryId: category?.id || null, amount: safeNumber(parseFloat(amountStr)), date: date || todayISO(),
+      categoryId: category?.id || null, amount: cleanAmount, date: cleanDate,
       // Accepte "oui" (FR) et "yes" (EN, tr('Oui') en mode anglais) : un CSV exporté par cette app
       // dans l'une ou l'autre langue doit se réimporter correctement, voir GEOFINANCE_CSV_HEADER_FR
       // ci-dessus pour le même principe appliqué à l'en-tête.
@@ -294,15 +299,28 @@ export async function importGeoFinanceCsvRows(rows) {
   return { imported, skipped };
 }
 
+/** Plafond d'un montant importé : au-delà c'est une erreur de colonne ou un fichier forgé (un seul
+    "99999999999999999999" suffirait à écraser tout le patrimoine affiché). */
+const MAX_IMPORTED_AMOUNT = 1e12;
+
 function parseFlexibleNumber(raw) {
   if (raw == null) return 0;
+  // Notation scientifique ("1e999") : une fois les lettres retirées elle se lirait comme un autre
+  // nombre ("1999") — mieux vaut la refuser (0 = ligne invalide chez les appelants).
+  if (/\d[eE][+\-]?\d/.test(String(raw))) return 0;
   let s = String(raw).trim().replace(/[^\d,.\-]/g, '');
   if (!s) return 0;
   const lastComma = s.lastIndexOf(',');
   const lastDot = s.lastIndexOf('.');
   s = lastComma > lastDot ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
   const n = parseFloat(s);
-  return isNaN(n) ? 0 : n;
+  return Number.isFinite(n) && Math.abs(n) < MAX_IMPORTED_AMOUNT ? n : 0;
+}
+
+/** Vraie date du calendrier (le 31 février ou un 13e mois ne sont pas des dates). */
+function isRealCalendarDate(y, m, d) {
+  if (y < 1900 || y > 2200 || m < 1 || m > 12 || d < 1) return false;
+  return d <= new Date(y, m, 0).getDate();
 }
 
 /** Accepte YYYY-MM-DD ou JJ/MM/AAAA (avec /, . ou - comme séparateur) — format usuel des relevés bancaires européens. */
@@ -310,9 +328,9 @@ function parseFlexibleDate(raw) {
   if (!raw) return null;
   const s = raw.trim();
   let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  if (m) return isRealCalendarDate(+m[1], +m[2], +m[3]) ? `${m[1]}-${m[2]}-${m[3]}` : null;
   m = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/);
-  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  if (m) return isRealCalendarDate(+m[3], +m[2], +m[1]) ? `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}` : null;
   return null;
 }
 
@@ -445,6 +463,9 @@ export async function checkWeeklyBackupReminder() {
   const lastMs = last ? new Date(last).getTime() : 0;
   const sevenDaysMs = 7 * 24 * 3600 * 1000;
   if (now - lastMs < sevenDaysMs) return;
+  // Rien à sauvegarder (tout premier lancement : l'assistant de configuration est encore ouvert) :
+  // le rappel s'empilait par-dessus l'assistant en réclamant l'export d'une base vide.
+  if (!(await dbGetAll(STORES.WALLETS)).length && !(await dbGetAll(STORES.TRANSACTIONS)).length) return;
 
   if (await runAutoBackupIfConfigured()) { showToast(tr('Sauvegarde automatique effectuée.')); return; }
 

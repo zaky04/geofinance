@@ -198,6 +198,8 @@ async function openDebtModal(d = null) {
       openingTransactionId: d?.openingTransactionId || null,
     };
 
+    if (!(record.principal > 0)) { showToast(tr('Saisissez un montant supérieur à 0.')); return; }
+
     if (movesMoneyNow) {
       const txType = currentType === 'debt' ? 'income' : 'expense';
       const openingTx = {
@@ -244,6 +246,12 @@ async function openPaymentModal(d) {
     const walletId = fd.get('walletId');
     if (!walletId) { showToast(tr("Créez d'abord un portefeuille en {currency}.", { currency: d.currency })); return; }
     const payment = { id: uuid(), debtId: d.id, amount: safeNumber(parseFloat(fd.get('amount'))), date: fd.get('date'), note: (fd.get('note') || '').trim().slice(0, 140) };
+    if (!(payment.amount > 0)) { showToast(tr('Saisissez un montant supérieur à 0.')); return; }
+    // Rembourser plus que le restant dû fabriquerait une transaction de portefeuille sans contrepartie
+    // (la dette passerait en négatif) : on refuse plutôt que de fausser le solde.
+    const paidBefore = (await dbGetAll(STORES.DEBT_PAYMENTS)).filter((p) => p.debtId === d.id);
+    const owed = remaining(d, paidBefore);
+    if (payment.amount > owed + 0.005) { showToast(tr('Le remboursement ({amount}) dépasse le restant dû ({owed}).', { amount: formatCurrency(payment.amount, d.currency), owed: formatCurrency(owed, d.currency) })); return; }
 
     const paymentTxType = d.type === 'debt' ? 'expense' : 'income';
     const paymentTx = {

@@ -223,15 +223,17 @@ export function openQuickAdd({ editTransaction = null } = {}) {
     targetWalletSelect.required = type === 'transfer';
     categorySelect.required = type !== 'transfer' && !splitMode;
     titleEl.textContent = editTransaction ? tr('Modifier la transaction') : (type === 'transfer' ? tr('Transfert entre portefeuilles') : tr('Saisie express'));
-    if (type !== 'transfer') {
-      populateCategories().then(() => {
-        splitList.querySelectorAll('.split-category').forEach((sel) => {
-          const prevVal = sel.value;
-          sel.innerHTML = categorySelect.innerHTML;
-          sel.value = prevVal;
-        });
+    // Renvoie la promesse : l'ouverture en modification doit ATTENDRE les options avant de poser la
+    // catégorie d'origine, sinon la valeur est posée sur un <select> encore vide puis les options
+    // arrivent et sélectionnent la première (la catégorie changeait en silence à chaque modification).
+    if (type === 'transfer') return Promise.resolve();
+    return populateCategories().then(() => {
+      splitList.querySelectorAll('.split-category').forEach((sel) => {
+        const prevVal = sel.value;
+        sel.innerHTML = categorySelect.innerHTML;
+        sel.value = prevVal;
       });
-    }
+    });
   }
 
   segButtons.forEach((b) => b.addEventListener('click', () => setType(b.dataset.value)));
@@ -257,7 +259,7 @@ export function openQuickAdd({ editTransaction = null } = {}) {
 
   (async () => {
     await populateWallets();
-    setType(currentType);
+    await setType(currentType);
     form.elements.date.value = editTransaction?.date || todayISO();
     form.elements.amount.value = editTransaction?.amount ?? '';
     form.elements.note.value = editTransaction?.note || '';
@@ -321,6 +323,12 @@ export function openQuickAdd({ editTransaction = null } = {}) {
     }
 
     const record = {
+      // Tous les champs de l'enregistrement d'origine d'abord : ce record REMPLACE l'ancien (dbPut), donc
+      // sans ça, modifier la note ou la date d'une transaction créée par un autre flux effaçait
+      // silencieusement ses liens (debtId, debtPaymentId, sharedExpenseId…) — un remboursement de dette
+      // modifié se mettait à compter comme une dépense ordinaire et la suppression en cascade ne le
+      // retrouvait plus.
+      ...(editTransaction || {}),
       id: editTransaction?.id || uuid(),
       type,
       walletId,
@@ -338,6 +346,8 @@ export function openQuickAdd({ editTransaction = null } = {}) {
       reconciled: editTransaction?.reconciled || false,
       createdAt: editTransaction?.createdAt || new Date().toISOString(),
     };
+    // min="0" sur le champ laisse passer 0 : une transaction à 0 ne veut rien dire et pollue la liste.
+    if (!(record.amount > 0)) { showToast(tr('Saisissez un montant supérieur à 0.')); return; }
     const before = editTransaction ? { ...editTransaction } : null;
     await dbPut(STORES.TRANSACTIONS, record);
     await logAudit({ entityType: 'transaction', entityId: record.id, action: editTransaction ? 'update' : 'create', before, after: record });

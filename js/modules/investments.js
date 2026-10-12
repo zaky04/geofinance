@@ -97,6 +97,7 @@ async function openInvestmentModal(inv = null) {
     e.preventDefault();
     const fd = new FormData(e.target);
     const before = inv ? { ...inv } : null;
+    if (safeNumber(parseFloat(fd.get('capitalInvested'))) < 0) { showToast(t('Saisissez un montant supérieur à 0.')); return; }
     const record = {
       id: inv?.id || uuid(),
       name: fd.get('name').trim(),
@@ -142,11 +143,15 @@ async function openHistoryModal(inv) {
   modal.el.querySelector('#entry-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
+    const entryType = fd.get('type');
+    const entryAmount = safeNumber(parseFloat(fd.get('amount')));
+    // Une valorisation à 0 est légitime (perte totale) ; un apport, dividende ou retrait à 0 ne l'est pas.
+    if (entryType === 'valuation' ? entryAmount < 0 : !(entryAmount > 0)) { showToast(t('Saisissez un montant supérieur à 0.')); return; }
     const entry = {
       id: uuid(),
       investmentId: inv.id,
-      type: fd.get('type'),
-      amount: safeNumber(parseFloat(fd.get('amount'))),
+      type: entryType,
+      amount: entryAmount,
       date: fd.get('date'),
       note: (fd.get('note') || '').trim().slice(0, 140),
     };

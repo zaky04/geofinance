@@ -92,12 +92,18 @@ export function investmentValueAsOf(investment, entries, cutoffDate) {
   const relevant = entries
     .filter((e) => e.investmentId === investment.id && e.type === 'valuation' && (!cutoffDate || e.date <= cutoffDate))
     .sort((a, b) => (a.date < b.date ? 1 : -1));
-  if (relevant.length) return relevant[0].amount;
-  if (cutoffDate && investment.createdAt && investment.createdAt.slice(0, 10) > cutoffDate) return 0;
-  const own = entries.filter((e) => e.investmentId === investment.id && (!cutoffDate || e.date <= cutoffDate));
+  const lastValuation = relevant[0] || null;
+  if (!lastValuation && cutoffDate && investment.createdAt && investment.createdAt.slice(0, 10) > cutoffDate) return 0;
+  // Une valorisation est la valeur totale À SA DATE : les apports/retraits datés strictement APRÈS
+  // elle s'y ajoutent (ou s'en retranchent), sinon un apport faisait baisser le patrimoine net du
+  // montant apporté jusqu'à la prochaine revalorisation.
+  const own = entries.filter((e) => e.investmentId === investment.id
+    && (!cutoffDate || e.date <= cutoffDate)
+    && (!lastValuation || e.date > lastValuation.date));
   const contributions = own.filter((e) => e.type === 'contribution').reduce((s, e) => s + (Number(e.amount) || 0), 0);
   const withdrawals = own.filter((e) => e.type === 'withdrawal').reduce((s, e) => s + (Number(e.amount) || 0), 0);
-  return (investment.capitalInvested || 0) + contributions - withdrawals;
+  const base = lastValuation ? lastValuation.amount : (investment.capitalInvested || 0);
+  return base + contributions - withdrawals;
 }
 
 /** Montant restant dû d'une dette/créance à une date donnée. */

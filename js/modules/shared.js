@@ -9,7 +9,7 @@
    pour que le budget/les rapports reflètent le coût réel supporté.
    ========================================================================== */
 
-import { STORES, dbGetAll, dbPut, dbAdd, dbDelete, logAudit } from '../db.js';
+import { STORES, dbGetAll, dbPut, dbAdd, dbDelete, logAudit, getSetting } from '../db.js';
 import { uuid, formatCurrency, formatDate, escapeHtml, todayISO, openModal, confirmDialog, showToast, currencySelectHtml, wireCurrencySelect, readCurrencyValue, safeNumber } from '../utils.js';
 import { notifyDataChanged } from '../state.js';
 import { t } from '../i18n.js';
@@ -155,6 +155,7 @@ async function openSharedExpenseModal(participants, defaultCurrency) {
     const fd = new FormData(form);
     const splitAmong = fd.getAll('splitAmong');
     if (splitAmong.length < 1) { showToast(t('Sélectionnez au moins un participant.')); return; }
+    if (!(safeNumber(parseFloat(fd.get('amount'))) > 0)) { showToast(t('Saisissez un montant supérieur à 0.')); return; }
     const currency = readCurrencyValue(form);
     const record = {
       id: uuid(),
@@ -266,8 +267,12 @@ export async function renderShared() {
 
   await renderParticipantsPanel(document.getElementById('shared-participants'));
 
-  container.querySelector('#shared-expense-add-btn').addEventListener('click', () => {
-    openSharedExpenseModal(participants, participants[0] ? (expenses[0]?.currency || 'EUR') : 'EUR');
+  container.querySelector('#shared-expense-add-btn').addEventListener('click', async () => {
+    // Devise de la dernière dépense partagée, sinon devise de base : un défaut codé en dur à EUR
+    // faisait échouer l'enregistrement d'une dépense payée par « moi » (« Créez d'abord un
+    // portefeuille en EUR ») pour tout utilisateur dont les portefeuilles sont en XOF/XAF.
+    const baseCurrency = await getSetting('baseCurrency', 'EUR');
+    openSharedExpenseModal(participants, expenses[0]?.currency || baseCurrency);
   });
 
   container.querySelectorAll('[data-action="delete-expense"]').forEach((btn) => {

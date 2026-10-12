@@ -256,6 +256,8 @@ const EN = {
   // restauration). Si confirmDialog est traduit un jour, NE PAS le faire passer par cette même clé
   // 'Annuler' (il lui faudrait 'Cancel') — utiliser un mécanisme séparé pour son cancelText.
   'Annuler': 'Undo',
+  'Saisissez un montant supérieur à 0.': 'Enter an amount greater than 0.',
+  'Le remboursement ({amount}) dépasse le restant dû ({owed}).': 'The repayment ({amount}) exceeds the remaining balance ({owed}).',
   'Restaurée (annulation groupée)': 'Restored (bulk undo)',
   '{count} transaction(s) restaurée(s).': '{count} transaction(s) restored.',
   '{count} sélectionnée(s)': '{count} selected',

@@ -31,7 +31,7 @@
 // test isolée, jamais la vraie base de l'utilisateur.
 window.__GEOFINANCE_TEST_DB_NAME__ = 'geofinance-ledger-test-db';
 
-const { STORES, dbAdd, wipeAllData, setSetting } = await import('../js/db.js');
+const { STORES, dbAdd, dbGetAll, wipeAllData, setSetting, exportAllData, importAllData } = await import('../js/db.js');
 const {
   walletBalancesAsOf, investmentValueAsOf, computeNetWorth, computeMonthSummary,
   computeBudgetVsActual, computeExpensesByCategory, computeFinancialHealthScore, guessCategoryId,
@@ -69,8 +69,8 @@ async function seedFixtures() {
 
   await dbAdd(STORES.BUDGETS, { id: 'b1', categoryId: 'c1', month: '2026-06', limit: 400 });
 
-  await dbAdd(STORES.DEBTS, { id: 'd1', type: 'debt', currency: 'EUR', principal: 500, startDate: '2026-05-01' });
-  await dbAdd(STORES.DEBTS, { id: 'd2', type: 'receivable', currency: 'EUR', principal: 200, startDate: '2026-05-01' });
+  await dbAdd(STORES.DEBTS, { id: 'd1', type: 'debt', personName: 'Prêteur test', currency: 'EUR', principal: 500, startDate: '2026-05-01' });
+  await dbAdd(STORES.DEBTS, { id: 'd2', type: 'receivable', personName: 'Débiteur test', currency: 'EUR', principal: 200, startDate: '2026-05-01' });
   await dbAdd(STORES.DEBT_PAYMENTS, { id: 'p1', debtId: 'd1', amount: 100, date: '2026-06-01' });
 
   await dbAdd(STORES.INVESTMENTS, { id: 'inv1', name: 'Actions', currency: 'EUR', capitalInvested: 1000, createdAt: '2026-01-01T00:00:00.000Z' });
@@ -123,6 +123,14 @@ async function runTests() {
   assertEqual('investmentValueAsOf : valorisation la plus récente ≤ cutoff', investmentValueAsOf(inv, entries, '2026-06-01'), 1200);
   assertEqual('investmentValueAsOf : repli sur le capital investi si aucune valorisation avant cutoff', investmentValueAsOf(inv, entries, '2026-02-01'), 1000);
   assertEqual('investmentValueAsOf : 0 si cutoff avant la création de l\'investissement', investmentValueAsOf(inv, entries, '2025-12-01'), 0);
+  const entriesAfter = [
+    ...entries,
+    { investmentId: 'inv1', type: 'contribution', amount: 500, date: '2026-06-20' },
+    { investmentId: 'inv1', type: 'withdrawal', amount: 100, date: '2026-06-25' },
+    { investmentId: 'inv1', type: 'contribution', amount: 50, date: '2026-06-10' },
+  ];
+  assertEqual('investmentValueAsOf : apports/retraits APRÈS la dernière valorisation s\'y ajoutent (1300 + 500 - 100)', investmentValueAsOf(inv, entriesAfter, null), 1700);
+  assertEqual('investmentValueAsOf : un apport daté du jour de la valorisation est déjà compris dedans', investmentValueAsOf(inv, entriesAfter, '2026-06-15'), 1300);
 
   // --- computeNetWorth (agrégat complet : portefeuilles + investissements + créances - dettes) ---
   const netWorth = await computeNetWorth();
@@ -171,6 +179,26 @@ async function runTests() {
 
   const byNothing = await guessCategoryId('xyz totalement inconnu', 'expense');
   assertEqual('guessCategoryId : null si aucune correspondance', byNothing, null);
+
+  // --- Import de sauvegarde : validé d'abord, atomique ensuite (db.js) ---
+  // Cette section vient en DERNIER : un import « remplacer » réécrit la base de test.
+  const snapshot = async () => JSON.stringify(Object.fromEntries(await Promise.all(Object.entries(STORES).map(async ([k, s]) => [k, (await dbGetAll(s)).length]))));
+  const good = JSON.parse(JSON.stringify(await exportAllData()));
+  const before = await snapshot();
+  const tryImport = async (mutate, opts) => {
+    const copy = JSON.parse(JSON.stringify(good)); mutate(copy);
+    try { await importAllData(copy, opts); return 'accepté'; } catch { return 'refusé'; }
+  };
+  assertEqual('import : une sauvegarde saine est acceptée (aller-retour)', await tryImport(() => {}, { merge: false }), 'accepté');
+  assertEqual('import : l\'aller-retour conserve exactement les mêmes données', await snapshot(), before);
+  assertEqual('import : ligne sans id refusée', await tryImport((d) => { d.stores[STORES.TRANSACTIONS].push({ amount: 5 }); }, { merge: false }), 'refusé');
+  assertEqual('import : transaction à date null refusée (elle ferait planter le tableau de bord)', await tryImport((d) => { d.stores[STORES.TRANSACTIONS][0].date = null; }, { merge: false }), 'refusé');
+  assertEqual('import : montant non numérique refusé', await tryImport((d) => { d.stores[STORES.TRANSACTIONS][0].amount = 'abc'; }, { merge: false }), 'refusé');
+  assertEqual('import : nom de portefeuille non texte refusé', await tryImport((d) => { d.stores[STORES.WALLETS][0].name = { a: 1 }; }, { merge: false }), 'refusé');
+  assertEqual('import : un fichier refusé ne modifie RIEN (atomique)', await snapshot(), before);
+  assertEqual('import : un stores non tableau est refusé', await tryImport((d) => { d.stores[STORES.WALLETS] = {}; }, { merge: false }), 'refusé');
+  await importAllData({ stores: { [STORES.SETTINGS]: [{ key: 'pinHash', value: 'evil' }] } }, { merge: true });
+  assertTrue('import : un pinHash forgé est ignoré', !(await dbGetAll(STORES.SETTINGS)).some((r) => r.key === 'pinHash'));
 
   render();
 }

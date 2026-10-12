@@ -7,7 +7,7 @@
    depuis Paramètres (voir settings.js applyOptionalModuleVisibility()).
    ========================================================================== */
 
-import { STORES, dbGetAll, dbPut, dbAdd, dbDelete, logAudit } from '../db.js';
+import { STORES, dbGetAll, dbPut, dbAdd, dbDelete, logAudit, getSetting } from '../db.js';
 import { uuid, formatCurrency, formatDate, escapeHtml, todayISO, openModal, confirmDialog, showToast, currencySelectHtml, wireCurrencySelect, readCurrencyValue, safeNumber } from '../utils.js';
 import { notifyDataChanged } from '../state.js';
 import { t } from '../i18n.js';
@@ -42,19 +42,20 @@ function accountCardHtml(account, balance) {
     </div>`;
 }
 
-function accountFormHtml(account) {
+function accountFormHtml(account, defaultCurrency = 'EUR') {
   return `
     <form id="kept-account-form">
       <div class="form-row"><label>${t("Nom du propriétaire de l'argent")}</label><input type="text" name="ownerName" required maxlength="60" value="${escapeHtml(account?.ownerName || '')}" placeholder="${t('Ex: Petit frère, Maman…')}"></div>
-      <div class="form-row"><label>${t('Devise')}</label>${currencySelectHtml(account?.currency || 'EUR')}</div>
+      <div class="form-row"><label>${t('Devise')}</label>${currencySelectHtml(account?.currency || defaultCurrency)}</div>
       <div class="form-row"><label>${account ? t('Solde initial') : t('Solde de départ')}</label><input type="number" step="0.01" name="initialBalance" value="${account?.initialBalance ?? 0}"></div>
       <div class="form-row"><label>${t('Note (optionnel)')}</label><input type="text" name="note" maxlength="140" value="${escapeHtml(account?.note || '')}"></div>
       <button type="submit" class="btn btn-primary btn-block">${account ? t('Enregistrer') : t('Créer le compte')}</button>
     </form>`;
 }
 
-function openAccountModal(account = null) {
-  const modal = openModal(accountFormHtml(account), { title: account ? t('Modifier le compte gardé') : t('Nouveau compte gardé') });
+async function openAccountModal(account = null) {
+  const defaultCurrency = account?.currency || await getSetting('baseCurrency', 'EUR');
+  const modal = openModal(accountFormHtml(account, defaultCurrency), { title: account ? t('Modifier le compte gardé') : t('Nouveau compte gardé') });
   wireCurrencySelect(modal.el);
   modal.el.querySelector('#kept-account-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -124,6 +125,7 @@ async function renderAccountDetail(container, account) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const fd = new FormData(form);
+    if (!(safeNumber(parseFloat(fd.get('amount'))) > 0)) { showToast(t('Saisissez un montant supérieur à 0.')); return; }
     const entry = {
       id: uuid(),
       accountId: account.id,
