@@ -10,6 +10,7 @@ import {
   exportJsonBackup, importJsonBackup, exportEncryptedBackup, importEncryptedBackup,
   analyzeTransactionsCsv, importGeoFinanceCsvRows, importGenericCsvRows, exportTransactionsCsv,
   isFileSystemAccessSupported, chooseAutoBackupDirectory, getAutoBackupDirectory, clearAutoBackupDirectory,
+  estimateBackupSize, optimizeStoredReceipts, formatBytes,
 } from '../backup.js';
 import { isNotificationSupported, getNotificationPermission, requestNotificationPermission, checkAndNotify } from '../notifications.js';
 import { renderCloudBackupSection } from '../firebase-sync.js';
@@ -277,6 +278,27 @@ async function renderBackupSection(container) {
     : '';
   const autoBackupDir = await getAutoBackupDirectory();
 
+  // Taille attendue de la sauvegarde (et des photos qui en font l'essentiel) : un souci d'estimation
+  // ne doit jamais empêcher d'ouvrir cette section, d'où le try/catch.
+  let sizeHtml = '';
+  try {
+    const est = await estimateBackupSize();
+    const badgeClass = est.level === 'critical' ? 'badge-neg' : est.level === 'warn' ? 'badge-warn' : 'badge-pos';
+    const sizeAdvice = est.level === 'ok' ? '' : `<p style="font-size:12px;color:var(--${est.level === 'critical' ? 'neg' : 'text-muted'});margin:6px 0 0;">${
+      est.level === 'critical'
+        ? t("Sauvegarde très volumineuse : l'envoi peut être très long, voire échouer sur un téléphone. Réduisez les photos ci-dessous.")
+        : t("Sauvegarde volumineuse : l'envoi peut être lent. Réduire les photos ci-dessous allège nettement la sauvegarde.")}</p>`;
+    sizeHtml = `
+      <div class="stat-row" style="margin-top:6px;"><span class="stat-row-label">${t('Taille estimée de la sauvegarde')}</span><span class="badge ${badgeClass}">≈ ${formatBytes(est.estimatedBytes)}</span></div>
+      <div class="stat-row" style="margin-top:6px;"><span class="stat-row-label">${t('Photos de justificatifs')}</span><span>${est.photoCount} · ${formatBytes(est.photoStoredBytes)}</span></div>
+      ${sizeAdvice}
+      ${est.optimizableCount > 0 ? `
+        <div style="margin-top:10px;">
+          <button type="button" class="btn btn-ghost" id="optimize-receipts-btn" data-count="${est.optimizableCount}">${t('Réduire les photos ({count})', { count: est.optimizableCount })}</button>
+          <p style="font-size:12px;color:var(--text-faint);margin:6px 0 0;">${t("Réduit une fois pour toutes les photos déjà enregistrées (taille et qualité, lisibles). Irréversible : exportez d'abord une copie si vous voulez garder les originaux.")}</p>
+        </div>` : ''}`;
+  } catch { /* estimation indisponible : section affichée sans ces lignes */ }
+
   let autoBackupHtml;
   if (!isFileSystemAccessSupported()) {
     autoBackupHtml = `<span class="badge">${t('Non disponible sur ce navigateur (Chrome/Edge sur ordinateur uniquement)')}</span>`;
@@ -293,6 +315,7 @@ async function renderBackupSection(container) {
       <div class="panel-header"><h3>${t('Sauvegarde &amp; restauration')}</h3></div>
       <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;">${t("Toutes vos données restent locales. Exportez régulièrement une copie (JSON complet ou CSV) pour éviter toute perte. Un rappel s'affiche automatiquement si aucune sauvegarde n'a été faite depuis 7 jours.")}</p>
       <div class="stat-row"><span class="stat-row-label">${t('Dernière sauvegarde')}</span><span>${lastBackupLabel}${snoozedLabel}</span></div>
+      ${sizeHtml}
       <div class="stat-row" style="margin-top:6px;"><span class="stat-row-label">${t('Sauvegarde automatique hebdomadaire')}</span><span>${autoBackupHtml}</span></div>
       <p style="font-size:12px;color:var(--text-faint);margin:6px 0 0;">${t("Si un dossier est choisi, GeoFinance y écrit un export JSON automatiquement à chaque rappel hebdomadaire, sans action de votre part.")}</p>
       <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;">
@@ -321,6 +344,26 @@ async function renderBackupSection(container) {
   container.querySelector('#auto-backup-disable-btn')?.addEventListener('click', async () => {
     await clearAutoBackupDirectory();
     showToast(t('Sauvegarde automatique désactivée.'));
+    renderBackupSection(container);
+  });
+
+  container.querySelector('#optimize-receipts-btn')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    const count = Number(btn.dataset.count) || 0;
+    const ok = await confirmDialog(
+      t('Réduire {count} photo(s) de justificatifs ? La taille et la qualité seront diminuées (elles restent lisibles). Les originaux ne sont pas conservés.', { count }),
+      { confirmText: t('Réduire les photos'), danger: true },
+    );
+    if (!ok) return;
+    btn.disabled = true;
+    try {
+      const { optimized, savedBytes } = await optimizeStoredReceipts((done, total) => { btn.textContent = t('Réduction… {done}/{total}', { done, total }); });
+      showToast(optimized > 0
+        ? t('{count} photo(s) réduite(s), {size} économisés.', { count: optimized, size: formatBytes(savedBytes) })
+        : t('Aucune photo à réduire.'));
+    } catch (err) {
+      showToast(t('Erreur : {message}', { message: err.message || t('réduction impossible.') }), { duration: 8000 });
+    }
     renderBackupSection(container);
   });
 

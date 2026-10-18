@@ -296,6 +296,8 @@ export function openQuickAdd({ editTransaction = null } = {}) {
     // enregistré (édition sans nouvelle photo) est conservé tel quel.
     const newReceipt = receiptInput.files[0] ? await compressImageBlob(receiptInput.files[0]) : null;
     const receiptBlob = newReceipt || (receiptRemoved ? null : editTransaction?.receiptBlob || null);
+    // Marque la photo comme déjà réduite (Paramètres > « Réduire les photos » ne la reproposera pas).
+    const receiptOptimized = newReceipt ? true : (receiptRemoved ? false : !!editTransaction?.receiptOptimized);
 
     if (splitMode && type !== 'transfer') {
       const rows = [...splitList.querySelectorAll('[data-split-row]')]
@@ -313,7 +315,7 @@ export function openQuickAdd({ editTransaction = null } = {}) {
       for (const r of rows) {
         const splitRecord = {
           id: uuid(), type, walletId, targetWalletId: null,
-          categoryId: r.categoryId || null, amount: r.amount, date, note, tags, receiptBlob,
+          categoryId: r.categoryId || null, amount: r.amount, date, note, tags, receiptBlob, receiptOptimized,
           reconciled: false, splitGroupId, createdAt: new Date().toISOString(),
         };
         await dbAdd(STORES.TRANSACTIONS, splitRecord);
@@ -342,6 +344,7 @@ export function openQuickAdd({ editTransaction = null } = {}) {
       note: (fd.get('note') || '').trim().slice(0, 140),
       tags: parseTags(fd.get('tags')),
       receiptBlob,
+      receiptOptimized,
       // Préserve le lien vers ses lignes sœurs : ce record remplace intégralement l'ancien
       // (dbPut), donc omettre splitGroupId ici détacherait silencieusement une ligne scindée de
       // son groupe dès qu'on modifie ne serait-ce que sa note ou sa date.

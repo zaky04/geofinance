@@ -2327,6 +2327,15 @@ morceaux 12-14 supprimés sans `getDocs`, blocage réseau → erreur lisible) ; 
 refusé ; aucune erreur console. **Envoi Firestore réel non testé** (compte Google de l'auteur requis).
 `CACHE_VERSION` : `v93` → `v94`.
 
+### 18 octobre 2026 (suite) — Taille de la sauvegarde visible, alerte, et réduction des photos (porté depuis Djignan)
+
+Même ajout que sur `djignan-finance` (détail dans son CLAUDE.md) : `estimateBackupSize()` / `formatBytes()` /
+`optimizeStoredReceipts()` (`backup.js`), champ `receiptOptimized` (`transactions.js`), lignes « Taille estimée »
+et « Photos de justificatifs » + bouton « Réduire les photos (N) » avec confirmation (`settings.js`),
+`confirmLargeBackup()` avant un envoi cloud estimé ≥ 60 Mo (`firebase-sync.js`), `.badge-warn` (`styles.css`).
+Testé comme sur Djignan : 17,6 Mo → 2 Mo, photos décodables, annuler = rien ne change, niveaux ok/warn/critical,
+aucune erreur console, 916 clés i18n sans doublon. `CACHE_VERSION` : `v94` → `v95`.
+
 ## 7. Pistes prioritaires non traitées
 
 Par ordre d'impact estimé, à valider avec l'auteur avant de s'y attaquer :

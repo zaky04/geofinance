@@ -20,7 +20,7 @@
    ========================================================================== */
 
 import { firebaseConfig, isFirebaseConfigured, googleClientId } from './firebase-config.js';
-import { buildEncryptedPayload, decryptPayload, deserializeReceiptsForImport, markBackupDone } from './backup.js';
+import { buildEncryptedPayload, decryptPayload, deserializeReceiptsForImport, markBackupDone, estimateBackupSize, formatBytes } from './backup.js';
 import { importAllData, getSetting, setSetting } from './db.js';
 import { openModal, showToast, confirmDialog, formatDate } from './utils.js';
 import { notifyDataChanged } from './state.js';
@@ -379,6 +379,7 @@ function showCloudBackupReminderModal(urgent = false) {
     modal.close();
     const p = await promptPassphrase(t('Chiffrer la sauvegarde cloud'));
     if (!p) return;
+    if (!(await confirmLargeBackup())) return;
     showToast(t('Sauvegarde en cours…'));
     try {
       await pushBackupToCloud(p);
@@ -507,6 +508,22 @@ function showCloudStalenessModal(cloudUpdatedAt) {
   });
 }
 
+/** Avant un envoi : si la sauvegarde est très volumineuse, prévient et laisse choisir (l'envoi peut
+    être très long, voire manquer de mémoire sur un téléphone). Renvoie `true` pour continuer. Une
+    estimation impossible ne bloque jamais l'envoi. */
+async function confirmLargeBackup() {
+  try {
+    const est = await estimateBackupSize();
+    if (est.level !== 'critical') return true;
+    return await confirmDialog(
+      t("La sauvegarde pèse environ {size} : l'envoi peut être très long, voire échouer sur un téléphone. Astuce : « Réduire les photos » dans Paramètres l'allège nettement. Envoyer quand même ?", { size: formatBytes(est.estimatedBytes) }),
+      { confirmText: t('Envoyer quand même') },
+    );
+  } catch {
+    return true;
+  }
+}
+
 /* ---------- UI (Paramètres) ---------- */
 function promptPassphrase(title) {
   return new Promise((resolve) => {
@@ -598,6 +615,7 @@ export async function renderCloudBackupSection(container) {
   container.querySelector('#cloud-push-btn')?.addEventListener('click', async () => {
     const p = await promptPassphrase(t('Chiffrer la sauvegarde cloud'));
     if (!p) return;
+    if (!(await confirmLargeBackup())) return;
     // Retour visible pendant tout l'envoi (plusieurs secondes, voire minutes, avec beaucoup de
     // justificatifs photo) : le bouton est désactivé et affiche l'étape en cours, pour qu'on ne
     // croie jamais que "rien ne se passe" — et qu'un second clic ne lance pas un envoi en double.

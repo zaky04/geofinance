@@ -4,9 +4,9 @@
    distante hebdomadaire) + rappel hebdomadaire de sauvegarde.
    ========================================================================== */
 
-import { STORES, dbGetAll, dbAdd, dbBulkPut, exportAllData, importAllData, getSetting, setSetting } from './db.js';
+import { STORES, dbGetAll, dbAdd, dbPut, dbBulkPut, exportAllData, importAllData, getSetting, setSetting } from './db.js';
 import { getEnrichedTransactions, guessCategoryId } from './ledger.js';
-import { uuid, todayISO, currentMonthKey, downloadFile, readFileAsText, showToast, safeNumber, compressImageBlob } from './utils.js';
+import { uuid, todayISO, currentMonthKey, downloadFile, readFileAsText, showToast, safeNumber, compressImageBlob, intlLocale } from './utils.js';
 import { notifyDataChanged } from './state.js';
 // Aliasé en tr (pas t) : ce fichier utilise `t` comme nom de variable pour une transaction dans
 // plusieurs fonctions — même piège documenté dans dashboard.js/transactions.js/debts.js/tools.js/
@@ -63,6 +63,7 @@ async function serializeReceiptsForExport(data) {
       // réduites ici, sinon la sauvegarde — chiffrée, donc encore gonflée par un double base64 —
       // devient trop lourde à envoyer.
       t.receiptDataUrl = await blobToDataUrl(await compressImageBlob(t.receiptBlob));
+      t.receiptOptimized = true; // la copie exportée est réduite : à la restauration, rien à re-réduire
       delete t.receiptBlob;
     }
   }
@@ -83,6 +84,76 @@ export async function deserializeReceiptsForImport(data) {
 export async function markBackupDone() {
   await setSetting('lastBackupAt', new Date().toISOString());
   await setSetting('backupSnoozeCount', 0);
+}
+
+/* ---------- Taille de la sauvegarde et optimisation des photos ----------
+   Une photo de justificatif est de loin ce qui pèse le plus dans une sauvegarde. Elle est réduite
+   à l'enregistrement (compressImageBlob) et, pour les anciennes photos, dans la copie d'export ;
+   ces fonctions permettent en plus de VOIR la taille attendue et de réduire une bonne fois pour
+   toutes les photos déjà stockées (sinon elles sont recompressées à chaque sauvegarde). */
+export const BACKUP_SIZE_WARN_BYTES = 30 * 1024 * 1024;     // au-delà : l'envoi devient lent
+export const BACKUP_SIZE_CRITICAL_BYTES = 60 * 1024 * 1024; // au-delà : risque de manquer de mémoire sur mobile
+const OPTIMIZE_MIN_BYTES = 250 * 1024; // même seuil que compressImageBlob() : en dessous, rien à gagner
+const PHOTO_ESTIMATE_CAP_BYTES = 450 * 1024; // taille typique d'une photo une fois réduite
+
+export function formatBytes(bytes) {
+  const mb = bytes / (1024 * 1024);
+  const nf = new Intl.NumberFormat(intlLocale(), { maximumFractionDigits: mb < 10 ? 1 : 0 });
+  return mb >= 1 ? tr('{size} Mo', { size: nf.format(mb) }) : tr('{size} Ko', { size: nf.format(Math.max(1, Math.round(bytes / 1024))) });
+}
+
+/** Estimation de la taille de la sauvegarde chiffrée ENVOYÉE (pas de la base locale) : le JSON de
+    toutes les données hors photos (+33 % de base64 du chiffré) et chaque photo (data URL + base64
+    du chiffré = ~1,78×), en comptant les photos encore grosses comme elles seront après réduction. */
+export async function estimateBackupSize() {
+  const data = await exportAllData();
+  let photoCount = 0;
+  let photoStoredBytes = 0;
+  let photoSentBytes = 0;
+  let optimizableCount = 0;
+  for (const t of data.stores?.[STORES.TRANSACTIONS] || []) {
+    if (t.receiptBlob instanceof Blob) {
+      photoCount++;
+      photoStoredBytes += t.receiptBlob.size;
+      // Photo déjà réduite (receiptOptimized) : sa taille réelle est celle qui sera envoyée. Sinon
+      // elle sera réduite à l'export : on compte sa taille typique après réduction.
+      photoSentBytes += t.receiptOptimized ? t.receiptBlob.size : Math.min(t.receiptBlob.size, PHOTO_ESTIMATE_CAP_BYTES);
+      if (!t.receiptOptimized && t.receiptBlob.size > OPTIMIZE_MIN_BYTES) optimizableCount++;
+      delete t.receiptBlob;
+    }
+  }
+  const otherBytes = JSON.stringify(data).length;
+  const estimatedBytes = Math.round(otherBytes * 1.34 + photoSentBytes * 1.78);
+  const level = estimatedBytes >= BACKUP_SIZE_CRITICAL_BYTES ? 'critical' : estimatedBytes >= BACKUP_SIZE_WARN_BYTES ? 'warn' : 'ok';
+  return { photoCount, photoStoredBytes, optimizableCount, estimatedBytes, level };
+}
+
+/** Réduit une fois pour toutes les photos de justificatifs déjà stockées (plus de ~250 Ko).
+    Irréversible : l'original n'est pas conservé. Ne remplace une photo que si le gain est net
+    (≥ 10 %) ; une photo illisible ou non convertible reste telle quelle. Chaque transaction est
+    réécrite séparément : une interruption en cours de route laisse simplement les photos restantes
+    à réduire au prochain essai, sans rien casser. `onProgress(fait, total)` est facultatif. */
+export async function optimizeStoredReceipts(onProgress = () => {}) {
+  const candidates = (await dbGetAll(STORES.TRANSACTIONS)).filter((t) => t.receiptBlob instanceof Blob && !t.receiptOptimized && t.receiptBlob.size > OPTIMIZE_MIN_BYTES);
+  let optimized = 0;
+  let savedBytes = 0;
+  for (let i = 0; i < candidates.length; i++) {
+    const tx = candidates[i];
+    const before = tx.receiptBlob.size;
+    const smaller = await compressImageBlob(tx.receiptBlob);
+    // Dans tous les cas la photo est marquée comme traitée (receiptOptimized) : sans ça, une photo
+    // qu'on ne peut pas réduire davantage resterait proposée à chaque fois.
+    if (smaller !== tx.receiptBlob && smaller.size < before * 0.9) {
+      tx.receiptBlob = smaller;
+      optimized++;
+      savedBytes += before - smaller.size;
+    }
+    tx.receiptOptimized = true;
+    await dbPut(STORES.TRANSACTIONS, tx);
+    onProgress(i + 1, candidates.length);
+  }
+  if (optimized > 0) notifyDataChanged('transactions');
+  return { scanned: candidates.length, optimized, savedBytes };
 }
 
 /* ---------- Export / import JSON en clair ---------- */
