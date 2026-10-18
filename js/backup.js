@@ -6,7 +6,7 @@
 
 import { STORES, dbGetAll, dbAdd, dbBulkPut, exportAllData, importAllData, getSetting, setSetting } from './db.js';
 import { getEnrichedTransactions, guessCategoryId } from './ledger.js';
-import { uuid, todayISO, currentMonthKey, downloadFile, readFileAsText, showToast, safeNumber } from './utils.js';
+import { uuid, todayISO, currentMonthKey, downloadFile, readFileAsText, showToast, safeNumber, compressImageBlob } from './utils.js';
 import { notifyDataChanged } from './state.js';
 // Aliasé en tr (pas t) : ce fichier utilise `t` comme nom de variable pour une transaction dans
 // plusieurs fonctions — même piège documenté dans dashboard.js/transactions.js/debts.js/tools.js/
@@ -15,9 +15,13 @@ import { t as tr, applyStaticTranslations } from './i18n.js';
 
 function bufToBase64(buf) {
   const bytes = new Uint8Array(buf);
-  let bin = '';
-  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-  return btoa(bin);
+  // Par blocs : une concaténation octet par octet sur plusieurs dizaines de Mo est lente et
+  // gourmande en mémoire (jusqu'à figer l'onglet sur mobile). Résultat strictement identique.
+  const parts = [];
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    parts.push(String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)));
+  }
+  return btoa(parts.join(''));
 }
 function base64ToBuf(b64) {
   const bin = atob(b64);
@@ -54,7 +58,11 @@ async function dataUrlToBlob(dataUrl) {
 async function serializeReceiptsForExport(data) {
   for (const t of data.stores?.[STORES.TRANSACTIONS] || []) {
     if (t.receiptBlob instanceof Blob) {
-      t.receiptDataUrl = await blobToDataUrl(t.receiptBlob);
+      // Copie d'export seulement (les lignes viennent de dbGetAll, la base n'est pas modifiée) :
+      // les photos enregistrées avant l'ajout de la compression (plusieurs Mo chacune) sont
+      // réduites ici, sinon la sauvegarde — chiffrée, donc encore gonflée par un double base64 —
+      // devient trop lourde à envoyer.
+      t.receiptDataUrl = await blobToDataUrl(await compressImageBlob(t.receiptBlob));
       delete t.receiptBlob;
     }
   }

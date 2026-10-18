@@ -139,7 +139,14 @@ function ensureFirebase() {
     ]);
     const app = initializeApp(firebaseConfig);
     firebaseAuth = authMod.getAuth(app);
-    firebaseDb = firestoreMod.getFirestore(app);
+    // Détection automatique du repli en "long polling" : certains réseaux, proxys et WebViews
+    // bloquent le flux WebChannel de Firestore, et les écritures restent alors suspendues sans
+    // erreur. Repli sur getFirestore() si l'instance existe déjà ou si l'option est refusée.
+    try {
+      firebaseDb = firestoreMod.initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
+    } catch {
+      firebaseDb = firestoreMod.getFirestore(app);
+    }
     return { authMod, firestoreMod };
   })();
   return sdkPromise;
@@ -203,25 +210,98 @@ export async function resolveCloudUser() {
 // plutôt que dans un seul champ — marge confortable sous la limite exacte.
 const CHUNK_SIZE = 900000;
 
-export async function pushBackupToCloud(passphrase) {
+// Limites Firestore : (1) ~1 Mo par DOCUMENT -> la sauvegarde est découpée en morceaux (CHUNK_SIZE) ;
+// (2) ~10-11 Mo par REQUÊTE : tous les morceaux dans un seul writeBatch() finissaient par la
+// dépasser ("Request payload size exceeds the limit: 11534336 bytes") dès que la sauvegarde grossissait
+// (justificatifs photo). Chaque lot d'écriture est donc borné par BATCH_BYTE_BUDGET.
+// 4 Mo (et non 8) : un lot plus petit passe sur une connexion mobile lente sans atteindre le délai
+// maximum de NETWORK_STEP_TIMEOUT_MS, et un échec n'oblige à renvoyer qu'une petite part.
+const BATCH_BYTE_BUDGET = 4000000;
+
+// Une écriture Firestore (batch.commit, setDoc...) ne rejette JAMAIS quand le réseau est coupé, lent ou
+// que le flux est bloqué : le SDK met l'écriture en file d'attente et la promesse reste pendante
+// indéfiniment -> mot de passe validé, puis plus rien (ni succès ni erreur). Chaque étape réseau est
+// donc bornée par un délai, pour qu'un blocage remonte comme une vraie erreur affichée.
+const NETWORK_STEP_TIMEOUT_MS = 120000;
+
+function withTimeout(promise, ms = NETWORK_STEP_TIMEOUT_MS) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(
+      t("Google ne répond pas (connexion lente ou coupée). Vérifiez votre réseau puis réessayez."),
+    )), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
+/** `onProgress(message)` (facultatif) reçoit l'étape en cours, pour l'afficher à l'utilisateur. */
+export async function pushBackupToCloud(passphrase, onProgress = () => {}) {
   const { firestoreMod } = await ensureFirebase();
   const user = firebaseAuth.currentUser;
   if (!user) throw new Error(t('Non connecté.'));
+  onProgress(t('Chiffrement des données…'));
   const payloadStr = JSON.stringify(await buildEncryptedPayload(passphrase));
   const chunks = [];
   for (let i = 0; i < payloadStr.length; i += CHUNK_SIZE) chunks.push(payloadStr.slice(i, i + CHUNK_SIZE));
 
   const chunksRef = firestoreMod.collection(firebaseDb, 'backups', user.uid, 'chunks');
-  const existing = await firestoreMod.getDocs(chunksRef);
-  const batch = firestoreMod.writeBatch(firebaseDb);
-  // Supprime d'abord les anciens morceaux : leur nombre peut varier d'une sauvegarde à l'autre
-  // (données en plus ou en moins) — sans ça, d'anciens morceaux en trop resteraient et
-  // corrompraient la sauvegarde suivante à la lecture (concaténation avec des restes obsolètes).
-  existing.forEach((d) => batch.delete(d.ref));
-  chunks.forEach((chunk, i) => batch.set(firestoreMod.doc(chunksRef, String(i)), { data: chunk }));
   const backupDocRef = firestoreMod.doc(firebaseDb, 'backups', user.uid);
-  batch.set(backupDocRef, { chunkCount: chunks.length, updatedAt: firestoreMod.serverTimestamp() });
-  await batch.commit();
+  let sent = 0;
+  const reportSent = () => onProgress(t('Envoi vers Google… {done}/{total}', { done: sent, total: chunks.length }));
+  reportSent();
+
+  // Phase 1 : écrit tous les NOUVEAUX morceaux, répartis en plusieurs lots sous BATCH_BYTE_BUDGET.
+  // Le pointeur chunkCount du document parent n'est PAS touché ici (phase 2) : une coupure réseau en
+  // cours de route laisse le document parent pointer vers l'ANCIENNE sauvegarde complète et valide,
+  // jamais vers une sauvegarde à moitié écrite. Un nouvel essai repart proprement.
+  let batch = firestoreMod.writeBatch(firebaseDb);
+  let batchBytes = 0;
+  let batchChunks = 0;
+  for (let i = 0; i < chunks.length; i++) {
+    if (batchBytes > 0 && batchBytes + chunks[i].length > BATCH_BYTE_BUDGET) {
+      await withTimeout(batch.commit());
+      sent += batchChunks;
+      reportSent();
+      batch = firestoreMod.writeBatch(firebaseDb);
+      batchBytes = 0;
+      batchChunks = 0;
+    }
+    batch.set(firestoreMod.doc(chunksRef, String(i)), { data: chunks[i] });
+    batchBytes += chunks[i].length;
+    batchChunks++;
+  }
+  if (batchBytes > 0) {
+    await withTimeout(batch.commit());
+    sent += batchChunks;
+    reportSent();
+  }
+
+  // Phase 2 : le pointeur bascule vers la nouvelle sauvegarde — à partir d'ici, pullBackupFromCloud
+  // lit bien les nouveaux morceaux (elle ne lit que 0..chunkCount-1, jamais au-delà).
+  onProgress(t('Finalisation…'));
+  // Ancien nombre de morceaux, pour la phase 3 (lecture du seul petit document parent).
+  let previousChunkCount = 0;
+  try {
+    const prevSnap = await withTimeout(firestoreMod.getDoc(backupDocRef), 20000);
+    previousChunkCount = Number(prevSnap.data()?.chunkCount) || 0;
+  } catch { /* au pire, d'anciens morceaux orphelins restent en place : sans effet sur la restauration */ }
+  await withTimeout(firestoreMod.setDoc(backupDocRef, { chunkCount: chunks.length, updatedAt: firestoreMod.serverTimestamp() }));
+
+  // Phase 3 : nettoyage des anciens morceaux en trop, désignés par leur NUMÉRO (previousChunkCount)
+  // au lieu de relire toute la sous-collection : getDocs() téléchargeait le CONTENU de chaque ancien
+  // morceau (des dizaines de Mo) à chaque sauvegarde. Déjà validée en phase 2 : un blocage ici ne
+  // doit pas faire échouer une sauvegarde réussie.
+  try {
+    const staleIds = [];
+    for (let i = chunks.length; i < previousChunkCount; i++) staleIds.push(String(i));
+    for (let i = 0; i < staleIds.length; i += 400) {
+      const cleanupBatch = firestoreMod.writeBatch(firebaseDb);
+      for (const id of staleIds.slice(i, i + 400)) cleanupBatch.delete(firestoreMod.doc(chunksRef, id));
+      await withTimeout(cleanupBatch.commit());
+    }
+  } catch (err) {
+    console.warn('Nettoyage des anciens morceaux cloud impossible :', err);
+  }
 
   await markBackupDone();
   await setSetting('lastCloudBackupAt', new Date().toISOString());
@@ -239,7 +319,7 @@ export async function pushBackupToCloud(passphrase) {
   // "plus récent" que ce qu'il vient d'enregistrer localement, et checkCloudStaleness() afficherait
   // à tort "une sauvegarde plus récente existe sur un autre appareil" pour sa propre sauvegarde.
   try {
-    const freshSnap = await firestoreMod.getDoc(backupDocRef);
+    const freshSnap = await withTimeout(firestoreMod.getDoc(backupDocRef), 15000);
     const resolvedUpdatedAt = freshSnap.data()?.updatedAt;
     await setSetting('cloudLastKnownSyncAt', resolvedUpdatedAt?.toDate ? resolvedUpdatedAt.toDate().toISOString() : new Date().toISOString());
   } catch {
@@ -299,11 +379,12 @@ function showCloudBackupReminderModal(urgent = false) {
     modal.close();
     const p = await promptPassphrase(t('Chiffrer la sauvegarde cloud'));
     if (!p) return;
+    showToast(t('Sauvegarde en cours…'));
     try {
       await pushBackupToCloud(p);
       showToast(t('Sauvegarde envoyée dans le cloud.'));
     } catch (err) {
-      showToast(t('Erreur : {message}', { message: err.message || t('envoi impossible.') }));
+      showToast(t('Erreur : {message}', { message: err.message || t('envoi impossible.') }), { duration: 8000 });
     }
   });
 }
@@ -517,12 +598,21 @@ export async function renderCloudBackupSection(container) {
   container.querySelector('#cloud-push-btn')?.addEventListener('click', async () => {
     const p = await promptPassphrase(t('Chiffrer la sauvegarde cloud'));
     if (!p) return;
+    // Retour visible pendant tout l'envoi (plusieurs secondes, voire minutes, avec beaucoup de
+    // justificatifs photo) : le bouton est désactivé et affiche l'étape en cours, pour qu'on ne
+    // croie jamais que "rien ne se passe" — et qu'un second clic ne lance pas un envoi en double.
+    const btn = container.querySelector('#cloud-push-btn');
+    const idleLabel = btn?.textContent;
+    if (btn) btn.disabled = true;
+    const setLabel = (msg) => { if (btn) btn.textContent = msg; };
+    setLabel(t('Sauvegarde en cours…'));
     try {
-      await pushBackupToCloud(p);
+      await pushBackupToCloud(p, setLabel);
       showToast(t('Sauvegarde envoyée dans le cloud.'));
       await renderCloudBackupSection(container);
     } catch (err) {
-      showToast(t('Erreur : {message}', { message: err.message || t('envoi impossible.') }));
+      showToast(t('Erreur : {message}', { message: err.message || t('envoi impossible.') }), { duration: 8000 });
+      if (btn) { btn.disabled = false; btn.textContent = idleLabel; }
     }
   });
 

@@ -243,6 +243,38 @@ export function downloadFile(filename, content, mimeType = 'application/octet-st
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
+/**
+ * Réduit une photo (justificatif) : côté max `maxDim` px, JPEG qualité `quality`. Une photo
+ * d'appareil fait 2 à 6 Mo ; un justificatif reste parfaitement lisible à ~150-300 Ko. Sans ça,
+ * chaque photo gonfle la base ET toutes les sauvegardes (et jusqu'à 1,8× de plus à l'export, à
+ * cause du double base64), jusqu'à bloquer la sauvegarde cloud.
+ * Ne renvoie JAMAIS plus gros que l'original, et renvoie l'original tel quel au moindre doute
+ * (pas une image, SVG, déjà petit, décodage ou canvas indisponible) — compresser ne doit jamais
+ * faire perdre un justificatif.
+ */
+export async function compressImageBlob(blob, { maxDim = 1600, quality = 0.72, skipBelow = 250 * 1024 } = {}) {
+  try {
+    if (!(blob instanceof Blob) || !/^image\/(jpeg|png|webp|heic|heif)$/i.test(blob.type) || blob.size <= skipBelow) return blob;
+    const bitmap = await createImageBitmap(blob, { imageOrientation: 'from-image' });
+    const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+    const w = Math.max(1, Math.round(bitmap.width * scale));
+    const h = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff'; // JPEG n'a pas de transparence
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close?.();
+    const out = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
+    canvas.width = canvas.height = 0; // libère la mémoire du canvas tout de suite
+    return out && out.size > 0 && out.size < blob.size ? out : blob;
+  } catch {
+    return blob;
+  }
+}
+
 /** Lit un fichier <input type="file"> comme texte. */
 export function readFileAsText(file) {
   return new Promise((resolve, reject) => {

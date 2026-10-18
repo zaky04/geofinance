@@ -2305,6 +2305,28 @@ le pipeline OCR réel complet a été testé sur `djignan-finance` (code stricte
 
 `CACHE_VERSION` : `v90` → `v91`.
 
+### 18 octobre 2026 — Sauvegarde cloud muette après plusieurs sauvegardes (porté depuis `djignan-finance`)
+
+Signalé par l'auteur sur Djignan : mot de passe de chiffrement validé, puis plus rien (ni succès, ni erreur),
+apparu « après plusieurs sauvegardes ». Même code ici, et **en plus exposé** : cette version n'avait jamais
+reçu le découpage en lots du 11 septembre (un seul `writeBatch` pour tous les morceaux, limite ~10-11 Mo par
+requête) ni la lecture inutile de toute l'ancienne sauvegarde (`getDocs`). Détail complet de l'analyse dans le
+CLAUDE.md de `djignan-finance` (entrée du 18 octobre 2026). Cause racine : les photos de justificatifs étaient
+stockées telles que prises (2-6 Mo, copiées dans chaque ligne en mode scindé), gonflées de ~1,8× à l'export
+(double base64) → sauvegarde de plus en plus lourde, onglet mobile qui fige, et aucun délai maximum sur les
+écritures Firestore (qui ne rejettent jamais quand le réseau bloque).
+
+**Porté** : `compressImageBlob()` (`utils.js`) appliqué à l'enregistrement d'une photo (`transactions.js`) et à
+la COPIE d'export des photos déjà stockées (`backup.js`, la base n'est pas modifiée) ; `bufToBase64` par blocs
+(sortie identique) ; `pushBackupToCloud` réécrit (lots de 4 Mo, délai de 120 s par étape, nettoyage des anciens
+morceaux par numéro, progression sur le bouton) ; `initializeFirestore` avec repli automatique en long polling.
+Pas de « Request payload size exceeds » possible désormais.
+Testé : tests du vrai code d'envoi contre un faux Firestore (10 Mo → 12 morceaux en 4 lots ≤ 3,6 Mo, anciens
+morceaux 12-14 supprimés sans `getDocs`, blocage réseau → erreur lisible) ; navigateur : photo 6 Mo → 679 Ko,
+17,6 Mo de photos → sauvegarde chiffrée de 3,58 Mo, déchiffrement OK, 3 photos restaurées, mauvais mot de passe
+refusé ; aucune erreur console. **Envoi Firestore réel non testé** (compte Google de l'auteur requis).
+`CACHE_VERSION` : `v93` → `v94`.
+
 ## 7. Pistes prioritaires non traitées
 
 Par ordre d'impact estimé, à valider avec l'auteur avant de s'y attaquer :

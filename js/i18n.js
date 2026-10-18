@@ -877,6 +877,11 @@ const EN = {
   'Sauvegarde cloud': 'Cloud backup',
   'Chiffrer la sauvegarde cloud': 'Encrypt the cloud backup',
   'Sauvegarde envoyée dans le cloud.': 'Backup sent to the cloud.',
+  'Sauvegarde en cours…': 'Backing up…',
+  'Chiffrement des données…': 'Encrypting data…',
+  'Envoi vers Google… {done}/{total}': 'Sending to Google… {done}/{total}',
+  'Finalisation…': 'Finishing…',
+  'Google ne répond pas (connexion lente ou coupée). Vérifiez votre réseau puis réessayez.': 'Google is not responding (slow or lost connection). Check your network and try again.',
   'envoi impossible.': 'send not possible.',
   'Une sauvegarde plus récente existe dans le cloud, faite le {date} — probablement depuis un autre appareil. Pour éviter des doublons ou de remplacer des données par erreur, il est recommandé de la récupérer avant de continuer sur cet appareil.':
     'A more recent backup exists in the cloud, made on {date} — probably from another device. To avoid duplicates or overwriting data by mistake, it is recommended to retrieve it before continuing on this device.',

@@ -7,7 +7,7 @@
 
 import { STORES, dbGetAll, dbAdd, dbPut, dbDelete, logAudit } from '../db.js';
 import { getEnrichedTransactions, guessCategoryId, checkUnusualExpense } from '../ledger.js';
-import { uuid, formatCurrency, formatDate, formatMonthLabel, escapeHtml, todayISO, currentMonthKey, monthKeyOffset, openModal, confirmDialog, showToast, safeNumber } from '../utils.js';
+import { uuid, formatCurrency, formatDate, formatMonthLabel, escapeHtml, todayISO, currentMonthKey, monthKeyOffset, openModal, confirmDialog, showToast, safeNumber, compressImageBlob } from '../utils.js';
 import { notifyDataChanged } from '../state.js';
 import { extractReceiptDataFromImage } from '../ocr.js';
 // Aliasé en tr (pas t) : ce fichier utilise `t` comme nom de variable pour une transaction dans
@@ -292,7 +292,10 @@ export function openQuickAdd({ editTransaction = null } = {}) {
     if (!walletId) { showToast(tr('Créez au moins un portefeuille avant de saisir une transaction.')); return; }
     if (type === 'transfer' && walletId === targetWalletId) { showToast(tr('Choisissez deux portefeuilles différents.')); return; }
 
-    const receiptBlob = receiptInput.files[0] || (receiptRemoved ? null : editTransaction?.receiptBlob || null);
+    // Une nouvelle photo est réduite avant stockage (voir compressImageBlob) ; un justificatif déjà
+    // enregistré (édition sans nouvelle photo) est conservé tel quel.
+    const newReceipt = receiptInput.files[0] ? await compressImageBlob(receiptInput.files[0]) : null;
+    const receiptBlob = newReceipt || (receiptRemoved ? null : editTransaction?.receiptBlob || null);
 
     if (splitMode && type !== 'transfer') {
       const rows = [...splitList.querySelectorAll('[data-split-row]')]
