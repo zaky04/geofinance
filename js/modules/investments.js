@@ -89,7 +89,7 @@ function investmentFormHtml(inv, defaultCurrency) {
     </form>`;
 }
 
-async function openInvestmentModal(inv = null) {
+export async function openInvestmentModal(inv = null) {
   const defaultCurrency = inv ? inv.currency : await getSetting('baseCurrency', 'EUR');
   const modal = openModal(investmentFormHtml(inv, defaultCurrency), { title: inv ? t("Modifier l'investissement") : t('Nouvel investissement') });
   wireCurrencySelect(modal.el);

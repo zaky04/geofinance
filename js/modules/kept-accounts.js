@@ -53,7 +53,7 @@ function accountFormHtml(account, defaultCurrency = 'EUR') {
     </form>`;
 }
 
-async function openAccountModal(account = null) {
+export async function openAccountModal(account = null) {
   const defaultCurrency = account?.currency || await getSetting('baseCurrency', 'EUR');
   const modal = openModal(accountFormHtml(account, defaultCurrency), { title: account ? t('Modifier le compte gardé') : t('Nouveau compte gardé') });
   wireCurrencySelect(modal.el);

@@ -940,6 +940,7 @@ const EN = {
   "Tapez pour rechercher parmi vos transactions, portefeuilles, dettes, objectifs d'épargne, investissements, comptes gardés et dépenses partagées.":
     'Type to search among your transactions, wallets, debts, savings goals, investments, managed accounts, and shared expenses.',
   'Aucun résultat.': 'No results.',
+  'Ouvrir dans son écran': 'Go to screen',
 
   // ---------- Assistant de configuration + mode démo (app.js) ----------
   'Passer cette étape': 'Skip this step',

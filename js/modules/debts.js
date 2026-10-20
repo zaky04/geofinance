@@ -144,7 +144,7 @@ function debtFormHtml(d, defaultCurrency) {
     </form>`;
 }
 
-async function openDebtModal(d = null) {
+export async function openDebtModal(d = null) {
   const defaultCurrency = d ? d.currency : await getSetting('baseCurrency', 'EUR');
   const modal = openModal(debtFormHtml(d, defaultCurrency), { title: d ? tr('Modifier') : tr('Nouvelle dette / créance') });
   wireCurrencySelect(modal.el);

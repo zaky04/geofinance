@@ -64,7 +64,7 @@ function goalFormHtml(g, defaultCurrency) {
     </form>`;
 }
 
-async function openGoalModal(g = null) {
+export async function openGoalModal(g = null) {
   const defaultCurrency = g ? g.currency : await getSetting('baseCurrency', 'EUR');
   const modal = openModal(goalFormHtml(g, defaultCurrency), { title: g ? t("Modifier l'objectif") : t("Nouvel objectif d'épargne") });
   wireCurrencySelect(modal.el);

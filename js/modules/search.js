@@ -13,6 +13,15 @@ import { formatCurrency, formatDate, escapeHtml, debounce } from '../utils.js';
 // collectSearchIndex() — même piège documenté dans dashboard.js/transactions.js/debts.js/tools.js/
 // reports-extras.js.
 import { t as tr } from '../i18n.js';
+import { bus, EVENTS } from '../state.js';
+// Un résultat s'ouvre directement dans le formulaire de modification de son module (la modale de
+// recherche reste ouverte dessous et se rafraîchit après l'enregistrement).
+import { openQuickAdd } from './transactions.js';
+import { openWalletModal } from './wallets.js';
+import { openDebtModal } from './debts.js';
+import { openGoalModal } from './savings.js';
+import { openInvestmentModal } from './investments.js';
+import { openAccountModal } from './kept-accounts.js';
 
 // Valeurs traduites à l'usage via tr(...) (voir resultRowHtml ci-dessous), jamais ici — mêmes
 // conventions que ASSET_CLASSES (investments.js) : les clés sont des identifiants internes de type,
@@ -57,7 +66,7 @@ async function collectSearchIndex() {
 
   for (const t of transactions) {
     items.push({
-      type: 'transaction',
+      type: 'transaction', store: STORES.TRANSACTIONS, id: t.id,
       haystack: `${t.note || ''} ${t.category?.name || ''} ${t.wallet?.name || ''} ${(t.tags || []).join(' ')}`,
       title: t.category?.name || t.note || tr('Transaction'),
       sub: `${t.wallet?.name || ''} · ${formatDate(t.date)}${t.note ? ' · ' + t.note : ''}${t.tags?.length ? ' · #' + t.tags.join(' #') : ''}`,
@@ -72,7 +81,7 @@ async function collectSearchIndex() {
   }
   for (const w of wallets.filter((w) => !w.archived)) {
     items.push({
-      type: 'wallet',
+      type: 'wallet', store: STORES.WALLETS, id: w.id,
       haystack: w.name,
       title: w.name,
       sub: w.currency,
@@ -81,7 +90,7 @@ async function collectSearchIndex() {
   }
   for (const d of debts) {
     items.push({
-      type: d.type === 'debt' ? 'debt' : 'receivable',
+      type: d.type === 'debt' ? 'debt' : 'receivable', store: STORES.DEBTS, id: d.id,
       haystack: `${d.personName} ${d.note || ''}`,
       title: d.personName,
       sub: formatCurrency(d.principal, d.currency),
@@ -90,7 +99,7 @@ async function collectSearchIndex() {
   }
   for (const g of savingsGoals.filter((g) => !g.archived)) {
     items.push({
-      type: 'savings',
+      type: 'savings', store: STORES.SAVINGS_GOALS, id: g.id,
       haystack: g.name,
       title: g.name,
       sub: `${formatCurrency(g.currentAmount, g.currency)} / ${formatCurrency(g.targetAmount, g.currency)}`,
@@ -99,7 +108,7 @@ async function collectSearchIndex() {
   }
   for (const inv of investments) {
     items.push({
-      type: 'investment',
+      type: 'investment', store: STORES.INVESTMENTS, id: inv.id,
       haystack: inv.name,
       title: inv.name,
       sub: formatCurrency(inv.capitalInvested, inv.currency),
@@ -108,7 +117,7 @@ async function collectSearchIndex() {
   }
   for (const acc of keptAccounts.filter((a) => !a.archived)) {
     items.push({
-      type: 'keptAccount',
+      type: 'keptAccount', store: STORES.KEPT_ACCOUNTS, id: acc.id,
       haystack: `${acc.ownerName} ${acc.note || ''}`,
       title: acc.ownerName,
       sub: acc.currency,
@@ -118,7 +127,7 @@ async function collectSearchIndex() {
   for (const exp of sharedExpenses) {
     const payer = participants.find((p) => p.id === exp.paidBy);
     items.push({
-      type: 'sharedExpense',
+      type: 'sharedExpense', store: STORES.SHARED_EXPENSES, id: exp.id,
       haystack: `${exp.description} ${payer?.name || ''}`,
       title: exp.description,
       sub: tr('Payé par {payer} · {date}', { payer: payer?.name || '?', date: formatDate(exp.date) }),
@@ -130,16 +139,33 @@ async function collectSearchIndex() {
   return items;
 }
 
-function resultRowHtml(item) {
+/** Formulaires de modification, par type de résultat (l'élément est relu en base au clic, donc toujours
+    à jour). Les dépenses partagées n'ont pas de formulaire de modification : on ouvre leur écran. */
+const EDITORS = {
+  transaction: (rec) => openQuickAdd({ editTransaction: rec }),
+  wallet: (rec) => openWalletModal(rec),
+  debt: (rec) => openDebtModal(rec),
+  receivable: (rec) => openDebtModal(rec),
+  savings: (rec) => openGoalModal(rec),
+  investment: (rec) => openInvestmentModal(rec),
+  keptAccount: (rec) => openAccountModal(rec),
+};
+
+function resultRowHtml(item, i) {
   return `
-    <button type="button" class="search-result" data-view="${item.view}">
-      <span class="badge badge-accent search-result-badge">${tr(TYPE_LABELS[item.type])}</span>
-      <span class="search-result-body">
-        <span class="search-result-title">${escapeHtml(item.title)}</span>
-        <span class="search-result-sub">${escapeHtml(item.sub)}</span>
-      </span>
-      ${item.amount ? `<span class="search-result-amount">${escapeHtml(item.amount)}</span>` : ''}
-    </button>`;
+    <div class="search-result-row">
+      <button type="button" class="search-result" data-index="${i}" title="${escapeHtml(tr(EDITORS[item.type] ? 'Modifier' : 'Ouvrir dans son écran'))}">
+        <span class="badge badge-accent search-result-badge">${tr(TYPE_LABELS[item.type])}</span>
+        <span class="search-result-body">
+          <span class="search-result-title">${escapeHtml(item.title)}</span>
+          <span class="search-result-sub">${escapeHtml(item.sub)}</span>
+        </span>
+        ${item.amount ? `<span class="search-result-amount">${escapeHtml(item.amount)}</span>` : ''}
+      </button>
+      ${EDITORS[item.type] ? `<button type="button" class="icon-btn search-result-go" data-go-index="${i}" aria-label="${tr('Ouvrir dans son écran')}" title="${tr('Ouvrir dans son écran')}">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M14 3v2h3.6l-9.3 9.3 1.4 1.4L19 6.4V10h2V3h-7ZM5 5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5h-2v5H5V7h5V5H5Z"/></svg>
+      </button>` : ''}
+    </div>`;
 }
 
 export function openGlobalSearch() {
@@ -182,9 +208,11 @@ export function openGlobalSearch() {
     </div>`;
   root.appendChild(backdrop);
 
+  let offDataChanged = () => {};
   function close() {
     backdrop.remove();
     document.removeEventListener('keydown', onKey);
+    offDataChanged();
   }
   function onKey(e) { if (e.key === 'Escape') close(); }
   backdrop.addEventListener('click', (e) => { if (e.target === backdrop) close(); });
@@ -202,6 +230,7 @@ export function openGlobalSearch() {
   const dateFromEl = backdrop.querySelector('#search-date-from');
   const dateToEl = backdrop.querySelector('#search-date-to');
   let index = null;
+  let shown = []; // résultats actuellement affichés (l'attribut data-index y renvoie)
 
   backdrop.querySelector('#search-filters-toggle').addEventListener('click', () => {
     filtersBar.hidden = !filtersBar.hidden;
@@ -248,20 +277,50 @@ export function openGlobalSearch() {
     // garde, index.filter() plantait avec un TypeError (index encore null). Le .then() qui peuple
     // index relance runSearch() une fois prêt, donc la requête déjà tapée n'est pas perdue.
     if (!index) return;
-    const matches = index.filter((it) => norm(it.haystack).includes(q) && passesAdvancedFilters(it)).slice(0, 40);
-    resultsEl.innerHTML = matches.length
-      ? matches.map(resultRowHtml).join('')
+    shown = index.filter((it) => norm(it.haystack).includes(q) && passesAdvancedFilters(it)).slice(0, 40);
+    resultsEl.innerHTML = shown.length
+      ? shown.map(resultRowHtml).join('')
       : `<div class="empty-state">${tr('Aucun résultat.')}</div>`;
   }, 120);
 
   input.addEventListener('input', runSearch);
   [walletEl, categoryEl, typeEl].forEach((el) => el.addEventListener('change', runSearch));
   [amountMinEl, amountMaxEl, dateFromEl, dateToEl].forEach((el) => el.addEventListener('input', runSearch));
-  resultsEl.addEventListener('click', (e) => {
+  resultsEl.addEventListener('click', async (e) => {
+    const go = e.target.closest('.search-result-go');
+    if (go) {
+      const item = shown[Number(go.dataset.goIndex)];
+      if (!item) return;
+      close();
+      goToView(item.view);
+      return;
+    }
     const btn = e.target.closest('.search-result');
     if (!btn) return;
-    close();
-    goToView(btn.dataset.view);
+    const item = shown[Number(btn.dataset.index)];
+    if (!item) return;
+    const edit = EDITORS[item.type];
+    if (!edit) { close(); goToView(item.view); return; }
+    const record = (await dbGetAll(item.store)).find((r) => r.id === item.id);
+    if (!record) {
+      // Supprimé entre-temps : on rafraîchit la liste plutôt que d'ouvrir un formulaire vide.
+      index = await collectSearchIndex();
+      runSearch();
+      return;
+    }
+    edit(record);
+  });
+
+  // Après une modification (ou suppression) faite depuis un résultat, la liste se met à jour toute seule.
+  let refreshSeq = 0;
+  offDataChanged = bus.on(EVENTS.DATA_CHANGED, async () => {
+    // La modale peut avoir été retirée sans passer par close() (Ctrl+K pressé à nouveau).
+    if (!backdrop.isConnected) { offDataChanged(); return; }
+    const seq = ++refreshSeq;
+    const items = await collectSearchIndex();
+    if (seq !== refreshSeq || !backdrop.isConnected) return;
+    index = items;
+    runSearch();
   });
 
   collectSearchIndex().then((items) => { index = items; runSearch(); });
