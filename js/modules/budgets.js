@@ -14,7 +14,7 @@ import {
 } from '../utils.js';
 import { notifyDataChanged } from '../state.js';
 import { t } from '../i18n.js';
-import { icon as svgIcon, CATEGORY_ICON_KEYS, DEFAULT_CATEGORY_LOOK } from '../icons.js';
+import { icon as svgIcon, CATEGORY_ICON_KEYS, categoryLook } from '../icons.js';
 
 const EDIT_ICON = svgIcon('edit', 16);
 const DELETE_ICON = svgIcon('trash', 16);
@@ -28,16 +28,6 @@ const CATEGORY_ICONS = Object.fromEntries(CATEGORY_ICON_KEYS.map((k) => [k, svgI
 const CATEGORY_COLORS = ['#1f5fa6', '#2d8a7a', '#c9a24a', '#b3382c', '#6a5f9e', '#7b8794', '#4f8a3c', '#b9663a'];
 const DEFAULT_CATEGORY_ICON = 'tag';
 const DEFAULT_CATEGORY_COLOR = CATEGORY_COLORS[0];
-
-/** Icône et couleur d'une catégorie. Celles créées avant l'arrivée des icônes (sans icône ni couleur) prennent
-    l'apparence de leur catégorie par défaut d'après leur nom (français ou traduit) — rien n'est réécrit en base. */
-function categoryLook(cat) {
-  const byName = Object.entries(DEFAULT_CATEGORY_LOOK).find(([fr]) => cat.name === fr || cat.name === t(fr));
-  return {
-    icon: CATEGORY_ICONS[cat.icon] ? cat.icon : (byName ? byName[1].icon : DEFAULT_CATEGORY_ICON),
-    color: cat.color || (byName ? byName[1].color : DEFAULT_CATEGORY_COLOR),
-  };
-}
 
 let activeTab = 'monthly';
 let monthKey = currentMonthKey();

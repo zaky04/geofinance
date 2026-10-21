@@ -11,6 +11,7 @@ import { getSetting } from '../db.js';
 // silencieusement à l'intérieur de cette fonction (t('Sans catégorie') appellerait alors la
 // transaction comme une fonction au lieu de traduire, TypeError immédiat).
 import { t as tr } from '../i18n.js';
+import { icon as svgIcon, knownCategoryLook } from '../icons.js';
 
 export const DASHBOARD_PANEL_DEFAULTS = { watchCategories: true, upcomingBills: true, charts: true, recentTransactions: true, safeToSpend: true, netWorth: true, debtsBalance: true };
 export const BUDGET_ALERT_THRESHOLD_DEFAULTS = { warn: 70, danger: 90 };
@@ -67,6 +68,14 @@ function renderAlerts(budgetRows, thresholds, unconfirmedRates) {
   }
 }
 
+/** Pastille de la ligne : icône et couleur de la catégorie quand elle en a une, sinon la flèche entrée/sortie/virement. */
+function txIconHtml(t) {
+  const look = t.type !== 'transfer' ? knownCategoryLook(t.category) : null;
+  if (!look) return `<div class="tx-icon">${TX_ICONS[t.type] || ''}</div>`;
+  const color = escapeHtml(look.color);
+  return `<div class="tx-icon" style="color:${color};background:${color}22;">${svgIcon(look.icon, 18)}</div>`;
+}
+
 function txRowHtml(t) {
   const isTransfer = t.type === 'transfer';
   const title = isTransfer
@@ -80,7 +89,7 @@ function txRowHtml(t) {
 
   return `
     <div class="tx-row">
-      <div class="tx-icon">${TX_ICONS[t.type] || ''}</div>
+      ${txIconHtml(t)}
       <div class="tx-main">
         <div class="tx-title">${escapeHtml(title)}</div>
         <div class="tx-sub">${sub}</div>

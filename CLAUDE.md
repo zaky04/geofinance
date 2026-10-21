@@ -2363,6 +2363,30 @@ portée ici sans toucher à la marque : le nom, le logo et les icônes d'install
 Vérifié (port 8124) : clair, sombre, mobile, aucune erreur console, `test/ledger.test.html` **35/35**, 4 onglets de Rapports (0/4/3/0 canvas),
 3 graphiques sur le tableau de bord, polices chargées sans requête externe. Rien n'est commité.
 
+### 21 octobre 2026 (suite) — Refonte visuelle, lot 4 : saisie, transactions, mobile, cartes (`CACHE_VERSION` `v98`)
+
+Suite de l'audit de réverification (points 1 à 5), appliqué aux deux dépôts.
+- **Icône de catégorie dans les transactions** : la liste (`transactions.js`) et les « transactions récentes » (`dashboard.js`) montrent l'icône et
+  la couleur de la catégorie (`txIconHtml`) ; flèche entrée/sortie/virement en repli quand la catégorie n'a ni icône ni apparence par défaut.
+  `categoryLook()` et `knownCategoryLook()` vivent maintenant dans `icons.js` (budgets.js les importe, sa copie locale est supprimée) ;
+  `icons.js` importe `t` de `i18n.js` — cycle `db → icons → i18n → db` sans danger (rien n'est évalué à l'import hors constantes).
+- **Saisie express centrée sur le montant** : champ grand, centré, en serif, devise du portefeuille à droite (`#qa-amount-currency`), placeholder
+  « 0 » pour XOF/XAF/JPY (`ZERO_DECIMAL_CURRENCIES`, désormais exporté de `utils.js`), focus à l'ouverture (hors modification). La catégorie n'est
+  plus préremplie avec la première de la liste : « Choisir une catégorie » est obligatoire (sauf pour modifier une transaction déjà sans catégorie) ;
+  les lignes du mode « diviser » gardent des options sans cette entrée. Plus de « ✦ » / « ★ » / « ☆ » dans les favoris (icône étoile ajoutée).
+- **Barre du haut mobile** : le bouton « + Saisie express » est masqué ≤ 900 px (le « + » de la barre du bas fait la même chose) — les titres ne sont
+  plus tronqués. En-têtes de vue ≤ 480 px : actions secondaires sur une ligne, action principale pleine largeur dessous.
+- **Menu « Plus » avec icônes** (`openMoreSheet`, `VIEW_ICONS` dans `app.js`).
+- **Actions des cartes** : nouveau `js/card-actions.js` (dans `APP_SHELL`) — toute `.summary-card .card-actions` avec ≥ 3 icônes garde UNE action
+  visible avec son libellé (Rembourser > Historique > Modifier, `PRIMARY_ACTIONS`) et range le reste dans un menu « ⋯ » (libellés, « Supprimer » en
+  rouge). Les boutons sont déplacés, pas recréés : écouteurs et `data-action` des modules continuent de marcher ; un `MutationObserver` traite les
+  cartes à chaque redessin. Ne touche ni les lignes de transaction ni les cartes à 2 icônes (portefeuilles, tontines).
+Vérifié : mobile 375 px (Djignan et gratuite), validation du formulaire (catégorie vide refusée, enregistrement avec catégorie OK), menu de carte puis
+« Modifier » qui ouvre bien le formulaire et referme le menu, aucune erreur console, tests 64/64 + 117/117 (Djignan) et 35/35 (gratuite).
+Noté mais non traité : en ouvrant Paramètres la console signale `Framing 'https://geofinance-backup.firebaseapp.com/' violates ... frame-src
+https://accounts.google.com` (le SDK Firebase charge un iframe d'authentification que la CSP ne prévoit pas) — sans effet visible sur la connexion
+Google actuelle, à examiner si la connexion par redirection pose problème.
+
 ## 7. Pistes prioritaires non traitées
 
 Par ordre d'impact estimé, à valider avec l'auteur avant de s'y attaquer :

@@ -478,9 +478,12 @@
           <button type="button" class="segmented-btn" data-value="income" data-i18n="Recette">Recette</button>
           <button type="button" class="segmented-btn" data-value="transfer" data-i18n="Transfert">Transfert</button>
         </div>
-        <div class="form-row" data-field="amountRow">
+        <div class="form-row amount-hero" data-field="amountRow">
           <label data-i18n="Montant">Montant</label>
-          <input type="number" step="0.01" min="0" name="amount" required inputmode="decimal" placeholder="0.00">
+          <div class="amount-hero-field">
+            <input type="number" step="0.01" min="0" name="amount" required inputmode="decimal" placeholder="0.00" autocomplete="off">
+            <span class="amount-hero-currency" id="qa-amount-currency"></span>
+          </div>
         </div>
         <div class="form-row">
           <label data-i18n="Portefeuille">Portefeuille</label>

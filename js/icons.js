@@ -6,6 +6,8 @@
    la couleur suit `currentColor`, donc le thème et l'état actif du menu.
    ========================================================================== */
 
+import { t } from './i18n.js';
+
 export const ICON_PATHS = {
   // ---------- Sections (menu latéral, barre du bas) ----------
   dashboard: '<rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/>',
@@ -75,6 +77,7 @@ export const ICON_PATHS = {
   gift: '<rect x="3.5" y="9" width="17" height="4" rx="1"/><path d="M5 13v7h14v-7M12 9v11"/><path d="M12 9c-2.7 0-4.5-1-4.5-2.7S9 3.8 10.4 5C11.3 5.8 12 7.5 12 9Zm0 0c2.7 0 4.5-1 4.5-2.7S15 3.8 13.6 5C12.7 5.8 12 7.5 12 9Z"/>',
   repeat: '<path d="M4 11V9.5A2.5 2.5 0 0 1 6.5 7H19M16 4l3 3-3 3"/><path d="M20 13v1.5a2.5 2.5 0 0 1-2.5 2.5H5M8 20l-3-3 3-3"/>',
   bolt: '<path d="M13 3 5.5 13.5H11L10 21l8.5-11H13V3Z"/>',
+  star: '<path d="M12 3.8l2.5 5.2 5.7.8-4.1 4 1 5.7-5.1-2.7-5.1 2.7 1-5.7-4.1-4 5.7-.8L12 3.8Z"/>',
 };
 
 /** <svg> d'une icône du jeu (inconnue : étiquette). Trait en `currentColor`, pas d'aplat. */
@@ -99,3 +102,20 @@ export const DEFAULT_CATEGORY_LOOK = {
   'Abonnements': { icon: 'repeat', color: '#6a5f9e' },
   'Autres dépenses': { icon: 'tag', color: '#7b8794' },
 };
+
+const DEFAULT_ACCENT = '#1f5fa6';
+
+/** Icône et couleur d'une catégorie SI elle en a une (choisie à la main, ou catégorie par défaut reconnue par son nom,
+    en français ou traduit) ; sinon null — l'appelant garde alors son repli (ex. la flèche entrée/sortie d'une ligne). */
+export function knownCategoryLook(cat) {
+  if (!cat) return null;
+  const byName = Object.entries(DEFAULT_CATEGORY_LOOK).find(([fr]) => cat.name === fr || cat.name === t(fr));
+  const hasIcon = CATEGORY_ICON_KEYS.includes(cat.icon);
+  if (!hasIcon && !byName) return null;
+  return { icon: hasIcon ? cat.icon : byName[1].icon, color: cat.color || (byName ? byName[1].color : DEFAULT_ACCENT) };
+}
+
+/** Comme knownCategoryLook, avec l'étiquette bleue en repli. */
+export function categoryLook(cat) {
+  return knownCategoryLook(cat) || { icon: 'tag', color: (cat && cat.color) || DEFAULT_ACCENT };
+}

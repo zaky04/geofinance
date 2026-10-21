@@ -119,7 +119,7 @@ export function formatDate(dateStr, options = { day: '2-digit', month: 'short', 
 // de décimales à partir des sous-unités propres à la devise, qui vaut déjà 0 pour XOF/XAF/JPY —
 // le problème n'est donc pas le minimum par défaut mais le maximum fixé à 2 pour toutes les devises
 // sans distinction, qui laisse passer jusqu'à 2 décimales même quand la devise n'en a normalement pas.
-const ZERO_DECIMAL_CURRENCIES = new Set(['XOF', 'XAF', 'JPY']);
+export const ZERO_DECIMAL_CURRENCIES = new Set(['XOF', 'XAF', 'JPY']);
 const currencyFormatters = new Map();
 export function formatCurrency(amount, currency = 'EUR') {
   const locale = intlLocale();

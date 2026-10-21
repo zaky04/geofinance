@@ -16,6 +16,8 @@ import { seedDemoData, clearDemoData } from './demo-data.js';
 import { maybeShowInstallPrompt } from './install-prompt.js';
 import { checkAndNotify, isNotificationSupported, requestNotificationPermission } from './notifications.js';
 import { initI18n, t } from './i18n.js';
+import { icon as svgIcon } from './icons.js';
+import { initCardActions } from './card-actions.js';
 
 import { renderDashboard, initDashboardModule, DASHBOARD_PANEL_DEFAULTS } from './modules/dashboard.js';
 import { renderWallets, initWalletsModule, openWalletModal } from './modules/wallets.js';
@@ -47,6 +49,11 @@ const VIEW_RENDERERS = {
   shared: renderShared,
   keptAccounts: renderKeptAccounts,
   settings: renderSettings,
+};
+
+const VIEW_ICONS = {
+  wallets: 'wallet', savings: 'jar', investments: 'chart', debts: 'ledger', tools: 'wrench', reports: 'report',
+  shared: 'people', keptAccounts: 'key', tontines: 'circle', settings: 'sliders',
 };
 
 const VIEW_TITLES = {
@@ -104,7 +111,7 @@ async function openMoreSheet() {
   const disabledViews = new Set(moduleStates.filter(([, enabled]) => !enabled).map(([view]) => view));
   const views = MORE_VIEWS.filter((v) => !disabledViews.has(v));
   const modal = openModal(
-    views.map((v) => `<button type="button" class="nav-item" style="width:100%;" data-view-target="${v}">${escapeHtml(t(VIEW_TITLES[v]))}</button>`).join(''),
+    views.map((v) => `<button type="button" class="nav-item" style="width:100%;" data-view-target="${v}">${svgIcon(VIEW_ICONS[v] || 'tag', 20)}<span>${escapeHtml(t(VIEW_TITLES[v]))}</span></button>`).join(''),
     { title: 'Plus' }
   );
   modal.el.querySelectorAll('[data-view-target]').forEach((btn) => {
@@ -602,6 +609,7 @@ async function onUnlocked() {
     await migrateDebtTransactionCategories();
 
     initDashboardModule();
+    initCardActions();
     initWalletsModule();
     initTransactionsModule();
     initBudgetsModule();

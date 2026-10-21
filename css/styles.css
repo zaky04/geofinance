@@ -831,6 +831,52 @@ body { font-size: 16px; line-height: 1.45; }
 .hero-card-value { font-weight: 600; font-variant-numeric: lining-nums tabular-nums; }
 .nav-item { font-weight: 600; font-size: 15px; }
 
+/* ==========================================================================
+   Lot 4 : montant en vedette dans la saisie express, menu « ⋯ » des cartes, barre du haut mobile.
+   ========================================================================== */
+/* Saisie express : le montant est le champ principal, grand et centré, devise à côté. */
+.modal-card .segmented { margin-bottom: 16px; }
+.amount-hero { align-items: center; margin-bottom: 18px; }
+.amount-hero label { text-transform: none; }
+.amount-hero-field { position: relative; width: 100%; }
+.form-row.amount-hero input {
+  width: 100%; text-align: center; font-family: var(--font-serif); font-size: 36px; font-weight: 600; line-height: 1.1;
+  padding: 16px 64px 16px 64px; font-variant-numeric: lining-nums tabular-nums;
+}
+.form-row.amount-hero input::placeholder { color: var(--text-faint); opacity: .6; }
+.amount-hero-currency {
+  position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+  font-size: 13px; font-weight: 700; color: var(--text-muted); pointer-events: none;
+}
+
+/* Cartes : une action visible + menu « ⋯ » (voir js/card-actions.js). */
+.summary-card .card-actions { position: relative; align-items: center; }
+.summary-card .card-actions .card-primary {
+  width: auto; height: 34px; padding: 0 12px; gap: 6px; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 700; color: var(--accent); background: var(--accent-soft);
+}
+.summary-card .card-actions .card-primary:hover { background: var(--accent-soft); color: var(--accent-hover); }
+.card-menu {
+  position: absolute; top: calc(100% + 4px); right: 0; z-index: 40; min-width: 210px;
+  display: flex; flex-direction: column; padding: 6px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-md);
+}
+.card-menu[hidden] { display: none; }
+.card-menu .card-menu-item {
+  width: 100%; height: auto; min-height: 40px; padding: 8px 12px; border-radius: var(--radius-sm);
+  justify-content: flex-start; gap: 12px; font-size: 14px; font-weight: 600; color: var(--text); text-align: left;
+}
+.card-menu .card-menu-item:hover { background: var(--surface-alt); }
+.card-menu .card-menu-item.is-danger { color: var(--neg); }
+@media (max-width: 900px) {
+  .card-menu .card-menu-item { width: 100%; height: auto; min-height: 44px; }
+  /* Sur mobile le gros « + » de la barre du bas ouvre déjà la saisie express : pas de second bouton, plus de place pour le titre. */
+  #quick-add-btn { display: none; }
+  .summary-card .card-actions .card-primary { height: 40px; }
+  /* En-tête de vue : les actions secondaires sur une ligne, l'action principale en pleine largeur dessous. */
+  .view-header .btn-ghost { flex: 1 1 0; min-width: 0; padding: 10px 6px; font-size: 13px; white-space: normal; line-height: 1.2; }
+}
+
 /* Réponse à une question en langage naturel (recherche globale, voir nl-query.js) */
 .search-answer { background: var(--accent-soft); color: var(--text); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
 .search-answer-text { font-weight: 700; font-size: 14.5px; }
