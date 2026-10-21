@@ -27,12 +27,12 @@ async function renderWealthTrajectoryTool() {
   const defaultMonthlySavings = Math.max(0, Math.round(summary.netSavings));
 
   const body = `
-    <div class="filters-bar" style="margin-bottom:14px;">
-      <div class="form-row" style="margin:0;"><label>${tr('Épargne mensuelle ({currency})', { currency: escapeHtml(currency) })}</label><input type="number" id="wt-savings" value="${defaultMonthlySavings}" step="10"></div>
-      <div class="form-row" style="margin:0;"><label>${tr('Rendement annuel attendu (%)')}</label><input type="number" id="wt-return" value="4" step="0.1"></div>
+    <div class="filters-bar mb-14">
+      <div class="form-row m-0"><label>${tr('Épargne mensuelle ({currency})', { currency: escapeHtml(currency) })}</label><input type="number" id="wt-savings" value="${defaultMonthlySavings}" step="10"></div>
+      <div class="form-row m-0"><label>${tr('Rendement annuel attendu (%)')}</label><input type="number" id="wt-return" value="4" step="0.1"></div>
     </div>
     <div id="wt-results" class="grid-cards"></div>
-    <p style="font-size:12px;color:var(--text-faint);margin-top:10px;">${tr('Projection à partir du patrimoine net actuel ({amount}), en supposant un rendement composé constant et une épargne mensuelle régulière.', { amount: formatCurrency(total, currency) })}</p>`;
+    <p class="fs-12 c-faint mt-10">${tr('Projection à partir du patrimoine net actuel ({amount}), en supposant un rendement composé constant et une épargne mensuelle régulière.', { amount: formatCurrency(total, currency) })}</p>`;
 
   const html = panel(tr("Simulateur de trajectoire patrimoniale (1, 3, 5 ans)"), body, 'tool-wealth-trajectory');
 
@@ -62,10 +62,10 @@ async function renderWealthTrajectoryTool() {
 async function renderInflationTool() {
   const { baseCurrency } = await getExchangeRatesSafe();
   const body = `
-    <div class="filters-bar" style="margin-bottom:14px;">
-      <div class="form-row" style="margin:0;"><label>${tr('Montant ({currency})', { currency: escapeHtml(baseCurrency) })}</label><input type="number" id="inf-amount" value="1000" step="10"></div>
-      <div class="form-row" style="margin:0;"><label>${tr('Inflation annuelle (%)')}</label><input type="number" id="inf-rate" value="3" step="0.1"></div>
-      <div class="form-row" style="margin:0;"><label>${tr('Durée (années)')}</label><input type="number" id="inf-years" value="10" step="1"></div>
+    <div class="filters-bar mb-14">
+      <div class="form-row m-0"><label>${tr('Montant ({currency})', { currency: escapeHtml(baseCurrency) })}</label><input type="number" id="inf-amount" value="1000" step="10"></div>
+      <div class="form-row m-0"><label>${tr('Inflation annuelle (%)')}</label><input type="number" id="inf-rate" value="3" step="0.1"></div>
+      <div class="form-row m-0"><label>${tr('Durée (années)')}</label><input type="number" id="inf-years" value="10" step="1"></div>
     </div>
     <div id="inf-results"></div>`;
   const html = panel(tr("Calculateur d'inflation & pouvoir d'achat"), body, 'tool-inflation');
@@ -102,9 +102,9 @@ async function renderEmergencyFundTool() {
   const { total: liquid, currency } = await computeLiquidBalance();
 
   const body = `
-    <div class="filters-bar" style="margin-bottom:14px;">
-      <div class="form-row" style="margin:0;"><label>${tr('Dépenses mensuelles moyennes ({currency})', { currency: escapeHtml(currency) })}</label><input type="number" id="ef-expenses" value="${Math.round(avgExpenses)}" step="10"></div>
-      <div class="form-row" style="margin:0;"><label>${tr('Mois de couverture souhaités')}</label>
+    <div class="filters-bar mb-14">
+      <div class="form-row m-0"><label>${tr('Dépenses mensuelles moyennes ({currency})', { currency: escapeHtml(currency) })}</label><input type="number" id="ef-expenses" value="${Math.round(avgExpenses)}" step="10"></div>
+      <div class="form-row m-0"><label>${tr('Mois de couverture souhaités')}</label>
         <select id="ef-months"><option value="3">${tr('{n} mois', { n: 3 })}</option><option value="6" selected>${tr('{n} mois', { n: 6 })}</option><option value="12">${tr('{n} mois', { n: 12 })}</option></select>
       </div>
     </div>
@@ -123,7 +123,7 @@ async function renderEmergencyFundTool() {
       <div class="stat-row"><span class="stat-row-label">${tr('Liquidités actuelles (portefeuilles)')}</span><span>${formatCurrency(liquid, currency)}</span></div>
       <div class="stat-row"><span class="stat-row-label">${tr('Objectif ({months} mois)', { months })}</span><span>${formatCurrency(target, currency)}</span></div>
       <div class="stat-row"><span class="stat-row-label">${tr('Autonomie actuelle')}</span><span class="badge ${autonomyMonths >= months ? 'badge-pos' : 'badge-neg'}">${tr('{n} mois', { n: autonomyMonths.toFixed(1) })}</span></div>
-      ${gap > 0 ? `<div class="stat-row"><span class="stat-row-label">${tr("Montant à épargner pour atteindre l'objectif")}</span><span>${formatCurrency(gap, currency)}</span></div>` : `<div class="alert alert-info" style="margin-top:8px;">${tr("Objectif de fonds d'urgence atteint !")}</div>`}`;
+      ${gap > 0 ? `<div class="stat-row"><span class="stat-row-label">${tr("Montant à épargner pour atteindre l'objectif")}</span><span>${formatCurrency(gap, currency)}</span></div>` : `<div class="alert alert-info mt-8">${tr("Objectif de fonds d'urgence atteint !")}</div>`}`;
   }
   return { html, wire: () => { document.getElementById('tool-emergency-fund').addEventListener('input', compute); compute(); } };
 }
@@ -142,16 +142,16 @@ async function renderPurchaseImpactTool() {
   const summary = await computeMonthSummary(currentMonthKey());
 
   const body = `
-    <div class="filters-bar" style="margin-bottom:14px;">
-      <div class="form-row" style="margin:0;"><label>${tr("Montant de l'achat ({currency})", { currency: escapeHtml(currency) })}</label><input type="number" id="pi-amount" value="1000" step="10" min="0"></div>
-      <div class="form-row" style="margin:0;"><label>${tr('Mode de financement')}</label>
+    <div class="filters-bar mb-14">
+      <div class="form-row m-0"><label>${tr("Montant de l'achat ({currency})", { currency: escapeHtml(currency) })}</label><input type="number" id="pi-amount" value="1000" step="10" min="0"></div>
+      <div class="form-row m-0"><label>${tr('Mode de financement')}</label>
         <select id="pi-mode">
           <option value="cash">${tr('Comptant (sur liquidités)')}</option>
           <option value="credit">${tr('Crédit / paiement échelonné')}</option>
         </select>
       </div>
-      <div class="form-row" id="pi-duration-row" style="margin:0;display:none;"><label>${tr('Durée (mois)')}</label><input type="number" id="pi-duration" value="12" min="1" step="1"></div>
-      <div class="form-row" id="pi-rate-row" style="margin:0;display:none;"><label>${tr("Taux d'intérêt annuel % (optionnel)")}</label><input type="number" id="pi-rate" value="0" min="0" step="0.1"></div>
+      <div class="form-row m-0" id="pi-duration-row" style="display:none;"><label>${tr('Durée (mois)')}</label><input type="number" id="pi-duration" value="12" min="1" step="1"></div>
+      <div class="form-row m-0" id="pi-rate-row" style="display:none;"><label>${tr("Taux d'intérêt annuel % (optionnel)")}</label><input type="number" id="pi-rate" value="0" min="0" step="0.1"></div>
     </div>
     <div id="pi-results"></div>`;
   const html = panel(tr("Simulateur d'impact d'un achat important"), body, 'tool-purchase-impact');
@@ -174,8 +174,8 @@ async function renderPurchaseImpactTool() {
         <div class="stat-row"><span class="stat-row-label">${tr('Liquidités après achat')}</span><span class="badge ${newLiquid >= 0 ? 'badge-pos' : 'badge-neg'}">${formatCurrency(newLiquid, currency)}</span></div>
         <div class="stat-row"><span class="stat-row-label">${tr("Autonomie du fonds d'urgence")}</span><span>${tr('{n} mois', { n: currentAutonomy.toFixed(1) })} → <span class="badge ${newAutonomy >= 3 ? 'badge-pos' : 'badge-neg'}">${tr('{n} mois', { n: newAutonomy.toFixed(1) })}</span></span></div>
         ${newLiquid < 0
-          ? `<div class="alert alert-danger" style="margin-top:8px;">${tr('Cet achat dépasserait vos liquidités actuelles.')}</div>`
-          : (newAutonomy < 3 ? `<div class="alert alert-warn" style="margin-top:8px;">${tr("Votre fonds d'urgence passerait sous 3 mois de couverture.")}</div>` : '')}`;
+          ? `<div class="alert alert-danger mt-8">${tr('Cet achat dépasserait vos liquidités actuelles.')}</div>`
+          : (newAutonomy < 3 ? `<div class="alert alert-warn mt-8">${tr("Votre fonds d'urgence passerait sous 3 mois de couverture.")}</div>` : '')}`;
     } else {
       const months = parseFloat(el.querySelector('#pi-duration').value) || 1;
       const rate = parseFloat(el.querySelector('#pi-rate').value) || 0;
@@ -188,7 +188,7 @@ async function renderPurchaseImpactTool() {
         <div class="stat-row"><span class="stat-row-label">${tr('Coût total')}</span><span>${formatCurrency(totalCost, currency)}${totalInterest > 0.5 ? ` ${tr("(dont {amount} d'intérêts)", { amount: formatCurrency(totalInterest, currency) })}` : ''}</span></div>
         <div class="stat-row"><span class="stat-row-label">${tr('Épargne nette mensuelle actuelle')}</span><span>${formatCurrency(summary.netSavings, currency)}</span></div>
         <div class="stat-row"><span class="stat-row-label">${tr('Épargne nette mensuelle après mensualité')}</span><span class="badge ${newNetSavings >= 0 ? 'badge-pos' : 'badge-neg'}">${formatCurrency(newNetSavings, currency)}</span></div>
-        ${newNetSavings < 0 ? `<div class="alert alert-danger" style="margin-top:8px;">${tr('Cette mensualité dépasserait votre épargne nette actuelle : vos dépenses excéderaient vos revenus.')}</div>` : ''}`;
+        ${newNetSavings < 0 ? `<div class="alert alert-danger mt-8">${tr('Cette mensualité dépasserait votre épargne nette actuelle : vos dépenses excéderaient vos revenus.')}</div>` : ''}`;
     }
     el.querySelector('#pi-results').innerHTML = resultsHtml;
   }
@@ -209,14 +209,14 @@ async function renderEnvelopeTool() {
   const income = Math.round(summary.income) || 0;
 
   const body = `
-    <div class="filters-bar" style="margin-bottom:14px;">
-      <div class="form-row" style="margin:0;"><label>${tr('Revenu mensuel ({currency})', { currency: escapeHtml(summary.currency) })}</label><input type="number" id="env-income" value="${income}" step="10"></div>
-      <div class="form-row" style="margin:0;"><label>${tr('% Besoins essentiels')}</label><input type="number" id="env-needs" value="50" step="1"></div>
-      <div class="form-row" style="margin:0;"><label>${tr('% Envies / loisirs')}</label><input type="number" id="env-wants" value="30" step="1"></div>
-      <div class="form-row" style="margin:0;"><label>${tr('% Épargne / dettes')}</label><input type="number" id="env-savings" value="20" step="1"></div>
+    <div class="filters-bar mb-14">
+      <div class="form-row m-0"><label>${tr('Revenu mensuel ({currency})', { currency: escapeHtml(summary.currency) })}</label><input type="number" id="env-income" value="${income}" step="10"></div>
+      <div class="form-row m-0"><label>${tr('% Besoins essentiels')}</label><input type="number" id="env-needs" value="50" step="1"></div>
+      <div class="form-row m-0"><label>${tr('% Envies / loisirs')}</label><input type="number" id="env-wants" value="30" step="1"></div>
+      <div class="form-row m-0"><label>${tr('% Épargne / dettes')}</label><input type="number" id="env-savings" value="20" step="1"></div>
     </div>
     <div id="env-results" class="grid-cards"></div>
-    <p id="env-warning" class="alert alert-warn" style="display:none;margin-top:10px;">${tr('Les pourcentages ne totalisent pas 100%.')}</p>`;
+    <p id="env-warning" class="alert alert-warn mt-10" style="display:none;">${tr('Les pourcentages ne totalisent pas 100%.')}</p>`;
   const html = panel(tr('Système de budgets par enveloppes (méthode 50/30/20)'), body, 'tool-envelope');
 
   function compute() {
@@ -247,9 +247,9 @@ async function renderEnvelopeTool() {
 async function renderSubscriptionsTool() {
   const { candidates, totalMonthly, currency } = await detectRecurringCandidates();
   const body = candidates.length
-    ? `<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">${tr('Détectés par similarité de note + montant sur au moins 2 mois distincts — vérifiez avant de les déclarer en Récurrences (Budgets &gt; Récurrences) pour un suivi précis.')}</p>
-       ${candidates.map((c) => `<div class="stat-row"><span class="stat-row-label">${escapeHtml(c.note)} <span class="badge" style="margin-left:6px;">${tr('{n} mois', { n: c.occurrences })}</span></span><span>${tr('{amount}/mois', { amount: formatCurrency(c.avgAmount, currency) })}</span></div>`).join('')}
-       <div class="stat-row" style="border-top:2px solid var(--border);margin-top:6px;padding-top:10px;font-weight:700;"><span class="stat-row-label">${tr('Total mensuel estimé')}</span><span>${formatCurrency(totalMonthly, currency)}</span></div>`
+    ? `<p class="fs-13 c-muted mb-10">${tr('Détectés par similarité de note + montant sur au moins 2 mois distincts — vérifiez avant de les déclarer en Récurrences (Budgets &gt; Récurrences) pour un suivi précis.')}</p>
+       ${candidates.map((c) => `<div class="stat-row"><span class="stat-row-label">${escapeHtml(c.note)} <span class="badge ml-6">${tr('{n} mois', { n: c.occurrences })}</span></span><span>${tr('{amount}/mois', { amount: formatCurrency(c.avgAmount, currency) })}</span></div>`).join('')}
+       <div class="stat-row mt-6 fw-700" style="border-top:2px solid var(--border);padding-top:10px;"><span class="stat-row-label">${tr('Total mensuel estimé')}</span><span>${formatCurrency(totalMonthly, currency)}</span></div>`
     : `<div class="empty-state">${tr('Aucun abonnement non déclaré détecté pour le moment.')}</div>`;
   const html = panel(tr('Abonnements & paiements récurrents détectés'), body);
   return { html, wire: () => {} };
@@ -291,7 +291,7 @@ async function renderAnomalyTool() {
     : `<div class="empty-state">${tr('Aucune anomalie détectée sur les 90 derniers jours.')}</div>`;
 
   const html = panel(tr("Analyse des habitudes & détection d'anomalies (90 derniers jours)"),
-    `<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">${tr('Moyenne journalière : {mean} · Écart-type : {stdev}. Un jour est signalé si ses dépenses dépassent la moyenne + 2 écarts-types.', { mean: formatCurrency(mean, baseCurrency), stdev: formatCurrency(stdev, baseCurrency) })}</p>${body}`);
+    `<p class="fs-13 c-muted mb-10">${tr('Moyenne journalière : {mean} · Écart-type : {stdev}. Un jour est signalé si ses dépenses dépassent la moyenne + 2 écarts-types.', { mean: formatCurrency(mean, baseCurrency), stdev: formatCurrency(stdev, baseCurrency) })}</p>${body}`);
   return { html, wire: () => {} };
 }
 

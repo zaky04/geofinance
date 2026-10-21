@@ -26,7 +26,7 @@ function participantRowHtml(p) {
         <div class="tx-title">${escapeHtml(p.name)} ${p.isMe ? `<span class="badge badge-accent">${t('Moi')}</span>` : ''}</div>
       </div>
       <div class="card-actions">
-        ${!p.isMe ? `<button type="button" class="btn btn-ghost" data-action="set-me" style="padding:4px 10px;font-size:12.5px;">${t('Définir comme moi')}</button>` : ''}
+        ${!p.isMe ? `<button type="button" class="btn btn-ghost fs-13" data-action="set-me" style="padding:4px 10px;">${t('Définir comme moi')}</button>` : ''}
         <button type="button" class="icon-btn" data-action="delete-participant" aria-label="${t('Supprimer')}" title="${t('Supprimer')}">${DELETE_ICON}</button>
       </div>
     </div>`;
@@ -35,10 +35,10 @@ function participantRowHtml(p) {
 async function renderParticipantsPanel(container) {
   const participants = await dbGetAll(STORES.PARTICIPANTS);
   container.innerHTML = `
-    <div class="panel" style="margin-bottom:16px;">
+    <div class="panel mb-16">
       <div class="panel-header"><h3>${t('Participants')}</h3></div>
       <form id="participant-form" class="filters-bar" style="align-items:flex-end;margin-bottom:${participants.length ? '10px' : '0'};">
-        <div class="form-row" style="margin:0;flex:1;min-width:160px;"><label>${t('Nom')}</label><input type="text" name="name" required maxlength="40" placeholder="${t('Ex: Awa')}"></div>
+        <div class="form-row m-0" style="flex:1;min-width:160px;"><label>${t('Nom')}</label><input type="text" name="name" required maxlength="40" placeholder="${t('Ex: Awa')}"></div>
         <button type="submit" class="btn btn-primary">${t('Ajouter')}</button>
       </form>
       ${participants.map(participantRowHtml).join('')}
@@ -108,14 +108,14 @@ function sharedExpenseFormHtml(participants, defaultCurrency, meParticipant) {
       </div>
       <div class="form-row"><label>${t('Réparti entre (parts égales)')}</label>
         ${participants.map((p) => `
-          <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;padding:4px 0;cursor:pointer;">
+          <label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;" class="fs-14">
             <input type="checkbox" name="splitAmong" value="${p.id}" ${meParticipant ? `data-is-me="${p.id === meParticipant.id}"` : ''} checked> ${escapeHtml(p.name)}
           </label>`).join('')}
       </div>
       <div class="form-row"><label>${t('Date')}</label><input type="date" name="date" value="${todayISO()}"></div>
       ${meParticipant ? `
       <div data-field="myShareFields">
-        <p style="font-size:12px;color:var(--text-muted);margin:0 0 10px;">${t('Votre part sera automatiquement ajoutée à vos transactions personnelles.')}</p>
+        <p style="margin:0 0 10px;" class="fs-12 c-muted">${t('Votre part sera automatiquement ajoutée à vos transactions personnelles.')}</p>
         <div class="form-row"><label>${t('Catégorie (ma part)')}</label><select name="categoryId"></select></div>
         <div class="form-row"><label>${t('Portefeuille (ma part)')}</label><select name="walletId"></select></div>
       </div>` : ''}
@@ -235,8 +235,8 @@ function computeBalances(expenses, participants) {
 function balancesPanelHtml(byCurrency, participants) {
   if (!byCurrency.size) return '';
   const sections = [...byCurrency.entries()].map(([currency, balances]) => `
-    <div style="margin-bottom:10px;">
-      <div style="font-size:12.5px;font-weight:700;color:var(--text-muted);margin-bottom:6px;">${escapeHtml(currency)}</div>
+    <div class="mb-10">
+      <div class="fs-13 fw-700 c-muted mb-6">${escapeHtml(currency)}</div>
       ${participants.map((p) => {
         const bal = balances.get(p.id) || 0;
         if (Math.abs(bal) < 0.005) return `<div class="stat-row"><span class="stat-row-label">${escapeHtml(p.name)}</span><span>${t('À jour')}</span></div>`;
@@ -244,7 +244,7 @@ function balancesPanelHtml(byCurrency, participants) {
         return `<div class="stat-row"><span class="stat-row-label">${escapeHtml(p.name)}</span><span class="badge ${bal > 0 ? 'badge-pos' : 'badge-neg'}">${label} · ${formatCurrency(Math.abs(bal), currency)}</span></div>`;
       }).join('')}
     </div>`).join('');
-  return `<div class="panel" style="margin-bottom:16px;"><div class="panel-header"><h3>${t('Soldes')}</h3></div>${sections}</div>`;
+  return `<div class="panel mb-16"><div class="panel-header"><h3>${t('Soldes')}</h3></div>${sections}</div>`;
 }
 
 /* ---------- Point d'entrée du module ---------- */

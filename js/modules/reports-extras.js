@@ -20,13 +20,13 @@ export async function healthScorePanelHtml(monthKey) {
   const health = await computeFinancialHealthScore(monthKey);
   const tier = scoreTier(health.score);
   return `
-    <div class="panel" style="margin-top:16px;">
+    <div class="panel mt-16">
       <div class="panel-header"><h3>${tr('Score de santé financière')}</h3></div>
-      <div style="display:flex;align-items:center;gap:18px;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:18px;" class="mb-14">
         <div style="width:76px;height:76px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:24px;font-weight:700;color:var(--on-accent);background:${tier.cls === 'pos' ? 'var(--pos)' : tier.cls === 'warn' ? 'var(--warn)' : 'var(--neg)'};">${health.score}</div>
         <div>
-          <div style="font-weight:700;font-size:15px;">${escapeHtml(tier.label)}</div>
-          <div style="font-size:12.5px;color:var(--text-muted);">${tr('Indicateur composite indicatif, pas un conseil personnalisé.')}</div>
+          <div class="fw-700 fs-15">${escapeHtml(tier.label)}</div>
+          <div class="fs-13 c-muted">${tr('Indicateur composite indicatif, pas un conseil personnalisé.')}</div>
         </div>
       </div>
       <div class="stat-row"><span class="stat-row-label">${tr("Taux d'épargne (mois)")}</span><span>${formatPercent(health.savingsRate * 100, 0)}</span></div>
@@ -66,13 +66,13 @@ export async function calendarPanelHtml(monthKey) {
   }
 
   return `
-    <div class="panel" style="margin-top:16px;" id="calendar-panel">
+    <div class="panel mt-16" id="calendar-panel">
       <div class="panel-header"><h3>${tr('Calendrier des dépenses')}</h3></div>
       <div class="calendar-grid calendar-grid-head">
         ${weekdayLabels().map((d) => `<div class="calendar-weekday">${d}</div>`).join('')}
       </div>
       <div class="calendar-grid">${cells}</div>
-      <div id="calendar-day-detail" style="margin-top:12px;"></div>
+      <div id="calendar-day-detail" class="mt-12"></div>
     </div>`;
 }
 
@@ -90,7 +90,7 @@ export function wireCalendarPanel(container, monthKey) {
       // elle-même — la liste ne correspondait plus au chiffre du dessus.
       const rows = (await getEnrichedTransactions({ monthKey })).filter((t) => t.date === date && t.type === 'expense' && !t.debtId);
       detail.innerHTML = rows.length
-        ? `<div class="tx-sub" style="margin-bottom:6px;">${formatDate(date)}</div>` + rows.map((t) => `
+        ? `<div class="tx-sub mb-6">${formatDate(date)}</div>` + rows.map((t) => `
             <div class="tx-row">
               <div class="tx-main">
                 <div class="tx-title">${escapeHtml(t.category?.name || tr('Sans catégorie'))}</div>

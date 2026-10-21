@@ -4,7 +4,7 @@
 
 import { formatCurrency, formatDate, formatPercent, escapeHtml, currentMonthKey, monthKeyOffset, percentage, budgetProgressClass } from '../utils.js';
 import { computeNetWorth, computeNetWorthHistory, computeNetWorthComposition, computeMonthSummary, computeExpensesByCategory, computeBudgetVsActual, computeMonthlyBudgetSummary, computeEndOfMonthForecast, getEnrichedTransactions, getUnconfirmedRates } from '../ledger.js';
-import { renderExpensesByCategoryChart, renderNetWorthTrendChart, renderBudgetVsActualChart } from '../charts.js';
+import { renderExpensesByCategoryChart, renderNetWorthTrendChart, renderBudgetVsActualChart, trimLeadingZeros } from '../charts.js';
 import { getSetting } from '../db.js';
 // Aliasé en tr (pas t) : ce fichier utilise déjà `t` comme nom de paramètre pour une transaction
 // (voir txRowHtml(t)) — importer la fonction de traduction sous le même nom la masquerait
@@ -114,7 +114,7 @@ function watchCategoryRowHtml(r) {
   const cls = budgetProgressClass(pct);
   return `
     <div style="padding:10px 0;border-bottom:1px solid var(--border);">
-      <div style="display:flex;justify-content:space-between;font-size:13.5px;font-weight:600;margin-bottom:6px;">
+      <div style="display:flex;justify-content:space-between;" class="fs-14 fw-600 mb-6">
         <span>${escapeHtml(r.label)}</span>
         <span>${formatPercent(pct, 0)}</span>
       </div>
@@ -220,7 +220,7 @@ export async function renderDashboard() {
     if (safeTrendEl) {
       safeTrendEl.textContent = safeToSpend >= 0
         ? tr('Après budgets réservés et échéances à venir')
-        : tr('⚠ Dépenses prévues supérieures aux liquidités disponibles');
+        : tr('Dépenses prévues supérieures aux liquidités disponibles');
     }
   }
 
@@ -284,7 +284,7 @@ export async function renderDashboard() {
 
   if (panels.charts) {
     renderExpensesByCategoryChart('chart-expenses-category', expensesByCategory, currency);
-    renderNetWorthTrendChart('chart-net-worth-trend', netWorthHistory, currency, tr('Valeur nette'));
+    renderNetWorthTrendChart('chart-net-worth-trend', trimLeadingZeros(netWorthHistory), currency, tr('Valeur nette'));
     renderBudgetVsActualChart('chart-budget-vs-actual', budgetVsActual, currency);
   }
 

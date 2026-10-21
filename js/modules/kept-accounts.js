@@ -30,7 +30,7 @@ function accountCardHtml(account, balance) {
       <div class="card-title-row">
         <div>
           <div class="summary-card-label">${escapeHtml(account.currency)}${account.archived ? ` · ${t('archivé')}` : ''}</div>
-          <div style="font-weight:700;font-size:14.5px;">${escapeHtml(account.ownerName)}</div>
+          <div class="fw-700 fs-15">${escapeHtml(account.ownerName)}</div>
         </div>
         <div class="card-actions">
           <button type="button" class="icon-btn" data-action="edit" aria-label="${t('Modifier')}" title="${t('Modifier')}">${EDIT_ICON}</button>
@@ -39,7 +39,7 @@ function accountCardHtml(account, balance) {
         </div>
       </div>
       <div class="summary-card-value amount" data-value="${balance}">${formatCurrency(balance, account.currency)}</div>
-      <button type="button" class="btn btn-ghost btn-block" data-action="open" style="margin-top:10px;">${t('Voir les mouvements')}</button>
+      <button type="button" class="btn btn-ghost btn-block mt-10" data-action="open">${t('Voir les mouvements')}</button>
     </div>`;
 }
 
@@ -101,16 +101,16 @@ async function renderAccountDetail(container, account) {
   const balance = accountBalance(account, entries);
 
   container.innerHTML = `
-    <div class="stat-row" style="margin-bottom:14px;"><span class="stat-row-label">${t('Solde actuel')}</span><strong class="amount">${formatCurrency(balance, account.currency)}</strong></div>
-    <form id="kept-entry-form" class="filters-bar" style="align-items:flex-end;margin-bottom:14px;">
+    <div class="stat-row mb-14"><span class="stat-row-label">${t('Solde actuel')}</span><strong class="amount">${formatCurrency(balance, account.currency)}</strong></div>
+    <form id="kept-entry-form" class="filters-bar mb-14" style="align-items:flex-end;">
       <div class="segmented" data-field="entry-type" style="flex-basis:100%;">
         <button type="button" class="segmented-btn is-active" data-value="in">${t('Entrée')}</button>
         <button type="button" class="segmented-btn" data-value="out">${t('Sortie')}</button>
       </div>
       <input type="hidden" name="type" value="in">
-      <div class="form-row" style="margin:0;flex:1;min-width:100px;"><label>${t('Montant')}</label><input type="number" step="0.01" min="0" name="amount" required></div>
-      <div class="form-row" style="margin:0;flex:1;min-width:130px;"><label>${t('Date')}</label><input type="date" name="date" value="${todayISO()}"></div>
-      <div class="form-row" style="margin:0;flex:2;min-width:160px;"><label>${t('Note (optionnel)')}</label><input type="text" name="note" maxlength="140"></div>
+      <div class="form-row m-0" style="flex:1;min-width:100px;"><label>${t('Montant')}</label><input type="number" step="0.01" min="0" name="amount" required></div>
+      <div class="form-row m-0" style="flex:1;min-width:130px;"><label>${t('Date')}</label><input type="date" name="date" value="${todayISO()}"></div>
+      <div class="form-row m-0" style="flex:2;min-width:160px;"><label>${t('Note (optionnel)')}</label><input type="text" name="note" maxlength="140"></div>
       <button type="submit" class="btn btn-primary">${t('Ajouter')}</button>
     </form>
     <div id="kept-entries-list">${entries.length ? entries.map((e) => entryRowHtml(e, account.currency)).join('') : `<div class="empty-state">${t('Aucun mouvement pour le moment.')}</div>`}</div>`;
@@ -176,7 +176,7 @@ export async function renderKeptAccounts() {
     return;
   }
   container.innerHTML = `<div class="grid-cards">${active.map((a) => accountCardHtml(a, accountBalance(a, entries))).join('')}</div>` +
-    (archived.length ? `<div style="font-size:12.5px;color:var(--text-faint);font-weight:700;margin:16px 0 8px;">${t('ARCHIVÉS')}</div><div class="grid-cards">${archived.map((a) => accountCardHtml(a, accountBalance(a, entries))).join('')}</div>` : '');
+    (archived.length ? `<div style="margin:16px 0 8px;" class="fs-13 c-faint fw-700">${t('ARCHIVÉS')}</div><div class="grid-cards">${archived.map((a) => accountCardHtml(a, accountBalance(a, entries))).join('')}</div>` : '');
 }
 
 export function initKeptAccountsModule() {

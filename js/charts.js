@@ -354,6 +354,14 @@ export function renderBudgetVsActualChart(canvasId, rows, currency = 'EUR') {
   registry.set(canvasId, chart);
 }
 
+/** Retire les points à zéro du début d'une série (patrimoine d'avant le premier mouvement) pour que la courbe
+    commence au premier mois renseigné ; garde au moins deux points pour qu'il reste une courbe. */
+export function trimLeadingZeros(points) {
+  const first = (points || []).findIndex((p) => p.value !== 0);
+  if (first <= 0) return points;
+  return points.slice(Math.min(first, Math.max(points.length - 2, 0)));
+}
+
 /** Détruit tous les graphiques enregistrés (ex: avant changement de thème global). */
 export function destroyAllCharts() {
   registry.forEach((c) => c.destroy());

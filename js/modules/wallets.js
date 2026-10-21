@@ -58,7 +58,7 @@ async function renderWealthHero() {
   if (safeTrendEl) {
     safeTrendEl.textContent = safeToSpend >= 0
       ? t('Après budgets réservés et échéances à venir')
-      : t('⚠ Dépenses prévues supérieures aux liquidités disponibles');
+      : t('Dépenses prévues supérieures aux liquidités disponibles');
   }
 }
 
@@ -66,11 +66,11 @@ async function renderWealthHero() {
 // jamais ici — mêmes conventions que ASSET_CLASSES (investments.js) : les clés sont les valeurs
 // stockées en base (wallet.type), jamais traduites.
 const WALLET_TYPES = {
-  bank: { label: 'Compte bancaire', icon: svgIcon('bank', 20) },
-  mobile_money: { label: 'Mobile Money', icon: svgIcon('phone', 20) },
-  cash: { label: 'Espèces', icon: svgIcon('banknote', 20) },
-  investment: { label: "Portefeuille d'investissement", icon: svgIcon('chart', 20) },
-  savings: { label: 'Épargne spécifique', icon: svgIcon('jar', 20) },
+  bank: { label: 'Compte bancaire', icon: svgIcon('bank', 20), color: '#1f5fa6' },
+  mobile_money: { label: 'Mobile Money', icon: svgIcon('phone', 20), color: '#b9663a' },
+  cash: { label: 'Espèces', icon: svgIcon('banknote', 20), color: '#4f8a3c' },
+  investment: { label: "Portefeuille d'investissement", icon: svgIcon('chart', 20), color: '#6a5f9e' },
+  savings: { label: 'Épargne spécifique', icon: svgIcon('jar', 20), color: '#2d8a7a' },
 };
 
 function walletFormHtml(wallet, defaultCurrency) {
@@ -149,10 +149,10 @@ function walletCardHtml(w) {
     <div class="summary-card" data-wallet-id="${w.id}">
       <div class="card-title-row">
         <div style="display:flex;align-items:center;gap:10px;">
-          <div class="tx-icon">${meta.icon}</div>
+          <div class="tx-icon" style="color:${meta.color};background:${meta.color}22;">${meta.icon}</div>
           <div>
             <div class="summary-card-label">${escapeHtml(t(meta.label))} · ${escapeHtml(w.currency)}</div>
-            <div style="font-weight:700;font-size:14.5px;">${escapeHtml(w.name)}</div>
+            <div class="fw-700 fs-15">${escapeHtml(w.name)}</div>
           </div>
         </div>
         <div class="card-actions">
@@ -187,7 +187,7 @@ async function renderRatesPanel() {
   const base = await getSetting('baseCurrency', 'EUR');
   const rates = await dbGetAll(STORES.EXCHANGE_RATES);
   if (!rates.length) {
-    panel.innerHTML = `<div class="panel"><h3 style="margin-bottom:6px;">${t('Taux de change')}</h3><p class="empty-state" style="padding:12px 0;">${t('Aucune devise étrangère utilisée. Devise de base : <strong>{base}</strong>.', { base: escapeHtml(base) })}</p></div>`;
+    panel.innerHTML = `<div class="panel"><h3 class="mb-6">${t('Taux de change')}</h3><p class="empty-state" style="padding:12px 0;">${t('Aucune devise étrangère utilisée. Devise de base : <strong>{base}</strong>.', { base: escapeHtml(base) })}</p></div>`;
     return;
   }
   const unconfirmedCount = rates.filter((r) => r.confirmed === false).length;
@@ -197,15 +197,15 @@ async function renderRatesPanel() {
         <h3>${t('Taux de change (devise de base : {base})', { base: escapeHtml(base) })}</h3>
         <button type="button" class="btn btn-ghost" id="rates-fetch-live-btn">${t('Actualiser via internet')}</button>
       </div>
-      ${unconfirmedCount ? `<p class="alert alert-warn" style="margin-bottom:10px;">⚠ ${unconfirmedCount > 1 ? t('{count} taux ne sont pas encore confirmés (valeur 1:1 par défaut, presque certainement fausse). Corrigez-les ci-dessous pour un patrimoine net exact.', { count: unconfirmedCount }) : t("Un taux n'est pas encore confirmé (valeur 1:1 par défaut, presque certainement fausse). Corrigez-le ci-dessous pour un patrimoine net exact.")}</p>` : ''}
+      ${unconfirmedCount ? `<p class="alert alert-warn mb-10">${unconfirmedCount > 1 ? t('{count} taux ne sont pas encore confirmés (valeur 1:1 par défaut, presque certainement fausse). Corrigez-les ci-dessous pour un patrimoine net exact.', { count: unconfirmedCount }) : t("Un taux n'est pas encore confirmé (valeur 1:1 par défaut, presque certainement fausse). Corrigez-le ci-dessous pour un patrimoine net exact.")}</p>` : ''}
       <div class="filters-bar" style="flex-direction:column;align-items:stretch;gap:10px;">
         ${rates.map((r) => `
           <div style="display:flex;align-items:center;gap:10px;">
             <span class="badge ${r.confirmed === false ? 'badge-neg' : 'badge-accent'}" style="min-width:56px;justify-content:center;">${escapeHtml(r.code)}</span>
-            <span style="font-size:13px;color:var(--text-muted);">1 ${escapeHtml(r.code)} =</span>
+            <span class="fs-13 c-muted">1 ${escapeHtml(r.code)} =</span>
             <input type="number" step="0.0001" min="0" data-rate-code="${escapeHtml(r.code)}" value="${r.rateToBase}" style="width:110px;padding:7px 9px;border-radius:8px;border:1px solid ${r.confirmed === false ? 'var(--neg)' : 'var(--border)'};background:var(--surface);">
-            <span style="font-size:13px;color:var(--text-muted);">${escapeHtml(base)}</span>
-            ${r.confirmed === false ? `<span style="font-size:12px;color:var(--neg);">${t('non confirmé')}</span>` : ''}
+            <span class="fs-13 c-muted">${escapeHtml(base)}</span>
+            ${r.confirmed === false ? `<span class="fs-12 c-neg">${t('non confirmé')}</span>` : ''}
           </div>`).join('')}
       </div>
     </div>`;
@@ -268,7 +268,7 @@ export async function renderWallets() {
     grid.innerHTML = `<div class="empty-state">${t('Aucun portefeuille pour le moment. Créez votre premier compte bancaire, mobile money ou espèces.')}</div>`;
   } else {
     grid.innerHTML = active.map(walletCardHtml).join('') +
-      (archived.length ? `<div style="grid-column:1/-1;font-size:12.5px;color:var(--text-faint);font-weight:700;margin-top:8px;">${t('ARCHIVÉS')}</div>${archived.map(walletCardHtml).join('')}` : '');
+      (archived.length ? `<div style="grid-column:1/-1;" class="fs-13 c-faint fw-700 mt-8">${t('ARCHIVÉS')}</div>${archived.map(walletCardHtml).join('')}` : '');
   }
 
   if (!document.getElementById('wallets-rates-panel')) {

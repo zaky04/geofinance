@@ -564,7 +564,7 @@ function showBackupReminderModal(urgent = false) {
   const backdrop = root.querySelector('.modal-backdrop[data-modal="backup-reminder"]');
 
   if (urgent) {
-    backdrop.querySelector('#backup-title').textContent = tr('Sauvegarde en retard ⚠');
+    backdrop.querySelector('#backup-title').textContent = tr('Sauvegarde en retard');
     backdrop.querySelector('.modal-body > p').textContent = tr("Vous avez repoussé ce rappel plusieurs fois. Vos données ne vivent que sur cet appareil : sans export, un changement de téléphone, une réinstallation ou un nettoyage du cache les effacerait définitivement. Exportez-les maintenant.");
     backdrop.querySelector('#backup-later-btn').remove();
   }
@@ -585,7 +585,7 @@ function showBackupReminderModal(urgent = false) {
     const body = backdrop.querySelector('.modal-body');
     body.innerHTML = `
       <form id="encrypted-export-form">
-        <p style="margin:0 0 12px;font-size:13px;color:var(--text-muted);">${tr("Choisissez un mot de passe pour chiffrer votre sauvegarde avant de l'envoyer vers votre stockage distant (Drive, etc.). Conservez-le précieusement : sans lui, la sauvegarde ne pourra pas être restaurée.")}</p>
+        <p style="margin:0 0 12px;" class="fs-13 c-muted">${tr("Choisissez un mot de passe pour chiffrer votre sauvegarde avant de l'envoyer vers votre stockage distant (Drive, etc.). Conservez-le précieusement : sans lui, la sauvegarde ne pourra pas être restaurée.")}</p>
         <div class="form-row"><label>${tr('Mot de passe')}</label><input type="password" name="passphrase" required minlength="6" autofocus></div>
         <div class="form-row"><label>${tr('Confirmer le mot de passe')}</label><input type="password" name="passphraseConfirm" required minlength="6"></div>
         <button type="submit" class="btn btn-primary btn-block">${tr('Chiffrer et exporter')}</button>

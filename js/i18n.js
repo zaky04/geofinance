@@ -175,7 +175,7 @@ const EN = {
   'Dépenses et revenus': 'Spending and income',
   'Budget et patrimoine': 'Budget and net worth',
   'Santé et calendrier': 'Health and calendar',
-  'Voir le détail des budgets →': 'See budget details →',
+  'Voir le détail des budgets': 'See budget details',
   'Composition du patrimoine': 'Net worth composition',
   'Solde net :': 'Net balance:',
   'Aucune échéance à venir ce mois-ci.': 'No upcoming bills this month.',
@@ -189,7 +189,7 @@ const EN = {
   'Aucune transaction pour le moment. Utilisez « Saisie express » pour commencer.': 'No transactions yet. Use "Quick add" to get started.',
   "Aucun budget défini pour l'instant.": 'No budget set yet.',
   'Après budgets réservés et échéances à venir': 'After reserved budgets and upcoming bills',
-  '⚠ Dépenses prévues supérieures aux liquidités disponibles': '⚠ Planned expenses exceed available cash',
+  'Dépenses prévues supérieures aux liquidités disponibles': 'Planned expenses exceed available cash',
   "Pas encore assez d'historique": 'Not enough history yet',
   'Reste {amount} ce mois-ci': '{amount} left this month',
   'Dépassé de {amount}': 'Over by {amount}',
@@ -993,7 +993,7 @@ const EN = {
     'Set the auto-lock after inactivity and enable biometric unlock.',
   'Réglez le verrouillage automatique après inactivité.': 'Set the auto-lock after inactivity.',
   'Activer le déverrouillage biométrique': 'Enable biometric unlock',
-  'Biométrie activée ✓': 'Biometrics enabled ✓',
+  'Biométrie activée': 'Biometrics enabled',
   'Rappels locaux pour vos budgets qui approchent leur limite, vos échéances proches et vos soldes bas.':
     'Local reminders for your budgets approaching their limit, your upcoming bills, and your low balances.',
   'Activer les notifications': 'Enable notifications',
@@ -1091,7 +1091,7 @@ const EN = {
   'Portefeuille introuvable.': 'Wallet not found.',
   'Votre navigateur ne permet pas cette fonctionnalité (Chrome/Edge sur ordinateur uniquement).': 'Your browser does not support this feature (Chrome/Edge on desktop only).',
   'Sauvegarde automatique effectuée.': 'Automatic backup completed.',
-  'Sauvegarde en retard ⚠': 'Backup overdue ⚠',
+  'Sauvegarde en retard': 'Backup overdue',
   "Vous avez repoussé ce rappel plusieurs fois. Vos données ne vivent que sur cet appareil : sans export, un changement de téléphone, une réinstallation ou un nettoyage du cache les effacerait définitivement. Exportez-les maintenant.":
     "You have postponed this reminder several times. Your data only lives on this device: without an export, a phone change, a reinstall, or a cache cleanup would permanently erase it. Export it now.",
   "Choisissez un mot de passe pour chiffrer votre sauvegarde avant de l'envoyer vers votre stockage distant (Drive, etc.). Conservez-le précieusement : sans lui, la sauvegarde ne pourra pas être restaurée.":

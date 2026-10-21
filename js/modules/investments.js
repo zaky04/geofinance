@@ -60,7 +60,7 @@ function investmentCardHtml(inv, metrics) {
       <div class="card-title-row">
         <div>
           <span class="badge badge-accent">${escapeHtml(t(ASSET_CLASSES[inv.assetClass] || inv.assetClass))}</span>
-          <div style="font-weight:700;font-size:14.5px;margin-top:6px;">${escapeHtml(inv.name)}</div>
+          <div class="fw-700 fs-15 mt-6">${escapeHtml(inv.name)}</div>
         </div>
         <div class="card-actions">
           <button type="button" class="icon-btn" data-action="history" aria-label="${t('Historique / Ajouter')}" title="${t('Historique / Ajouter')}">${HISTORY_ICON}</button>
@@ -119,7 +119,7 @@ async function openHistoryModal(inv) {
   const entries = (await dbGetAll(STORES.INVESTMENT_ENTRIES)).filter((e) => e.investmentId === inv.id).sort((a, b) => b.date.localeCompare(a.date));
 
   const modal = openModal(`
-    <form id="entry-form" style="margin-bottom:16px;">
+    <form id="entry-form" class="mb-16">
       <div class="form-row"><label>${t('Type')}</label>
         <select name="type">${Object.entries(ENTRY_TYPE_LABELS).map(([k, l]) => `<option value="${k}">${t(l)}</option>`).join('')}</select>
       </div>
@@ -200,14 +200,14 @@ function renderYieldTable(rows, baseCurrency, rates) {
 
   return `
     <div style="overflow-x:auto;">
-      <table style="width:100%;border-collapse:collapse;font-size:13.5px;">
-        <thead><tr style="text-align:left;color:var(--text-muted);">
+      <table style="width:100%;border-collapse:collapse;" class="fs-14">
+        <thead><tr style="text-align:left;" class="c-muted">
           <th style="padding:8px 6px;">${t("Classe d'actif")}</th><th style="padding:8px 6px;">${t('Capital net')}</th><th style="padding:8px 6px;">${t('Valeur actuelle')}</th><th style="padding:8px 6px;">${t('Rendement annualisé')}</th>
         </tr></thead>
         <tbody>
           ${lines.map((l) => `
             <tr style="border-top:1px solid var(--border);">
-              <td style="padding:8px 6px;font-weight:600;">${escapeHtml(l.label)}</td>
+              <td style="padding:8px 6px;" class="fw-600">${escapeHtml(l.label)}</td>
               <td style="padding:8px 6px;">${formatCurrency(l.netInvested, baseCurrency)}</td>
               <td style="padding:8px 6px;">${formatCurrency(l.currentValue, baseCurrency)}</td>
               <td style="padding:8px 6px;"><span class="badge ${l.yieldPct >= 0 ? 'badge-pos' : 'badge-neg'}">${formatPercent(l.yieldPct)}</span></td>
@@ -235,13 +235,13 @@ export async function renderInvestments() {
   });
 
   container.innerHTML = `
-    <div class="tabs-bar" style="margin-bottom:16px;">
+    <div class="tabs-bar mb-16">
       <button type="button" class="tab-btn ${assetFilter === 'all' ? 'is-active' : ''}" data-asset-filter="all">${t('Tous')}</button>
       <button type="button" class="tab-btn ${assetFilter === 'financial' ? 'is-active' : ''}" data-asset-filter="financial">${t('Actifs financiers')}</button>
       <button type="button" class="tab-btn ${assetFilter === 'physical' ? 'is-active' : ''}" data-asset-filter="physical">${t('Biens physiques')}</button>
     </div>
-    <div class="grid-cards" style="margin-bottom:18px;">${rows.length ? rows.map((r) => investmentCardHtml(r.inv, r.metrics)).join('') : `<div class="empty-state">${t('Aucun actif dans cette catégorie.')}</div>`}</div>
-    <div class="chart-card" style="margin-bottom:18px;">
+    <div class="grid-cards mb-18">${rows.length ? rows.map((r) => investmentCardHtml(r.inv, r.metrics)).join('') : `<div class="empty-state">${t('Aucun actif dans cette catégorie.')}</div>`}</div>
+    <div class="chart-card mb-18">
       <h3>${t('Évolution de la valeur du portefeuille')}</h3>
       <div class="chart-canvas-wrap"><canvas id="chart-investments-trend"></canvas></div>
     </div>

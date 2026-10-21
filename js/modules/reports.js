@@ -12,7 +12,7 @@ import { formatCurrency, formatMonthLabel, currentMonthKey, monthKeyOffset, loca
 import { exportTransactionsCsv } from '../backup.js';
 import { getSetting } from '../db.js';
 import { healthScorePanelHtml, calendarPanelHtml, wireCalendarPanel } from './reports-extras.js';
-import { renderExpensesByCategoryChart, renderNetWorthTrendChart, renderBudgetVsActualChart, renderMultiTrendChart, renderNetSavingsBarChart } from '../charts.js';
+import { renderExpensesByCategoryChart, renderNetWorthTrendChart, renderBudgetVsActualChart, renderMultiTrendChart, renderNetSavingsBarChart, trimLeadingZeros } from '../charts.js';
 import { t } from '../i18n.js';
 
 /** formatCurrency() insère des espaces insécables/fines (ex: séparateur de milliers en fr-FR) que
@@ -174,7 +174,7 @@ async function renderBudgetCharts(container) {
     computeNetWorth(), computeBudgetVsActual(reportMonthKey), computeNetWorthHistoryForYear(reportYear),
   ]);
   renderBudgetVsActualChart('rep-chart-budget-vs-actual', budgetVsActual, currency);
-  renderNetWorthTrendChart('rep-chart-net-worth', netWorthHistory, currency, t('Valeur nette'));
+  renderNetWorthTrendChart('rep-chart-net-worth', trimLeadingZeros(netWorthHistory), currency, t('Valeur nette'));
   await refreshBudgetTrendChart();
 
   container.querySelector('#rep-budget-category').onchange = (e) => { repBudgetCategoryId = e.target.value; refreshBudgetTrendChart(); };
@@ -339,7 +339,7 @@ async function summaryTabHtml() {
         <button type="button" class="link-btn" id="rep-csv-all-btn">${t("Exporter tout l'historique (CSV)")}</button>
       </div>
     </div>
-    <div class="panel" style="margin-top:16px;">
+    <div class="panel mt-16">
       <div class="panel-header"><h3>${t('Bilan annuel')} <span class="chart-card-period">· ${reportYear}</span></h3></div>
       <button type="button" class="btn btn-primary" id="rep-annual-pdf-btn">${t('Générer le bilan annuel PDF')}</button>
     </div>

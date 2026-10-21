@@ -64,7 +64,7 @@ function debtCardHtml(d, payments) {
       <div class="card-title-row">
         <div>
           <span class="badge ${isDebt ? 'badge-neg' : 'badge-pos'}">${isDebt ? tr('Dette') : tr('Créance')}</span>
-          <div style="font-weight:700;font-size:14.5px;margin-top:6px;">${escapeHtml(d.personName)}</div>
+          <div class="fw-700 fs-15 mt-6">${escapeHtml(d.personName)}</div>
           ${d.note ? `<div class="tx-sub">${escapeHtml(d.note)}</div>` : ''}
         </div>
         <div class="card-actions">
@@ -74,7 +74,7 @@ function debtCardHtml(d, payments) {
         </div>
       </div>
       <div class="progress-track"><div class="progress-fill" style="width:${Math.min(pct, 100)}%"></div></div>
-      <div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--text-muted);margin:6px 0 10px;">
+      <div style="display:flex;justify-content:space-between;margin:6px 0 10px;" class="fs-13 c-muted">
         <span>${tr('Remboursé : {amount}', { amount: formatCurrency(paid, d.currency) })}</span>
         <span>${formatPercent(pct, 0)}</span>
       </div>
@@ -131,7 +131,7 @@ function debtFormHtml(d, defaultCurrency) {
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
           <input type="checkbox" name="movesMoneyNow" checked> ${tr('Cet argent bouge aujourd\'hui')}
         </label>
-        <p style="font-size:12px;color:var(--text-muted);margin:2px 0 0;">${tr('Décochez si c\'est une dette déjà existante avant d\'utiliser l\'app (aucun mouvement de portefeuille ne sera créé).')}</p>
+        <p style="margin:2px 0 0;" class="fs-12 c-muted">${tr('Décochez si c\'est une dette déjà existante avant d\'utiliser l\'app (aucun mouvement de portefeuille ne sera créé).')}</p>
       </div>
       <div class="form-row" data-field="movesMoneyWallet">
         <label>${tr('Portefeuille')}</label>
@@ -343,11 +343,11 @@ function renderSimulatorResult(result, method, currency) {
   }
   const years = (result.months / 12).toFixed(1);
   return `
-    <div class="panel" style="margin-bottom:12px;">
+    <div class="panel mb-12">
       <div class="panel-header"><h3>${method === 'avalanche' ? tr("Avalanche (taux le plus élevé d'abord)") : tr("Boule de neige (plus petit montant d'abord)")}</h3></div>
       <div class="stat-row"><span class="stat-row-label">${tr('Durée totale estimée')}</span><span>${tr('{months} mois (~{years} ans)', { months: result.months, years })}</span></div>
       <div class="stat-row"><span class="stat-row-label">${tr('Intérêts totaux payés')}</span><span>${formatCurrency(result.totalInterest, currency)}</span></div>
-      <div style="margin-top:8px;font-size:12.5px;color:var(--text-muted);">
+      <div class="mt-8 fs-13 c-muted">
         ${tr('Ordre de remboursement : {list}', { list: result.order.map((o, i) => `${i + 1}. ${escapeHtml(o.name)} (${tr('mois {n}', { n: o.payoffMonth || '—' })})`).join(' · ') })}
       </div>
     </div>`;
@@ -356,7 +356,7 @@ function renderSimulatorResult(result, method, currency) {
 async function renderSimulator(container) {
   const { baseCurrency } = await getExchangeRates();
   container.innerHTML = `
-    <div class="panel" style="margin-bottom:16px;">
+    <div class="panel mb-16">
       <div class="panel-header"><h3>${tr('Simulateur de remboursement stratégique')}</h3></div>
       <div class="form-row" style="max-width:260px;">
         <label>${tr('Budget mensuel disponible (en {currency}) pour rembourser vos dettes', { currency: escapeHtml(baseCurrency) })}</label>
@@ -385,16 +385,16 @@ export async function renderDebts() {
   const paidDebts = debts.filter((d) => d.status === 'paid');
 
   const cardsHtml = activeDebts.length
-    ? `<div class="grid-cards" style="margin-bottom:20px;">${activeDebts.map((d) => debtCardHtml(d, payments)).join('')}</div>`
+    ? `<div class="grid-cards mb-20">${activeDebts.map((d) => debtCardHtml(d, payments)).join('')}</div>`
     : `<div class="empty-state">${tr('Aucune dette ni créance active.')}</div>`;
 
   const hasDebts = debts.some((d) => d.type === 'debt');
   const chartHtml = hasDebts
-    ? `<div class="chart-card" style="margin-bottom:20px;"><h3>${tr('Évolution du désendettement')}</h3><div class="chart-canvas-wrap"><canvas id="chart-debts-trend"></canvas></div></div>`
+    ? `<div class="chart-card mb-20"><h3>${tr('Évolution du désendettement')}</h3><div class="chart-canvas-wrap"><canvas id="chart-debts-trend"></canvas></div></div>`
     : '';
 
   const paidHtml = paidDebts.length
-    ? `<div class="panel" style="margin-top:20px;">
+    ? `<div class="panel mt-20">
         <div class="panel-header"><h3>${tr('Soldées')}</h3></div>
         ${paidDebts
           .map((d) => ({ d, paidDate: latestPaymentDate(d, payments) }))

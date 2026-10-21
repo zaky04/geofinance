@@ -201,7 +201,7 @@ export function openGlobalSearch() {
         <input type="number" step="0.01" id="search-amount-max" placeholder="${tr('Montant max')}">
         <input type="date" id="search-date-from" title="${tr('Du')}">
         <input type="date" id="search-date-to" title="${tr('Au')}">
-        <span style="font-size:11.5px;color:var(--text-faint);">${tr("S'applique aux transactions uniquement")}</span>
+        <span class="fs-12 c-faint">${tr("S'applique aux transactions uniquement")}</span>
       </div>
       <div id="search-results" class="search-results">
         <div class="empty-state">${tr("Tapez pour rechercher parmi vos transactions, portefeuilles, dettes, objectifs d'épargne, investissements, comptes gardés et dépenses partagées.")}</div>

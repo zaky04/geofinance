@@ -2387,6 +2387,32 @@ Noté mais non traité : en ouvrant Paramètres la console signale `Framing 'htt
 https://accounts.google.com` (le SDK Firebase charge un iframe d'authentification que la CSP ne prévoit pas) — sans effet visible sur la connexion
 Google actuelle, à examiner si la connexion par redirection pose problème.
 
+### 21 octobre 2026 (suite 2) — Refonte visuelle, lot 5 : points 6 à 15 de l'audit (`CACHE_VERSION` `v99`)
+
+- **Pages longues** (`js/panels.js`, nouveau, dans `APP_SHELL`, initialisé par `app.js`) : les panneaux de Paramètres, d'Outils et deux panneaux du
+  tableau de bord (`panel-forecast`, `panel-recap`) deviennent des sections repliables (titre cliquable + chevron, clavier OK). Repliées par défaut
+  ≤ 900 px, dépliées sur grand écran ; l'état est retenu pour la session (ces vues se redessinent à chaque réglage). Mesuré sur mobile :
+  Paramètres 4 805 → 1 120 px, Outils 3 298 → 905 px, tableau de bord 3 289 → 3 041 px. Ajouter une vue repliable = une ligne dans `COLLAPSIBLE`.
+- **États vides actionnables** (même module) : un message « Aucun… » posé directement sur un écran qui a un bouton principal d'en-tête
+  (`.view-header .btn-primary`) reçoit ce bouton (il le déclenche tel quel). Ignoré dans les panneaux/modales. `EMPTY_ACTION_VIEWS` liste les écrans.
+- **Contrastes** : `--text-faint` `#75737c` → `#6a6872`, `--pos` `#1b7f4d` → `#167342` (clair seulement). Audit rejoué sur les 12 vues : 0 texte sous
+  4,5:1 (11 avant). **Zones tactiles** (`@media (pointer: coarse)`) : liens à zone invisible élargie (`::after`, pas de changement de mise en page),
+  cases à cocher 22 px, boutons segmentés 40 px.
+- **Échelle typographique** : plus de demi-tailles (10,5/11,5/12,5/13,5/14,5 → 11/12/13/14/15) dans le CSS, les modules et `index.html` ; le
+  tableau de bord passe de 9 à 6 tailles.
+- **Styles en ligne → classes** : script appliqué aux balises statiques (jamais celles avec `${…}`). Marges (`mt-8`, `mb-16`, `ml-8`…), `m-0`,
+  tailles (`fs-13`), couleurs (`c-muted`, `c-faint`, `c-neg`, `c-pos`), `ta-center/right`, `fw-600/700`, en fin de `styles.css` (bloc « Utilitaires »,
+  en `!important` : un style en ligne l'emportait déjà sur les règles de composant). Les mises en page (`display:flex`, gap…) restent en ligne exprès
+  (`[hidden]` est `!important`). Styles en ligne : Paramètres 59 → 16, Budgets 47 → 19, Outils 37 → 6.
+- **Symboles décoratifs** : « ⚠ », « ✓ », « ✕ » remplacés par des icônes (`check`, `close`) ou retirés (la couleur de l'alerte porte le sens) ; « → » en
+  fin de lien retiré (le texte des clés i18n a été modifié en même temps que le code). Restent les « → » de séparation (ex. « Compte → Compte »).
+- **Couleur par type de portefeuille** (`WALLET_TYPES.color`) ; **courbe de valeur nette** qui démarre au premier mois renseigné
+  (`trimLeadingZeros()` dans `charts.js`, utilisé par Rapports et, côté gratuite, le tableau de bord).
+- **GeoFinance gratuite** : icônes d'installation (PNG ×4 + SVG ×2) recolorées du violet au bleu `#1F5FA6` (script PowerShell : le mélange indigo/blanc
+  est relu depuis le canal rouge, les bords lissés et la transparence sont conservés). Le motif du cauri y reste.
+Vérifié : mobile 375 px (les deux apps), 12 vues sans erreur nouvelle, contraste 0 problème, tests 64/64 + 117/117 (Djignan) et 35/35 (gratuite).
+Les builds natifs doivent recevoir `panels.js`, `card-actions.js`, `icons.js`, CSS/HTML/modules avant reconstruction (et les nouvelles icônes pour GeoFinance).
+
 ## 7. Pistes prioritaires non traitées
 
 Par ordre d'impact estimé, à valider avec l'auteur avant de s'y attaquer :

@@ -52,7 +52,7 @@
       <svg viewBox="0 0 48 48" width="40" height="40"><path fill="currentColor" d="M24 2c8 6 16 8 16 8v14c0 12-8 19-16 22C16 43 8 36 8 24V10s8-2 16-8Z" opacity=".15"/><path fill="currentColor" d="M24 6c6.4 4.8 12.8 6.4 12.8 6.4V24c0 9.6-6.4 15.2-12.8 17.6C17.6 39.2 11.2 33.6 11.2 24V12.4S17.6 10.8 24 6Z"/><path fill="#fff" d="M22 26.5l-4.5-4.5-2.1 2.1L22 30.7l12.6-12.6-2.1-2.1z"/></svg>
     </div>
     <h1 class="lock-title">Choisissez votre langue / Choose your language</h1>
-    <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:280px;margin-top:18px;">
+    <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:280px;" class="mt-18">
       <button type="button" class="btn btn-primary btn-block" id="language-choice-fr">Français</button>
       <button type="button" class="btn btn-primary btn-block" id="language-choice-en">English</button>
     </div>
@@ -324,7 +324,7 @@
 
       <!-- WALLETS -->
       <section id="view-wallets" class="view" data-view="wallets" hidden>
-        <div class="hero-grid" style="margin-bottom:18px;">
+        <div class="hero-grid mb-18">
           <div class="hero-card hero-card-safe" id="hero-safe-to-spend">
             <div class="hero-card-label" data-i18n="Reste à vivre">Reste à vivre</div>
             <div class="hero-card-value">
@@ -342,7 +342,7 @@
           </div>
         </div>
 
-        <div class="chart-card" style="margin-bottom:18px;">
+        <div class="chart-card mb-18">
           <h3 data-i18n="Composition du patrimoine">Composition du patrimoine</h3>
           <div class="chart-canvas-wrap"><canvas id="chart-net-worth-composition"></canvas></div>
         </div>
@@ -498,12 +498,12 @@
           <select name="categoryId" required></select>
         </div>
         <div class="form-row" data-field="splitToggleRow">
-          <button type="button" id="qa-split-toggle" class="link-btn" style="font-size:13px;" data-i18n="Diviser en plusieurs catégories">Diviser en plusieurs catégories</button>
+          <button type="button" id="qa-split-toggle" class="link-btn fs-13" data-i18n="Diviser en plusieurs catégories">Diviser en plusieurs catégories</button>
         </div>
         <div data-field="splitRows" hidden>
           <div id="qa-split-list"></div>
           <button type="button" id="qa-split-add" class="btn btn-ghost" style="margin:4px 0 10px;" data-i18n="+ Ajouter une catégorie">+ Ajouter une catégorie</button>
-          <div id="qa-split-total" style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;" data-i18n="Total : 0.00">Total : 0.00</div>
+          <div id="qa-split-total" data-i18n="Total : 0.00" class="fs-13 c-muted mb-12">Total : 0.00</div>
         </div>
         <div class="form-row">
           <label data-i18n="Date">Date</label>
@@ -522,11 +522,11 @@
           <button type="button" id="qa-receipt-trigger" class="btn btn-ghost" data-i18n="Choisir un fichier">Choisir un fichier</button>
           <input type="file" id="qa-receipt-input" name="receipt" accept="image/*" capture="environment"
             style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;">
-          <div id="qa-receipt-preview" style="margin-top:8px;" hidden>
+          <div id="qa-receipt-preview" hidden class="mt-8">
             <img id="qa-receipt-preview-img" alt="Aperçu du justificatif" data-i18n-alt="Aperçu du justificatif" style="max-width:120px;max-height:120px;border-radius:8px;border:1px solid var(--border);display:block;">
-            <div style="display:flex;gap:14px;align-items:center;margin-top:6px;">
-              <button type="button" id="qa-receipt-scan" class="link-btn" style="font-size:12.5px;" data-i18n="Scanner le montant">Scanner le montant</button>
-              <button type="button" id="qa-receipt-remove" class="link-btn" style="font-size:12.5px;" data-i18n="Retirer le justificatif">Retirer le justificatif</button>
+            <div style="display:flex;gap:14px;align-items:center;" class="mt-6">
+              <button type="button" id="qa-receipt-scan" class="link-btn fs-13" data-i18n="Scanner le montant">Scanner le montant</button>
+              <button type="button" id="qa-receipt-remove" class="link-btn fs-13" data-i18n="Retirer le justificatif">Retirer le justificatif</button>
             </div>
           </div>
         </div>

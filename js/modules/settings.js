@@ -36,7 +36,7 @@ function openCsvMappingModal(analysis) {
 
   const modal = openModal(`
     <form id="csv-mapping-form">
-      <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;">${t("Ce fichier ne correspond pas au format d'export GeoFinance. Indiquez à quoi correspond chaque colonne pour l'importer quand même ({count} ligne(s) détectée(s)).", { count: rows.length })}</p>
+      <p class="fs-13 c-muted mb-12">${t("Ce fichier ne correspond pas au format d'export GeoFinance. Indiquez à quoi correspond chaque colonne pour l'importer quand même ({count} ligne(s) détectée(s)).", { count: rows.length })}</p>
       <div class="form-row"><label>${t('Portefeuille de destination')}</label><select name="walletId" id="csv-map-wallet" required></select></div>
       <div class="form-row"><label>${t('Colonne Date')}</label><select name="dateCol">${colOptions}</select></div>
       <div class="form-row"><label>${t('Colonne Description / libellé (optionnel)')}</label><select name="noteCol"><option value="">${t('Aucune')}</option>${colOptions}</select></div>
@@ -48,7 +48,7 @@ function openCsvMappingModal(analysis) {
       </div>
       <div id="csv-map-single-fields">
         <div class="form-row"><label>${t('Colonne Montant')}</label><select name="amountCol">${colOptions}</select></div>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:14px;"><input type="checkbox" name="invertSign"> ${t('Inverser le signe (si les dépenses sont positives dans ce fichier)')}</label>
+        <label style="display:flex;align-items:center;gap:8px;" class="fs-13 mb-14"><input type="checkbox" name="invertSign"> ${t('Inverser le signe (si les dépenses sont positives dans ce fichier)')}</label>
       </div>
       <div id="csv-map-debit-credit-fields" hidden>
         <div class="form-row"><label>${t('Colonne Débit (dépenses)')}</label><select name="debitCol">${colOptions}</select></div>
@@ -131,9 +131,9 @@ async function renderSecuritySection(container) {
   const autoLockMinutes = await getSetting('autoLockMinutes', 0);
 
   container.innerHTML = `
-    <div class="panel" style="margin-bottom:16px;">
+    <div class="panel mb-16">
       <div class="panel-header"><h3>${t('Sécurité')}</h3></div>
-      <form id="pin-change-form" style="margin-bottom:18px;">
+      <form id="pin-change-form" class="mb-18">
         <div class="form-row"><label>${t('Code PIN actuel')}</label><input type="password" name="oldPin" required minlength="4" maxlength="6" inputmode="numeric" pattern="\\d{4,6}"></div>
         <div class="form-row"><label>${t('Nouveau code PIN (4-6 chiffres)')}</label><input type="password" name="newPin" required minlength="4" maxlength="6" inputmode="numeric" pattern="\\d{4,6}"></div>
         <div class="form-row"><label>${t('Confirmer le nouveau code')}</label><input type="password" name="newPinConfirm" required minlength="4" maxlength="6" inputmode="numeric" pattern="\\d{4,6}"></div>
@@ -144,11 +144,11 @@ async function renderSecuritySection(container) {
         <span>
           ${!bioSupported ? `<span class="badge">${t('Non disponible sur cet appareil')}</span>` : `
             <span class="badge ${bioConfigured ? 'badge-pos' : ''}">${bioConfigured ? t('Activée') : t('Désactivée')}</span>
-            <button type="button" class="btn btn-ghost" id="bio-toggle-btn" style="margin-left:8px;">${bioConfigured ? t('Désactiver') : t('Activer')}</button>
+            <button type="button" class="btn btn-ghost ml-8" id="bio-toggle-btn">${bioConfigured ? t('Désactiver') : t('Activer')}</button>
           `}
         </span>
       </div>
-      <div class="stat-row" style="margin-top:10px;">
+      <div class="stat-row mt-10">
         <span class="stat-row-label">${t("Verrouillage automatique après inactivité")}</span>
         <select id="auto-lock-select">${AUTO_LOCK_OPTIONS.map(([v, l]) => `<option value="${v}" ${v === autoLockMinutes ? 'selected' : ''}>${t(l)}</option>`).join('')}</select>
       </div>
@@ -201,9 +201,9 @@ export const PROFILE_FIELDS = [
 async function renderProfileSection(container) {
   const profile = await getSetting('userProfile', {});
   container.innerHTML = `
-    <div class="panel" style="margin-bottom:16px;">
+    <div class="panel mb-16">
       <div class="panel-header"><h3>${t('Mon profil')}</h3></div>
-      <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;">${t("Informations personnelles utilisées pour personnaliser l'application (salutation sur le tableau de bord, en-tête des rapports PDF). Reste 100% local, jamais transmis.")}</p>
+      <p class="fs-13 c-muted mb-12">${t("Informations personnelles utilisées pour personnaliser l'application (salutation sur le tableau de bord, en-tête des rapports PDF). Reste 100% local, jamais transmis.")}</p>
       <form id="profile-form">
         ${PROFILE_FIELDS.map((f) => `
           <div class="form-row">
@@ -230,7 +230,7 @@ async function renderProfileSection(container) {
 async function renderLanguageSection(container) {
   const lang = getLanguage();
   container.innerHTML = `
-    <div class="panel" style="margin-bottom:16px;">
+    <div class="panel mb-16">
       <div class="panel-header"><h3>Langue / Language</h3></div>
       <div class="form-row" style="max-width:200px;">
         <select id="language-select">
@@ -248,9 +248,9 @@ async function renderLanguageSection(container) {
 async function renderCurrencySection(container) {
   const baseCurrency = await getSetting('baseCurrency', 'EUR');
   container.innerHTML = `
-    <div class="panel" style="margin-bottom:16px;">
+    <div class="panel mb-16">
       <div class="panel-header"><h3>${t('Devise de base')}</h3></div>
-      <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">${t('Toutes les conversions (patrimoine net, rapports, outils) sont exprimées dans cette devise. La modifier réinitialise vos taux de change existants.')}</p>
+      <p class="fs-13 c-muted mb-10">${t('Toutes les conversions (patrimoine net, rapports, outils) sont exprimées dans cette devise. La modifier réinitialise vos taux de change existants.')}</p>
       <div class="form-row" style="max-width:200px;">
         <select id="base-currency-select">${CURRENCIES.map((c) => `<option value="${c}" ${c === baseCurrency ? 'selected' : ''}>${c}</option>`).join('')}</select>
       </div>
@@ -289,13 +289,13 @@ async function renderBackupSection(container) {
         ? t("Sauvegarde très volumineuse : l'envoi peut être très long, voire échouer sur un téléphone. Réduisez les photos ci-dessous.")
         : t("Sauvegarde volumineuse : l'envoi peut être lent. Réduire les photos ci-dessous allège nettement la sauvegarde.")}</p>`;
     sizeHtml = `
-      <div class="stat-row" style="margin-top:6px;"><span class="stat-row-label">${t('Taille estimée de la sauvegarde')}</span><span class="badge ${badgeClass}">≈ ${formatBytes(est.estimatedBytes)}</span></div>
-      <div class="stat-row" style="margin-top:6px;"><span class="stat-row-label">${t('Photos de justificatifs')}</span><span>${est.photoCount} · ${formatBytes(est.photoStoredBytes)}</span></div>
+      <div class="stat-row mt-6"><span class="stat-row-label">${t('Taille estimée de la sauvegarde')}</span><span class="badge ${badgeClass}">≈ ${formatBytes(est.estimatedBytes)}</span></div>
+      <div class="stat-row mt-6"><span class="stat-row-label">${t('Photos de justificatifs')}</span><span>${est.photoCount} · ${formatBytes(est.photoStoredBytes)}</span></div>
       ${sizeAdvice}
       ${est.optimizableCount > 0 ? `
-        <div style="margin-top:10px;">
+        <div class="mt-10">
           <button type="button" class="btn btn-ghost" id="optimize-receipts-btn" data-count="${est.optimizableCount}">${t('Réduire les photos ({count})', { count: est.optimizableCount })}</button>
-          <p style="font-size:12px;color:var(--text-faint);margin:6px 0 0;">${t("Réduit une fois pour toutes les photos déjà enregistrées (taille et qualité, lisibles). Irréversible : exportez d'abord une copie si vous voulez garder les originaux.")}</p>
+          <p style="margin:6px 0 0;" class="fs-12 c-faint">${t("Réduit une fois pour toutes les photos déjà enregistrées (taille et qualité, lisibles). Irréversible : exportez d'abord une copie si vous voulez garder les originaux.")}</p>
         </div>` : ''}`;
   } catch { /* estimation indisponible : section affichée sans ces lignes */ }
 
@@ -305,20 +305,20 @@ async function renderBackupSection(container) {
   } else if (autoBackupDir) {
     autoBackupHtml = `
       <span class="badge badge-pos">${t('Dossier : {name}', { name: escapeHtml(autoBackupDir.name) })}</span>
-      <button type="button" class="btn btn-ghost" id="auto-backup-disable-btn" style="margin-left:8px;">${t('Désactiver')}</button>`;
+      <button type="button" class="btn btn-ghost ml-8" id="auto-backup-disable-btn">${t('Désactiver')}</button>`;
   } else {
     autoBackupHtml = `<button type="button" class="btn btn-ghost" id="auto-backup-choose-btn">${t('Choisir un dossier')}</button>`;
   }
 
   container.innerHTML = `
-    <div class="panel" style="margin-bottom:16px;">
+    <div class="panel mb-16">
       <div class="panel-header"><h3>${t('Sauvegarde &amp; restauration')}</h3></div>
-      <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;">${t("Toutes vos données restent locales. Exportez régulièrement une copie (JSON complet ou CSV) pour éviter toute perte. Un rappel s'affiche automatiquement si aucune sauvegarde n'a été faite depuis 7 jours.")}</p>
+      <p class="fs-13 c-muted mb-12">${t("Toutes vos données restent locales. Exportez régulièrement une copie (JSON complet ou CSV) pour éviter toute perte. Un rappel s'affiche automatiquement si aucune sauvegarde n'a été faite depuis 7 jours.")}</p>
       <div class="stat-row"><span class="stat-row-label">${t('Dernière sauvegarde')}</span><span>${lastBackupLabel}${snoozedLabel}</span></div>
       ${sizeHtml}
-      <div class="stat-row" style="margin-top:6px;"><span class="stat-row-label">${t('Sauvegarde automatique hebdomadaire')}</span><span>${autoBackupHtml}</span></div>
-      <p style="font-size:12px;color:var(--text-faint);margin:6px 0 0;">${t("Si un dossier est choisi, GeoFinance y écrit un export JSON automatiquement à chaque rappel hebdomadaire, sans action de votre part.")}</p>
-      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;">
+      <div class="stat-row mt-6"><span class="stat-row-label">${t('Sauvegarde automatique hebdomadaire')}</span><span>${autoBackupHtml}</span></div>
+      <p style="margin:6px 0 0;" class="fs-12 c-faint">${t("Si un dossier est choisi, GeoFinance y écrit un export JSON automatiquement à chaque rappel hebdomadaire, sans action de votre part.")}</p>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;" class="mt-12">
         <button type="button" class="btn btn-primary" id="export-json-btn">${t('Exporter (JSON)')}</button>
         <button type="button" class="btn btn-ghost" id="import-json-btn">${t('Importer (JSON)')}</button>
         <button type="button" class="btn btn-ghost" id="export-encrypted-btn">${t('Exporter (JSON chiffré)')}</button>
@@ -328,7 +328,7 @@ async function renderBackupSection(container) {
       </div>
     </div>
     <div class="panel" style="border-color:var(--neg);">
-      <div class="panel-header"><h3 style="color:var(--neg);">${t('Zone dangereuse')}</h3></div>
+      <div class="panel-header"><h3 class="c-neg">${t('Zone dangereuse')}</h3></div>
       <button type="button" class="btn btn-danger" id="wipe-data-btn">${t('Réinitialiser toutes les données')}</button>
     </div>`;
 
@@ -440,20 +440,20 @@ async function renderNotificationsSection(container) {
   if (!supported) {
     statusHtml = `<span class="badge">${t('Non supportées par ce navigateur')}</span>`;
   } else if (permission === 'granted') {
-    statusHtml = `<span class="badge badge-pos">${t('Activées')}</span><button type="button" class="btn btn-ghost" id="notif-test-btn" style="margin-left:8px;">${t('Tester')}</button>`;
+    statusHtml = `<span class="badge badge-pos">${t('Activées')}</span><button type="button" class="btn btn-ghost ml-8" id="notif-test-btn">${t('Tester')}</button>`;
   } else if (permission === 'denied') {
     statusHtml = `<span class="badge badge-neg">${t('Bloquées par le navigateur')}</span>`;
   } else {
-    statusHtml = `<span class="badge">${t('Désactivées')}</span><button type="button" class="btn btn-primary" id="notif-enable-btn" style="margin-left:8px;">${t('Activer')}</button>`;
+    statusHtml = `<span class="badge">${t('Désactivées')}</span><button type="button" class="btn btn-primary ml-8" id="notif-enable-btn">${t('Activer')}</button>`;
   }
 
   container.innerHTML = `
-    <div class="panel" style="margin-bottom:16px;">
+    <div class="panel mb-16">
       <div class="panel-header"><h3>${t('Notifications')}</h3></div>
-      <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;">${t("Rappels locaux pour vos échéances récurrentes proches (3 jours), vos dettes/créances arrivant à échéance (3 jours), vos budgets qui approchent leur limite et vos portefeuilles passant sous leur seuil d'alerte (réglable sur chaque portefeuille). Ces rappels s'affichent quand l'application est ouverte ou récemment réactivée — un envoi en arrière-plan app totalement fermée nécessiterait un serveur distant, ce qui irait à l'encontre du principe 100% local de GeoFinance.")}</p>
+      <p class="fs-13 c-muted mb-12">${t("Rappels locaux pour vos échéances récurrentes proches (3 jours), vos dettes/créances arrivant à échéance (3 jours), vos budgets qui approchent leur limite et vos portefeuilles passant sous leur seuil d'alerte (réglable sur chaque portefeuille). Ces rappels s'affichent quand l'application est ouverte ou récemment réactivée — un envoi en arrière-plan app totalement fermée nécessiterait un serveur distant, ce qui irait à l'encontre du principe 100% local de GeoFinance.")}</p>
       <div class="stat-row"><span class="stat-row-label">${t('Statut')}</span><span>${statusHtml}</span></div>
-      ${permission === 'denied' ? `<p style="font-size:12px;color:var(--text-faint);margin-top:8px;">${t('Vous avez bloqué les notifications pour ce site. Autorisez-les dans les paramètres de votre navigateur pour les réactiver.')}</p>` : ''}
-      <div class="stat-row" style="margin-top:10px;align-items:center;">
+      ${permission === 'denied' ? `<p class="fs-12 c-faint mt-8">${t('Vous avez bloqué les notifications pour ce site. Autorisez-les dans les paramètres de votre navigateur pour les réactiver.')}</p>` : ''}
+      <div class="stat-row mt-10" style="align-items:center;">
         <span class="stat-row-label">${t("Seuils d'alerte budget")}</span>
         <span style="display:flex;align-items:center;gap:8px;">
           <input type="number" min="1" max="100" id="threshold-warn" value="${thresholds.warn}" style="width:60px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface-alt);text-align:right;"> ${t('% avertissement')}
@@ -497,28 +497,28 @@ async function renderInstallSection(container) {
   if (standalone) {
     statusHtml = `<span class="badge badge-pos">${t('Déjà installée')}</span>`;
   } else if (hasDeferredPrompt()) {
-    statusHtml = `<span class="badge badge-pos">${t('Disponible')}</span><button type="button" class="btn btn-primary" id="install-now-btn" style="margin-left:8px;">${t('Installer maintenant')}</button>`;
+    statusHtml = `<span class="badge badge-pos">${t('Disponible')}</span><button type="button" class="btn btn-primary ml-8" id="install-now-btn">${t('Installer maintenant')}</button>`;
   } else if (iosSafari) {
     statusHtml = `<span class="badge">${t('Installation manuelle')}</span>`;
-    extraHtml = `<p style="font-size:12.5px;color:var(--text-muted);margin-top:10px;">${t('Appuyez sur <strong>Partager</strong>, puis <strong>« Sur l\'écran d\'accueil »</strong>.')}</p>`;
+    extraHtml = `<p class="fs-13 c-muted mt-10">${t('Appuyez sur <strong>Partager</strong>, puis <strong>« Sur l\'écran d\'accueil »</strong>.')}</p>`;
   } else if (iosOther) {
     statusHtml = `<span class="badge">${t('Non disponible dans ce navigateur')}</span>`;
-    extraHtml = `<p style="font-size:12.5px;color:var(--text-muted);margin-top:10px;">${t('Sur iPhone/iPad, l\'installation n\'est possible que depuis <strong>Safari</strong> (restriction Apple). Ouvrez ce site dans Safari, puis Partager → « Sur l\'écran d\'accueil ».')}</p>`;
+    extraHtml = `<p class="fs-13 c-muted mt-10">${t('Sur iPhone/iPad, l\'installation n\'est possible que depuis <strong>Safari</strong> (restriction Apple). Ouvrez ce site dans Safari, puis Partager → « Sur l\'écran d\'accueil ».')}</p>`;
   } else if (androidLike) {
     statusHtml = `<span class="badge">${t('Pas encore proposée')}</span>`;
-    extraHtml = `<p style="font-size:12.5px;color:var(--text-muted);margin-top:10px;">${t('Ouvrez le menu ⋮ de votre navigateur et choisissez « Installer l\'application » ou « Ajouter à l\'écran d\'accueil ».')}</p>`;
+    extraHtml = `<p class="fs-13 c-muted mt-10">${t('Ouvrez le menu ⋮ de votre navigateur et choisissez « Installer l\'application » ou « Ajouter à l\'écran d\'accueil ».')}</p>`;
   } else {
     statusHtml = `<span class="badge">${t('Pas encore proposée')}</span>`;
-    extraHtml = `<p style="font-size:12.5px;color:var(--text-muted);margin-top:10px;">${t('Cherchez une icône d\'installation dans la barre d\'adresse, ou le menu du navigateur → « Installer GeoFinance ».')}</p>`;
+    extraHtml = `<p class="fs-13 c-muted mt-10">${t('Cherchez une icône d\'installation dans la barre d\'adresse, ou le menu du navigateur → « Installer GeoFinance ».')}</p>`;
   }
 
   container.innerHTML = `
-    <div class="panel" style="margin-bottom:16px;">
+    <div class="panel mb-16">
       <div class="panel-header"><h3>${t('Installation')}</h3></div>
-      <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;">${t("Installez GeoFinance sur cet appareil pour un accès direct depuis l'écran d'accueil, en plein écran et 100% hors-ligne.")}</p>
+      <p class="fs-13 c-muted mb-12">${t("Installez GeoFinance sur cet appareil pour un accès direct depuis l'écran d'accueil, en plein écran et 100% hors-ligne.")}</p>
       <div class="stat-row"><span class="stat-row-label">${t('Statut')}</span><span>${statusHtml}</span></div>
       ${extraHtml}
-      ${!standalone ? `<button type="button" class="btn btn-ghost" id="reset-install-snooze-btn" style="margin-top:12px;">${t('Réafficher le rappel automatique')}</button>` : ''}
+      ${!standalone ? `<button type="button" class="btn btn-ghost mt-12" id="reset-install-snooze-btn">${t('Réafficher le rappel automatique')}</button>` : ''}
     </div>`;
 
   container.querySelector('#install-now-btn')?.addEventListener('click', async () => {
@@ -536,11 +536,11 @@ async function renderInstallSection(container) {
 
 async function renderUpdateSection(container) {
   container.innerHTML = `
-    <div class="panel" style="margin-bottom:16px;">
+    <div class="panel mb-16">
       <div class="panel-header"><h3>${t('Mise à jour')}</h3></div>
-      <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;">${t("GeoFinance fonctionne hors-ligne grâce à une copie locale de l'application. Vérifiez ici si une nouvelle version a été publiée : seul le code de l'application est remplacé, vos données (portefeuilles, transactions, budgets…) restent intactes.")}</p>
+      <p class="fs-13 c-muted mb-12">${t("GeoFinance fonctionne hors-ligne grâce à une copie locale de l'application. Vérifiez ici si une nouvelle version a été publiée : seul le code de l'application est remplacé, vos données (portefeuilles, transactions, budgets…) restent intactes.")}</p>
       <div class="stat-row"><span class="stat-row-label">${t('Statut')}</span><span id="update-status"><span class="badge">${t('Non vérifié')}</span></span></div>
-      <button type="button" class="btn btn-primary" id="check-update-btn" style="margin-top:12px;">${t('Vérifier les mises à jour')}</button>
+      <button type="button" class="btn btn-primary mt-12" id="check-update-btn">${t('Vérifier les mises à jour')}</button>
     </div>`;
 
   const statusEl = container.querySelector('#update-status');
@@ -632,14 +632,14 @@ export async function applyOptionalModuleVisibility() {
 async function renderFeaturesSection(container) {
   const states = await Promise.all(OPTIONAL_MODULES.map((mod) => getSetting(mod.key, false)));
   container.innerHTML = `
-    <div class="panel" style="margin-bottom:16px;">
+    <div class="panel mb-16">
       <div class="panel-header"><h3>${t('Fonctionnalités optionnelles')}</h3></div>
       ${OPTIONAL_MODULES.map((mod, i) => `
-        <label style="display:flex;align-items:center;gap:10px;padding:8px 0;font-size:14px;cursor:pointer;">
+        <label style="display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer;" class="fs-14">
           <input type="checkbox" data-module-key="${mod.key}" ${states[i] ? 'checked' : ''}>
           ${escapeHtml(t(mod.label))}
         </label>
-        <p style="font-size:12.5px;color:var(--text-muted);margin:2px 0 10px;">${escapeHtml(t(mod.description))}</p>`).join('')}
+        <p style="margin:2px 0 10px;" class="fs-13 c-muted">${escapeHtml(t(mod.description))}</p>`).join('')}
     </div>`;
 
   container.querySelectorAll('[data-module-key]').forEach((input) => {
@@ -655,11 +655,11 @@ async function renderDashboardConfigSection(container) {
   const panels = { ...DASHBOARD_PANEL_DEFAULTS, ...(await getSetting('dashboardPanels', {})) };
 
   container.innerHTML = `
-    <div class="panel" style="margin-bottom:16px;">
+    <div class="panel mb-16">
       <div class="panel-header"><h3>${t('Tableau de bord')}</h3></div>
-      <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;">${t('Choisissez les panneaux affichés sur le tableau de bord (la carte « Budget mensuel alloué » et les 4 chiffres du mois restent toujours visibles).')}</p>
+      <p class="fs-13 c-muted mb-12">${t('Choisissez les panneaux affichés sur le tableau de bord (la carte « Budget mensuel alloué » et les 4 chiffres du mois restent toujours visibles).')}</p>
       ${Object.entries(DASHBOARD_PANEL_LABELS).map(([key, label]) => `
-        <label style="display:flex;align-items:center;gap:10px;padding:8px 0;font-size:14px;cursor:pointer;">
+        <label style="display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer;" class="fs-14">
           <input type="checkbox" data-panel-key="${key}" ${panels[key] ? 'checked' : ''}>
           ${escapeHtml(t(label))}
         </label>`).join('')}
@@ -684,7 +684,7 @@ const DEVELOPER_EMAIL = 'ronywest01@gmail.com';
 
 function renderDeveloperSection(container) {
   container.innerHTML = `
-    <div class="panel" style="margin-top:16px;">
+    <div class="panel mt-16">
       <div class="panel-header"><h3>${t('À propos du développeur')}</h3></div>
       <div class="stat-row"><span class="stat-row-label">${t('Nom')}</span><span>${escapeHtml(DEVELOPER_NAME)}</span></div>
       <div class="stat-row"><span class="stat-row-label">${t('Email')}</span><a href="mailto:${DEVELOPER_EMAIL}" style="color:var(--accent);">${escapeHtml(DEVELOPER_EMAIL)}</a></div>

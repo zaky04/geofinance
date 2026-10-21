@@ -36,15 +36,15 @@ function goalCardHtml(g) {
       <div style="display:flex;gap:14px;align-items:center;">
         <div style="position:relative;width:72px;height:72px;flex-shrink:0;">
           ${gaugeSvg(pct, color)}
-          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;">${pct.toFixed(0)}%</div>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:800;" class="fs-13">${pct.toFixed(0)}%</div>
         </div>
         <div style="flex:1;min-width:0;">
-          <div style="font-weight:700;font-size:14.5px;">${escapeHtml(g.name)}</div>
+          <div class="fw-700 fs-15">${escapeHtml(g.name)}</div>
           <div class="tx-sub amount" data-value="${g.currentAmount}">${formatCurrency(g.currentAmount, g.currency)} / ${formatCurrency(g.targetAmount, g.currency)}</div>
           ${g.targetDate ? `<div class="tx-sub">${t('Échéance : {date}', { date: formatDate(g.targetDate) })}</div>` : ''}
         </div>
       </div>
-      <div class="card-actions" style="justify-content:flex-end;margin-top:10px;">
+      <div class="card-actions mt-10" style="justify-content:flex-end;">
         <button type="button" class="icon-btn" data-action="contribute" aria-label="${t('Ajouter une contribution')}" title="${t('Ajouter une contribution')}">${ADD_ICON}</button>
         <button type="button" class="icon-btn" data-action="edit" aria-label="${t('Modifier')}" title="${t('Modifier')}">${EDIT_ICON}</button>
         <button type="button" class="icon-btn" data-action="archive" aria-label="${g.archived ? t('Désarchiver') : t('Archiver')}" title="${g.archived ? t('Désarchiver') : t('Archiver')}">${ARCHIVE_ICON}</button>
@@ -119,7 +119,7 @@ export async function renderSavings() {
   const archived = goals.filter((g) => g.archived);
 
   container.innerHTML = active.length || archived.length
-    ? active.map(goalCardHtml).join('') + (archived.length ? `<div style="grid-column:1/-1;font-size:12.5px;color:var(--text-faint);font-weight:700;margin-top:8px;">${t('ARCHIVÉS')}</div>${archived.map(goalCardHtml).join('')}` : '')
+    ? active.map(goalCardHtml).join('') + (archived.length ? `<div style="grid-column:1/-1;" class="fs-13 c-faint fw-700 mt-8">${t('ARCHIVÉS')}</div>${archived.map(goalCardHtml).join('')}` : '')
     : `<div class="empty-state">${t("Aucun objectif d'épargne. Créez-en un pour visualiser votre progression.")}</div>`;
 }
 

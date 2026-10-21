@@ -428,7 +428,7 @@ function reconTxRowHtml(t, currency) {
         <div class="tx-sub">${formatDate(t.date)}${t.note ? ' · ' + escapeHtml(t.note) : ''}</div>
       </div>
       <div class="tx-amount amount ${cls}">${sign}${formatCurrency(t.amount, currency)}</div>
-      <button type="button" class="btn btn-ghost" data-recon-tx="${t.id}" style="padding:4px 10px;font-size:12.5px;">${tr('Pointer')}</button>
+      <button type="button" class="btn btn-ghost" data-recon-tx="${t.id}" style="padding:4px 10px;font-size:13px;">${tr('Pointer')}</button>
     </div>`;
 }
 
@@ -447,7 +447,7 @@ function openReconciliationModal() {
       <input type="number" step="0.01" id="recon-balance" inputmode="decimal" placeholder="0.00">
     </div>
     <button type="button" class="btn btn-primary btn-block" id="recon-calc">${tr("Calculer l'écart")}</button>
-    <div id="recon-result" style="margin-top:16px;"></div>
+    <div id="recon-result" class="mt-16"></div>
   `, { title: tr('Rapprochement bancaire') });
 
   const walletSelect = modal.el.querySelector('#recon-wallet');
@@ -469,15 +469,15 @@ function openReconciliationModal() {
     const unreconciled = (await getEnrichedTransactions({ walletId })).filter((t) => !t.reconciled && t.date <= cutoff);
 
     resultEl.innerHTML = `
-      <div class="panel" style="margin-bottom:12px;">
-        <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px;"><span>${tr('Solde pointé (app)')}</span><strong>${formatCurrency(reconciled, wallet.currency)}</strong></div>
-        <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px;"><span>${tr('Solde du relevé')}</span><strong>${formatCurrency(statementBalance, wallet.currency)}</strong></div>
+      <div class="panel mb-12">
+        <div style="display:flex;justify-content:space-between;" class="fs-14 mb-4"><span>${tr('Solde pointé (app)')}</span><strong>${formatCurrency(reconciled, wallet.currency)}</strong></div>
+        <div style="display:flex;justify-content:space-between;" class="fs-14 mb-4"><span>${tr('Solde du relevé')}</span><strong>${formatCurrency(statementBalance, wallet.currency)}</strong></div>
         <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;color:${isBalanced ? 'var(--pos)' : 'var(--neg)'};"><span>${tr('Écart')}</span><strong>${formatCurrency(diff, wallet.currency)}</strong></div>
       </div>
       ${isBalanced
-        ? `<p class="empty-state" style="padding:8px 0;">✓ ${tr('Rapprochement exact, aucun écart.')}</p>`
+        ? `<p class="empty-state" style="padding:8px 0;">${svgIcon('check', 16)} ${tr('Rapprochement exact, aucun écart.')}</p>`
         : unreconciled.length
-          ? `<p style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">${tr('{count} transaction(s) non pointée(s) jusqu\'à cette date — pointez celles qui apparaissent sur le relevé pour résorber l\'écart :', { count: unreconciled.length })}</p>
+          ? `<p class="fs-13 c-muted mb-8">${tr('{count} transaction(s) non pointée(s) jusqu\'à cette date — pointez celles qui apparaissent sur le relevé pour résorber l\'écart :', { count: unreconciled.length })}</p>
              <div id="recon-tx-list">${unreconciled.map((t) => reconTxRowHtml(t, wallet.currency)).join('')}</div>`
           : `<p class="empty-state" style="padding:8px 0;">${tr("Aucune transaction non pointée sur cette période — l'écart provient peut-être d'une transaction manquante ou d'une date de relevé incorrecte.")}</p>`
       }`;
@@ -671,7 +671,7 @@ async function renderBulkBar() {
   const allSelected = visibleIds.length > 0 && count === visibleIds.length;
   bar.innerHTML = `
     <div class="filters-bar" style="align-items:center;background:var(--surface-alt);border-radius:10px;padding:8px 12px;">
-      <span style="font-size:13px;font-weight:700;">${tr('{count} sélectionnée(s)', { count })}</span>
+      <span class="fs-13 fw-700">${tr('{count} sélectionnée(s)', { count })}</span>
       <button type="button" class="btn btn-ghost" id="bulk-select-all">${allSelected ? tr('Tout désélectionner') : tr('Tout sélectionner')}</button>
       ${count ? `
         <button type="button" class="btn btn-ghost" id="bulk-categorize">${tr('Changer la catégorie')}</button>
@@ -700,7 +700,7 @@ async function renderFiltersBar() {
   bar.innerHTML = `
     <div style="display:flex;align-items:center;gap:4px;">
       <button type="button" class="icon-btn" id="tx-prev-month" aria-label="${tr('Mois précédent')}">‹</button>
-      <strong style="min-width:130px;text-align:center;display:inline-block;">${formatMonthLabel(filters.monthKey)}</strong>
+      <strong style="min-width:130px;display:inline-block;" class="ta-center">${formatMonthLabel(filters.monthKey)}</strong>
       <button type="button" class="icon-btn" id="tx-next-month" aria-label="${tr('Mois suivant')}">›</button>
     </div>
     <select id="tx-filter-wallet"><option value="">${tr('Tous les portefeuilles')}</option>${wallets.map((w) => `<option value="${w.id}" ${filters.walletId === w.id ? 'selected' : ''}>${escapeHtml(w.name)}</option>`).join('')}</select>

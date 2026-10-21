@@ -50,20 +50,20 @@ function budgetCategoryCardHtml(cat, actual, limit, currency, carryover = null) 
       : t('Enveloppe : {sign}{amount} reporté du mois dernier', { sign: carryover >= 0 ? '+' : '', amount: formatCurrency(carryover, currency) }))
     : '';
   const carryLabel = carryover != null
-    ? `<div style="font-size:11.5px;color:${carryover >= 0 ? 'var(--pos)' : 'var(--neg)'};margin-top:4px;">${carryText}</div>`
+    ? `<div style="font-size:12px;color:${carryover >= 0 ? 'var(--pos)' : 'var(--neg)'};margin-top:4px;">${carryText}</div>`
     : '';
   return `
     <div class="summary-card" style="${cat.parentId ? 'margin-left:16px;' : ''}">
       <div class="card-title-row">
-        <div style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;">
+        <div style="display:flex;align-items:center;gap:8px;" class="fw-700 fs-14">
           <span style="display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:${color}22;color:${color};flex-shrink:0;">${icon}</span>
-          ${cat.parentId ? '— ' : ''}${escapeHtml(cat.name)}${cat.envelopeMode ? ` <span class="badge badge-accent" style="margin-left:4px;">${t('Enveloppe')}</span>` : ''}
+          ${cat.parentId ? '— ' : ''}${escapeHtml(cat.name)}${cat.envelopeMode ? ` <span class="badge badge-accent ml-4">${t('Enveloppe')}</span>` : ''}
         </div>
         <input type="number" min="0" step="0.01" data-limit-input="${cat.id}" value="${limit || ''}" placeholder="${t('Budget')}"
           style="width:100px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface-alt);text-align:right;">
       </div>
       <div class="progress-track"><div class="progress-fill ${cls}" style="width:${Math.min(pct, 100)}%"></div></div>
-      <div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--text-muted);margin-top:6px;">
+      <div style="display:flex;justify-content:space-between;" class="fs-13 c-muted mt-6">
         <span>${formatCurrency(actual, currency)}</span>
         <span>${effectiveLimit ? formatPercent(pct, 0) : t('Pas de limite')}</span>
       </div>
@@ -89,13 +89,13 @@ async function renderMonthlyTab(container) {
     ? t('Solde actuel : {amount} · {count} échéance(s) à venir ce mois-ci', { amount: formatCurrency(forecast.current, forecast.currency), count: forecast.upcoming.length })
     : t('Solde actuel : {amount}', { amount: formatCurrency(forecast.current, forecast.currency) });
   container.innerHTML = `
-    <div style="display:flex;align-items:center;gap:4px;margin-bottom:14px;">
+    <div style="display:flex;align-items:center;gap:4px;" class="mb-14">
       <button type="button" class="icon-btn" id="bud-prev-month" aria-label="${t('Mois précédent')}">‹</button>
-      <strong style="min-width:130px;text-align:center;display:inline-block;">${formatMonthLabel(monthKey)}</strong>
+      <strong style="min-width:130px;display:inline-block;" class="ta-center">${formatMonthLabel(monthKey)}</strong>
       <button type="button" class="icon-btn" id="bud-next-month" aria-label="${t('Mois suivant')}">›</button>
       ${canCopyPrevious ? `<button type="button" class="btn btn-ghost" id="bud-copy-prev" style="margin-left:auto;">${t('Reprendre les budgets du mois dernier')}</button>` : ''}
     </div>
-    <div class="hero-card" style="margin-bottom:18px;">
+    <div class="hero-card mb-18">
       <div class="hero-card-label">${t('Solde prévisionnel de fin de mois')}</div>
       <div class="hero-card-value"><span class="amount" data-value="${forecast.projected}">${formatCurrency(forecast.projected, forecast.currency)}</span></div>
       <div class="hero-card-trend">${trendText}</div>
@@ -166,12 +166,12 @@ async function renderAnnualTab(container) {
   const totalActual = actuals.filter((a) => budgetByCategory[a.categoryId]).reduce((s, a) => s + a.actual, 0);
 
   container.innerHTML = `
-    <div style="display:flex;align-items:center;gap:4px;margin-bottom:14px;">
+    <div style="display:flex;align-items:center;gap:4px;" class="mb-14">
       <button type="button" class="icon-btn" id="bud-prev-year" aria-label="${t('Année précédente')}">‹</button>
-      <strong style="min-width:80px;text-align:center;display:inline-block;">${annualYear}</strong>
+      <strong style="min-width:80px;display:inline-block;" class="ta-center">${annualYear}</strong>
       <button type="button" class="icon-btn" id="bud-next-year" aria-label="${t('Année suivante')}">›</button>
     </div>
-    ${yearBudgets.length ? `<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px;">${t('{spent} dépensé sur {pct} du budget annuel total attribué ({total}).', {
+    ${yearBudgets.length ? `<p class="fs-13 c-muted mb-14">${t('{spent} dépensé sur {pct} du budget annuel total attribué ({total}).', {
         spent: formatCurrency(totalActual, currency), pct: formatPercent(totalBudget ? percentage(totalActual, totalBudget) : 0, 0), total: formatCurrency(totalBudget, currency),
       })}</p>` : ''}
     <div class="grid-cards" id="budget-annual-grid"></div>`;
@@ -238,7 +238,7 @@ function categoryFormHtml(category, presetParentId, presetType) {
         <input type="hidden" name="color" value="${categoryLook(category || {}).color}">
       </div>
       <div data-field="envelopeRow" ${type !== 'expense' ? 'hidden' : ''}>
-        <label style="display:flex;align-items:center;gap:10px;padding:8px 0 14px;font-size:13.5px;cursor:pointer;">
+        <label style="display:flex;align-items:center;gap:10px;padding:8px 0 14px;cursor:pointer;" class="fs-14">
           <input type="checkbox" name="envelopeMode" ${category?.envelopeMode ? 'checked' : ''}>
           ${t('Mode enveloppe : reporter le solde non dépensé (ou le dépassement) sur le mois suivant')}
         </label>
@@ -337,7 +337,7 @@ async function renderCategoriesTab(container) {
   const group = (type, label) => {
     const roots = categories.filter((c) => c.type === type && !c.parentId);
     const rows = roots.map((r) => categoryRowHtml(r) + categories.filter((c) => c.parentId === r.id).map((ch) => categoryRowHtml(ch, true)).join('')).join('');
-    return `<div class="panel" style="margin-bottom:16px;"><div class="panel-header"><h3>${label}</h3></div>${rows || `<div class="empty-state">${t('Aucune catégorie.')}</div>`}</div>`;
+    return `<div class="panel mb-16"><div class="panel-header"><h3>${label}</h3></div>${rows || `<div class="empty-state">${t('Aucune catégorie.')}</div>`}</div>`;
   };
   container.innerHTML = group('expense', t('Catégories de dépenses')) + group('income', t('Catégories de recettes'));
 
@@ -474,8 +474,8 @@ async function renderRecurringTab(container) {
   const sorted = [...recurring].sort((a, b) => (a.nextDate || '').localeCompare(b.nextDate || ''));
 
   container.innerHTML = `
-    <div class="view-header" style="margin-bottom:10px;">
-      <h2 style="font-size:15px;">${t('Dépenses &amp; recettes récurrentes')}</h2>
+    <div class="view-header mb-10">
+      <h2 class="fs-15">${t('Dépenses &amp; recettes récurrentes')}</h2>
       <button type="button" class="btn btn-primary" id="recurring-add-btn">${t('+ Nouvelle récurrence')}</button>
     </div>
     <div class="panel">
@@ -537,12 +537,12 @@ async function renderRulesTab(container) {
   const catOptionsHtml = expenseCats.map((c) => `<option value="${c.id}">${c.parentId ? '— ' : ''}${escapeHtml(c.name)}</option>`).join('');
 
   container.innerHTML = `
-    <div class="panel" style="margin-bottom:16px;">
+    <div class="panel mb-16">
       <div class="panel-header"><h3>${t('Nouvelle règle')}</h3></div>
-      <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">${t("Quand la note d'une dépense contient ce texte, la catégorie est présélectionnée automatiquement en Saisie express.")}</p>
+      <p class="fs-13 c-muted mb-10">${t("Quand la note d'une dépense contient ce texte, la catégorie est présélectionnée automatiquement en Saisie express.")}</p>
       <form id="rule-form" class="filters-bar" style="align-items:flex-end;">
-        <div class="form-row" style="margin:0;flex:1;min-width:160px;"><label>${t('Texte à repérer')}</label><input type="text" name="pattern" required maxlength="60" placeholder="${t('Ex: netflix')}"></div>
-        <div class="form-row" style="margin:0;flex:1;min-width:160px;"><label>${t('Catégorie')}</label><select name="categoryId" required>${catOptionsHtml}</select></div>
+        <div class="form-row m-0" style="flex:1;min-width:160px;"><label>${t('Texte à repérer')}</label><input type="text" name="pattern" required maxlength="60" placeholder="${t('Ex: netflix')}"></div>
+        <div class="form-row m-0" style="flex:1;min-width:160px;"><label>${t('Catégorie')}</label><select name="categoryId" required>${catOptionsHtml}</select></div>
         <button type="submit" class="btn btn-primary">${t('Ajouter')}</button>
       </form>
     </div>
@@ -650,7 +650,7 @@ export async function renderBudgets() {
       <button type="button" class="tab-btn ${activeTab === 'recurring' ? 'is-active' : ''}" data-tab="recurring">${t('Récurrences')}</button>
       <button type="button" class="tab-btn ${activeTab === 'rules' ? 'is-active' : ''}" data-tab="rules">${t('Règles')}</button>
     </div>
-    <div id="budgets-tab-content" style="margin-top:16px;"></div>`;
+    <div id="budgets-tab-content" class="mt-16"></div>`;
 
   content.querySelectorAll('.tab-btn').forEach((b) => b.addEventListener('click', () => { activeTab = b.dataset.tab; renderBudgets(); }));
   const tabContent = document.getElementById('budgets-tab-content');
