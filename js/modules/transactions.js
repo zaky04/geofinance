@@ -703,15 +703,15 @@ async function renderFiltersBar() {
       <strong style="min-width:130px;display:inline-block;" class="ta-center">${formatMonthLabel(filters.monthKey)}</strong>
       <button type="button" class="icon-btn" id="tx-next-month" aria-label="${tr('Mois suivant')}">›</button>
     </div>
-    <select id="tx-filter-wallet"><option value="">${tr('Tous les portefeuilles')}</option>${wallets.map((w) => `<option value="${w.id}" ${filters.walletId === w.id ? 'selected' : ''}>${escapeHtml(w.name)}</option>`).join('')}</select>
-    <select id="tx-filter-category"><option value="">${tr('Toutes catégories')}</option>${categories.map((c) => `<option value="${c.id}" ${filters.categoryId === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}</select>
-    <select id="tx-filter-type">
+    <select id="tx-filter-wallet" aria-label="${tr('Portefeuille')}"><option value="">${tr('Tous les portefeuilles')}</option>${wallets.map((w) => `<option value="${w.id}" ${filters.walletId === w.id ? 'selected' : ''}>${escapeHtml(w.name)}</option>`).join('')}</select>
+    <select id="tx-filter-category" aria-label="${tr('Catégorie')}"><option value="">${tr('Toutes catégories')}</option>${categories.map((c) => `<option value="${c.id}" ${filters.categoryId === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}</select>
+    <select id="tx-filter-type" aria-label="${tr('Type')}">
       <option value="">${tr('Tous types')}</option>
       <option value="income" ${filters.type === 'income' ? 'selected' : ''}>${tr('Recettes')}</option>
       <option value="expense" ${filters.type === 'expense' ? 'selected' : ''}>${tr('Dépenses')}</option>
       <option value="transfer" ${filters.type === 'transfer' ? 'selected' : ''}>${tr('Transferts')}</option>
     </select>
-    <select id="tx-filter-reconciled">
+    <select id="tx-filter-reconciled" aria-label="${tr('Rapprochement')}">
       <option value="">${tr('Rapprochement : toutes')}</option>
       <option value="yes" ${filters.reconciled === 'yes' ? 'selected' : ''}>${tr('Pointées')}</option>
       <option value="no" ${filters.reconciled === 'no' ? 'selected' : ''}>${tr('Non pointées')}</option>

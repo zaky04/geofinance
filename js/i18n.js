@@ -162,6 +162,8 @@ const EN = {
   'Variation mensuelle des entrées': 'Monthly income trend',
   'Transactions récentes': 'Recent transactions',
   'Voir tout': 'See all',
+  "Seuil d'avertissement (%)": 'Warning threshold (%)',
+  'Seuil critique (%)': 'Critical threshold (%)',
   "Plus d'actions": 'More actions',
   'Choisir une catégorie': 'Choose a category',
   'Garder comme favori': 'Keep as favourite',
@@ -306,11 +308,11 @@ const EN = {
   'Pointée': 'Reconciled',
   'Dépointée': 'Unreconciled',
   'Supprimer cette transaction ?': 'Delete this transaction?',
-  'Transaction supprimée.': 'Transaction deleted.',
-  'Transaction restaurée.': 'Transaction restored.',
   'Supprimer cette règle de catégorisation ?': 'Delete this categorization rule?',
   "Utiliser l'empreinte digitale": 'Use fingerprint',
   'Remplacer TOUTES vos données actuelles par celles de la sauvegarde ? Elles seront définitivement perdues. Exportez une sauvegarde avant si besoin.': 'Replace ALL your current data with the backup? It will be permanently lost. Export a backup first if needed.',
+  'Transaction supprimée.': 'Transaction deleted.',
+  'Transaction restaurée.': 'Transaction restored.',
   'Restaurée (annulation)': 'Restored (undo)',
 
   // ---------- Budgets (budgets.js + en-tête index.html) ----------
@@ -969,14 +971,14 @@ const EN = {
   "Tapez pour rechercher parmi vos transactions, portefeuilles, dettes, objectifs d'épargne, investissements, comptes gardés et dépenses partagées.":
     'Type to search among your transactions, wallets, debts, savings goals, investments, managed accounts, and shared expenses.',
   'Aucun résultat.': 'No results.',
-  'Ouvrir dans son écran': 'Go to screen',
-
   'Pour confirmer, recopiez exactement ce texte :': 'To confirm, type this text exactly:',
   'Code PIN': 'PIN code',
   'Saisissez votre code PIN pour confirmer.': 'Enter your PIN code to confirm.',
   'Le texte saisi ne correspond pas.': 'The text you typed does not match.',
   'Vérification impossible. Réessayez.': 'Verification failed. Try again.',
   'SUPPRIMER TOUT': 'DELETE EVERYTHING',
+  'Ouvrir dans son écran': 'Go to screen',
+
   // ---------- Assistant de configuration + mode démo (app.js) ----------
   'Passer cette étape': 'Skip this step',
   'Bienvenue sur GeoFinance': 'Welcome to GeoFinance',

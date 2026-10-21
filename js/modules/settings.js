@@ -150,7 +150,7 @@ async function renderSecuritySection(container) {
       </div>
       <div class="stat-row mt-10">
         <span class="stat-row-label">${t("Verrouillage automatique après inactivité")}</span>
-        <select id="auto-lock-select">${AUTO_LOCK_OPTIONS.map(([v, l]) => `<option value="${v}" ${v === autoLockMinutes ? 'selected' : ''}>${t(l)}</option>`).join('')}</select>
+        <select id="auto-lock-select" aria-label="${t('Verrouillage automatique après inactivité')}">${AUTO_LOCK_OPTIONS.map(([v, l]) => `<option value="${v}" ${v === autoLockMinutes ? 'selected' : ''}>${t(l)}</option>`).join('')}</select>
       </div>
     </div>`;
 
@@ -233,7 +233,7 @@ async function renderLanguageSection(container) {
     <div class="panel mb-16">
       <div class="panel-header"><h3>Langue / Language</h3></div>
       <div class="form-row" style="max-width:200px;">
-        <select id="language-select">
+        <select id="language-select" aria-label="Langue / Language">
           <option value="fr" ${lang === 'fr' ? 'selected' : ''}>Français</option>
           <option value="en" ${lang === 'en' ? 'selected' : ''}>English</option>
         </select>
@@ -252,7 +252,7 @@ async function renderCurrencySection(container) {
       <div class="panel-header"><h3>${t('Devise de base')}</h3></div>
       <p class="fs-13 c-muted mb-10">${t('Toutes les conversions (patrimoine net, rapports, outils) sont exprimées dans cette devise. La modifier réinitialise vos taux de change existants.')}</p>
       <div class="form-row" style="max-width:200px;">
-        <select id="base-currency-select">${CURRENCIES.map((c) => `<option value="${c}" ${c === baseCurrency ? 'selected' : ''}>${c}</option>`).join('')}</select>
+        <select id="base-currency-select" aria-label="${t('Devise de base')}">${CURRENCIES.map((c) => `<option value="${c}" ${c === baseCurrency ? 'selected' : ''}>${c}</option>`).join('')}</select>
       </div>
     </div>`;
 
@@ -462,8 +462,8 @@ async function renderNotificationsSection(container) {
       <div class="stat-row mt-10" style="align-items:center;">
         <span class="stat-row-label">${t("Seuils d'alerte budget")}</span>
         <span style="display:flex;align-items:center;gap:8px;">
-          <input type="number" min="1" max="100" id="threshold-warn" value="${thresholds.warn}" style="width:60px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface-alt);text-align:right;"> ${t('% avertissement')}
-          <input type="number" min="1" max="100" id="threshold-danger" value="${thresholds.danger}" style="width:60px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface-alt);text-align:right;"> ${t('% dépassement')}
+          <input type="number" min="1" max="100" aria-label="${t("Seuil d'avertissement (%)")}" id="threshold-warn" value="${thresholds.warn}" style="width:60px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface-alt);text-align:right;"> ${t('% avertissement')}
+          <input type="number" min="1" max="100" aria-label="${t('Seuil critique (%)')}" id="threshold-danger" value="${thresholds.danger}" style="width:60px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface-alt);text-align:right;"> ${t('% dépassement')}
         </span>
       </div>
     </div>`;

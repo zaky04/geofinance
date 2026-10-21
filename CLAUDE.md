@@ -2413,6 +2413,22 @@ Google actuelle, à examiner si la connexion par redirection pose problème.
 Vérifié : mobile 375 px (les deux apps), 12 vues sans erreur nouvelle, contraste 0 problème, tests 64/64 + 117/117 (Djignan) et 35/35 (gratuite).
 Les builds natifs doivent recevoir `panels.js`, `card-actions.js`, `icons.js`, CSS/HTML/modules avant reconstruction (et les nouvelles icônes pour GeoFinance).
 
+### 21 octobre 2026 (suite 3) — Retouches après revérification (`CACHE_VERSION` `v101`)
+
+- **Clavier du PIN** : le bouton biométrique masqué (`hidden`) restait hors de la grille et le « 0 » glissait dans la colonne de gauche.
+  `.pin-keypad .pin-key[hidden]` garde désormais sa place en `visibility:hidden` (le « 0 » est centré sous le « 8 »).
+- **Accessibilité** : `aria-label` sur les 4 filtres de Transactions et sur les réglages de Paramètres qui n'avaient pas de libellé associé
+  (verrouillage auto, seuils d'alerte, langue, devise de base) ; `@media (prefers-reduced-motion: reduce)` coupe animations et transitions.
+- **Tablette** : le tableau de bord, ses graphiques et ses panneaux passent sur 2 colonnes dès 700 px (une seule colonne en dessous).
+  La barre latérale reste réservée aux écrans > 900 px.
+- **Titres `h3` posés directement dans un `.panel`** (ex. « Taux de change ») suivent le style des autres titres (`.panel > h3`).
+- **Écran d'activation** (Djignan seulement) : une langue par ligne, la seconde en plus petit (`.lock-title-alt`, `.lock-subtitle-alt`).
+- **Motif du cauri conditionnel** : les règles `.lock-screen::before` et `.empty-state::before, .tx-empty::before` sont préfixées par
+  `html.brand-cowrie`. Djignan pose la classe sur `<html>` (`index.html`) ; **GeoFinance gratuite ne la pose pas** (son logo est le bouclier, le cauri n'y a pas
+  de sens). `styles.css` reste donc identique dans les deux dépôts. Pour remettre le motif dans la gratuite : `<html lang="fr" class="brand-cowrie">`.
+Vérifié sur des origines de test isolées (serveur statique local, pour ne pas toucher aux données d'une autre session dans le navigateur d'aperçu) :
+clavier aligné, libellés présents, 2 colonnes à 768 px, cauri absent côté gratuite, tests 64/64 + 117/117 (Djignan) et 35/35 (gratuite).
+
 ## 7. Pistes prioritaires non traitées
 
 Par ordre d'impact estimé, à valider avec l'auteur avant de s'y attaquer :

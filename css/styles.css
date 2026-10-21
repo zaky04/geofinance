@@ -220,6 +220,8 @@ body[data-privacy="visible"] #privacy-toggle .icon-eye-closed { display: none; }
 .pin-key:active { transform: scale(.92); background: var(--accent-soft); }
 .pin-key-ghost { background: transparent; box-shadow: none; color: var(--text-muted); }
 .pin-key-ghost:active { background: var(--surface-alt); }
+/* Masqué mais présent dans la grille : le « 0 » reste centré sous le « 8 ». */
+.pin-keypad .pin-key[hidden] { display: flex !important; visibility: hidden; }
 
 /* ==========================================================================
    APP SHELL
@@ -623,8 +625,6 @@ body[data-privacy="visible"] #privacy-toggle .icon-eye-closed { display: none; }
   .demo-mode-banner { padding: 12px 16px 0; }
   .hero-grid { grid-template-columns: 1fr; }
   .summary-grid { grid-template-columns: 1fr 1fr; }
-  .charts-grid { grid-template-columns: 1fr; }
-  .dashboard-panels-grid { grid-template-columns: 1fr; }
   /* Cibles tactiles agrandies (min. ~40-44px recommandé) et espacement accru
      pour éviter les appuis sur le mauvais bouton. */
   .card-actions { gap: 6px; }
@@ -776,8 +776,10 @@ body[data-ui-mode="simple"] #dashboard-panels-grid { display: none !important; }
 .ledger-block { margin-top: 14px; padding-top: 4px; border-top: 1px solid var(--border); }
 .ledger-block .link-btn { margin-top: 8px; }
 @media (max-width: 900px) {
-  .dash-top { grid-template-columns: 1fr; }
   .dash-top .hero-card-value { font-size: 34px; }
+}
+@media (max-width: 699px) {
+  .dash-top, .charts-grid, .dashboard-panels-grid { grid-template-columns: 1fr; }
 }
 
 /* Rapports : barre de période commune + onglets, cartes de graphique à en-tête compact. */
@@ -803,13 +805,13 @@ body[data-ui-mode="simple"] #dashboard-panels-grid { display: none !important; }
   --cauri-tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round'%3E%3Cg transform='translate(8 6) scale(.95)'%3E%3Cg transform='rotate(22 24 24)'%3E%3Cellipse cx='24' cy='24' rx='13' ry='18'/%3E%3Cpath d='M24 11 C18.2 18 18.2 30 24 37 C29.8 30 29.8 18 24 11Z'/%3E%3Cpath d='M20.7 15 L17.7 15 M27.3 15 L30.3 15 M19.6 18 L16.6 18 M28.4 18 L31.4 18 M19 21 L16 21 M29 21 L32 21 M18.8 24 L15.8 24 M29.2 24 L32.2 24 M19 27 L16 27 M29 27 L32 27 M19.6 30 L16.6 30 M28.4 30 L31.4 30 M20.7 33 L17.7 33 M27.3 33 L30.3 33'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(66 62) scale(.95) rotate(180 24 24)'%3E%3Cg transform='rotate(22 24 24)'%3E%3Cellipse cx='24' cy='24' rx='13' ry='18'/%3E%3Cpath d='M24 11 C18.2 18 18.2 30 24 37 C29.8 30 29.8 18 24 11Z'/%3E%3Cpath d='M20.7 15 L17.7 15 M27.3 15 L30.3 15 M19.6 18 L16.6 18 M28.4 18 L31.4 18 M19 21 L16 21 M29 21 L32 21 M18.8 24 L15.8 24 M29.2 24 L32.2 24 M19 27 L16 27 M29 27 L32 27 M19.6 30 L16.6 30 M28.4 30 L31.4 30 M20.7 33 L17.7 33 M27.3 33 L30.3 33'/%3E%3C/g%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 .lock-screen { overflow: hidden; }
-.lock-screen::before {
+html.brand-cowrie .lock-screen::before {
   content: ""; position: absolute; inset: 0; pointer-events: none;
   background: var(--text); opacity: .05;
   -webkit-mask: var(--cauri-tile) 0 0 / 120px 120px repeat; mask: var(--cauri-tile) 0 0 / 120px 120px repeat;
 }
 .lock-card { position: relative; z-index: 1; }
-.empty-state::before, .tx-empty::before {
+html.brand-cowrie .empty-state::before, html.brand-cowrie .tx-empty::before {
   content: ""; display: block; width: 38px; height: 38px; margin: 0 auto 10px;
   background: var(--text-faint); opacity: .6;
   -webkit-mask: var(--cauri-glyph) center / contain no-repeat; mask: var(--cauri-glyph) center / contain no-repeat;
@@ -819,11 +821,11 @@ body[data-ui-mode="simple"] #dashboard-panels-grid { display: none !important; }
    Typographie : serif pour les titres et les gros montants, sans-serif pour tout le reste.
    ========================================================================== */
 body { font-size: 16px; line-height: 1.45; }
-.page-title, .panel-header h3, .chart-card h3, .view-header h2, .modal-header h3, .lock-title, .sidebar-brand, .hero-card-value {
+.page-title, .panel-header h3, .panel > h3, .chart-card h3, .view-header h2, .modal-header h3, .lock-title, .sidebar-brand, .hero-card-value {
   font-family: var(--font-serif);
 }
 .page-title { font-size: 21px; font-weight: 600; }
-.panel-header h3, .chart-card h3 { font-size: 16px; font-weight: 600; }
+.panel-header h3, .panel > h3, .chart-card h3 { font-size: 16px; font-weight: 600; }
 .view-header h2 { font-weight: 600; }
 .modal-header h3 { font-weight: 600; font-size: 18px; }
 .lock-title { font-weight: 600; font-size: 23px; }
@@ -902,6 +904,15 @@ body { font-size: 16px; line-height: 1.45; }
   input[type="checkbox"], input[type="radio"] { width: 22px; height: 22px; }
   .tx-select { width: 22px !important; height: 22px !important; }
   .segmented-btn { min-height: 40px; }
+}
+
+/* ==========================================================================
+   Retouches : écran d'activation bilingue, animations réduites.
+   ========================================================================== */
+.lock-title-alt { font-size: 14px; font-weight: 600; color: var(--text-muted); margin-top: -2px; }
+.lock-subtitle-alt { font-size: 12px; margin-top: -4px; opacity: .85; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
 
 /* ---- Utilitaires (issus des styles en ligne) ---- */
