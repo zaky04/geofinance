@@ -636,7 +636,7 @@ async function bulkSetReconciled(reconciled) {
 
 async function bulkDelete() {
   const count = selectedIds.size;
-  const ok = await confirmDialog(tr('Supprimer {count} transaction(s) sélectionnée(s) ?', { count }), { danger: true, confirmText: tr('Supprimer') });
+  const ok = await confirmDialog(tr('Supprimer {count} transaction(s) sélectionnée(s) ?', { count }), { danger: true, requirePin: true, confirmText: tr('Supprimer') });
   if (!ok) return;
   const all = await dbGetAll(STORES.TRANSACTIONS);
   const deleted = [];
@@ -755,7 +755,7 @@ export function initTransactionsModule() {
     } else if (btn.dataset.action === 'edit') {
       openQuickAdd({ editTransaction: t });
     } else if (btn.dataset.action === 'delete') {
-      const ok = await confirmDialog(tr('Supprimer cette transaction ?'), { danger: true, confirmText: tr('Supprimer') });
+      const ok = await confirmDialog(tr('Supprimer cette transaction ?'), { danger: true, requirePin: true, confirmText: tr('Supprimer') });
       if (ok) {
         await dbDelete(STORES.TRANSACTIONS, txId);
         await logAudit({ entityType: 'transaction', entityId: txId, action: 'delete', before: t });

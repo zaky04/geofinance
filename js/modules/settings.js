@@ -16,7 +16,7 @@ import { isNotificationSupported, getNotificationPermission, requestNotification
 import { renderCloudBackupSection } from '../firebase-sync.js';
 import { isStandalone, isIOS, isSafari, isAndroid, hasDeferredPrompt, triggerInstall, resetInstallPromptSnooze } from '../install-prompt.js';
 import { DASHBOARD_PANEL_DEFAULTS, BUDGET_ALERT_THRESHOLD_DEFAULTS } from './dashboard.js';
-import { escapeHtml, formatDate, CURRENCIES, openModal, confirmDialog, showToast } from '../utils.js';
+import { escapeHtml, formatDate, CURRENCIES, openModal, confirmDialog, confirmReplaceAllData, showToast } from '../utils.js';
 import { notifyDataChanged } from '../state.js';
 import { t, getLanguage, setLanguage } from '../i18n.js';
 
@@ -372,6 +372,7 @@ async function renderBackupSection(container) {
   container.querySelector('#import-json-btn').addEventListener('click', () => {
     hiddenFileInput('application/json', async (file) => {
       const merge = await confirmDialog(t('Fusionner avec les données existantes ? "Annuler" remplacera entièrement les données actuelles par celles du fichier.'), { confirmText: t('Fusionner'), cancelText: t('Remplacer tout') });
+      if (!merge && !(await confirmReplaceAllData())) return;
       try {
         await importJsonBackup(file, { merge });
         showToast(t('Import réussi.'));
@@ -392,6 +393,7 @@ async function renderBackupSection(container) {
       const p = await promptPassphrase(t('Mot de passe de la sauvegarde'));
       if (!p) return;
       const merge = await confirmDialog(t('Fusionner avec les données existantes ?'), { confirmText: t('Fusionner'), cancelText: t('Remplacer tout') });
+      if (!merge && !(await confirmReplaceAllData())) return;
       try {
         await importEncryptedBackup(file, p, { merge });
         showToast(t('Import réussi.'));
@@ -423,7 +425,11 @@ async function renderBackupSection(container) {
   container.querySelector('#wipe-data-btn').addEventListener('click', async () => {
     const ok = await confirmDialog(t('Supprimer DÉFINITIVEMENT toutes les données de GeoFinance (portefeuilles, transactions, budgets, investissements, dettes…) ? Cette action est irréversible. Exportez une sauvegarde avant si besoin.'), { danger: true, confirmText: t('Tout supprimer') });
     if (!ok) return;
-    const ok2 = await confirmDialog(t('Dernière confirmation : voulez-vous vraiment tout réinitialiser ?'), { danger: true, confirmText: t('Oui, réinitialiser') });
+    // Dernière barrière : code PIN + texte affiché en clair à recopier (empêche un clic malheureux ou
+    // une réinitialisation par quelqu'un qui a juste l'appareil déverrouillé entre les mains).
+    const ok2 = await confirmDialog(t('Dernière confirmation : voulez-vous vraiment tout réinitialiser ?'), {
+      danger: true, requirePin: true, typeToConfirm: t('SUPPRIMER TOUT'), confirmText: t('Oui, réinitialiser'),
+    });
     if (!ok2) return;
     await wipeAllData();
     showToast(t('Toutes les données ont été réinitialisées.'));

@@ -319,8 +319,11 @@ export function openModal(bodyHtml, { title = '', onClose = null } = {}) {
   return { el: wrap, close };
 }
 
-/** Boîte de confirmation stylée (remplace window.confirm). Résout un booléen. */
-export function confirmDialog(message, { title, confirmText, cancelText, danger = false } = {}) {
+/** Boîte de confirmation. Options de sécurité (suppressions) :
+    - requirePin : demande le code PIN de l'appareil avant de valider (ignoré si aucun PIN n'est configuré) ;
+    - typeToConfirm : texte affiché en clair que l'utilisateur doit recopier (réinitialisation complète).
+    Le PIN est vérifié avec le même blocage anti-brute-force que l'écran de verrouillage. */
+export async function confirmDialog(message, { title, confirmText, cancelText, danger = false, requirePin = false, typeToConfirm = null } = {}) {
   title = title ?? tr('Confirmation');
   confirmText = confirmText ?? tr('Confirmer');
   // Pas de tr('Annuler') ici : ce mot français sert déjà de clé pour le bouton "Annuler" des toasts
@@ -328,16 +331,134 @@ export function confirmDialog(message, { title, confirmText, cancelText, danger 
   // Voir le commentaire sur la clé 'Annuler' dans i18n.js. Contournement direct par langue plutôt
   // que par une clé dictionnaire, même pattern que intlLocale() ci-dessus dans ce fichier.
   cancelText = cancelText ?? (getLanguage() === 'en' ? 'Cancel' : 'Annuler');
+
+  let needPin = false;
+  if (requirePin) {
+    // En cas d'échec de lecture on exige quand même le PIN (on échoue du côté sûr).
+    try { needPin = await (await import('./auth.js')).isPinConfigured(); } catch { needPin = true; }
+  }
+  // L'empreinte (déjà enregistrée dans Paramètres) peut remplacer la saisie du PIN : même preuve de
+  // présence que le déverrouillage de l'appli.
+  let canBio = false;
+  if (needPin) {
+    try {
+      const a = await import('./auth.js');
+      canBio = (await a.isBiometricAvailable()) && (await a.isBiometricConfigured());
+    } catch { canBio = false; }
+  }
+  const secure = needPin || !!typeToConfirm;
+  const normalize = (s) => String(s).trim().replace(/\s+/g, ' ').toLowerCase();
+
   return new Promise((resolve) => {
     let decided = false;
     const modal = openModal(`
-      <p style="margin:0 0 18px;">${escapeHtml(message)}</p>
+      <p class="mb-16">${escapeHtml(message)}</p>
+      ${secure ? `<div class="confirm-secure">
+        ${typeToConfirm ? `<div class="form-row">
+          <label for="cd-phrase">${escapeHtml(tr('Pour confirmer, recopiez exactement ce texte :'))}</label>
+          <p class="confirm-phrase">${escapeHtml(typeToConfirm)}</p>
+          <input type="text" id="cd-phrase" data-secure="phrase" autocomplete="off" autocapitalize="off" spellcheck="false">
+        </div>` : ''}
+        ${needPin ? `<div class="form-row">
+          <label for="cd-pin">${escapeHtml(tr('Code PIN'))}</label>
+          <input type="password" id="cd-pin" data-secure="pin" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="${escapeHtml(tr('Saisissez votre code PIN pour confirmer.'))}">
+        </div>` : ''}
+        ${canBio ? `<button type="button" class="btn btn-ghost btn-block mb-16" data-act="biometric">${svgIcon('fingerprint', 18)} ${escapeHtml(tr("Utiliser l'empreinte digitale"))}</button>` : ''}
+        <p class="confirm-error c-neg" role="alert" hidden></p>
+      </div>` : ''}
       <div class="modal-actions">
         <button type="button" class="btn btn-ghost" data-act="cancel">${escapeHtml(cancelText)}</button>
         <button type="button" class="btn ${danger ? 'btn-danger' : 'btn-primary'}" data-act="confirm">${escapeHtml(confirmText)}</button>
       </div>
     `, { title, onClose: () => { if (!decided) { decided = true; resolve(false); } } });
+
+    const confirmBtn = modal.el.querySelector('[data-act="confirm"]');
+    const phraseEl = modal.el.querySelector('[data-secure="phrase"]');
+    const pinEl = modal.el.querySelector('[data-secure="pin"]');
+    const errorEl = modal.el.querySelector('.confirm-error');
+    const showError = (msg) => { if (errorEl) { errorEl.textContent = msg; errorEl.hidden = false; } };
+
     modal.el.querySelector('[data-act="cancel"]').addEventListener('click', () => { decided = true; resolve(false); modal.close(); });
-    modal.el.querySelector('[data-act="confirm"]').addEventListener('click', () => { decided = true; resolve(true); modal.close(); });
+
+    let checking = false;
+    confirmBtn.addEventListener('click', async () => {
+      if (checking) return;
+      if (errorEl) errorEl.hidden = true;
+      if (phraseEl && normalize(phraseEl.value) !== normalize(typeToConfirm)) {
+        showError(tr('Le texte saisi ne correspond pas.'));
+        phraseEl.focus();
+        return;
+      }
+      if (pinEl) {
+        if (!/^\d{4,6}$/.test(pinEl.value)) {
+          showError(tr('Code PIN incorrect.'));
+          pinEl.value = '';
+          pinEl.focus();
+          return;
+        }
+        checking = true;
+        confirmBtn.disabled = true;
+        try {
+          const { ok, waitSeconds } = await (await import('./auth.js')).verifyPinForAction(pinEl.value);
+          if (!ok) {
+            showError(waitSeconds > 0 ? tr('Trop de tentatives. Réessayez dans {s}s.', { s: waitSeconds }) : tr('Code PIN incorrect.'));
+            pinEl.value = '';
+            pinEl.focus();
+            return;
+          }
+        } catch (err) {
+          console.error('[confirmDialog] vérification du PIN impossible :', err);
+          showError(tr('Vérification impossible. Réessayez.'));
+          return;
+        } finally {
+          checking = false;
+          confirmBtn.disabled = false;
+        }
+      }
+      decided = true;
+      resolve(true);
+      modal.close();
+    });
+    // Empreinte digitale à la place du PIN (le texte à recopier, lui, reste exigé s'il y en a un).
+    modal.el.querySelector('[data-act="biometric"]')?.addEventListener('click', async () => {
+      if (checking) return;
+      if (errorEl) errorEl.hidden = true;
+      if (phraseEl && normalize(phraseEl.value) !== normalize(typeToConfirm)) {
+        showError(tr('Le texte saisi ne correspond pas.'));
+        phraseEl.focus();
+        return;
+      }
+      checking = true;
+      confirmBtn.disabled = true;
+      try {
+        const ok = await (await import('./auth.js')).verifyBiometric();
+        if (!ok) { showError(tr('Échec de la vérification biométrique.')); return; }
+      } catch (err) {
+        console.error('[confirmDialog] vérification biométrique impossible :', err);
+        showError(tr('Échec de la vérification biométrique.'));
+        return;
+      } finally {
+        checking = false;
+        confirmBtn.disabled = false;
+      }
+      decided = true;
+      resolve(true);
+      modal.close();
+    });
+    // Entrée dans un champ valide la confirmation.
+    modal.el.querySelectorAll('[data-secure]').forEach((el) => el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); confirmBtn.click(); }
+    }));
+    if (secure) setTimeout(() => (phraseEl || pinEl)?.focus(), 50);
   });
+}
+
+/** Dernier verrou avant d'écraser TOUTES les données de l'appareil (import ou restauration cloud en mode
+    « Remplacer tout ») : PIN (ou empreinte) obligatoire. Fermer la première boîte (Échap, ✕) équivaut à
+    « Remplacer tout » dans ces flux — ce verrou évite qu'un simple geste détruise les données. */
+export function confirmReplaceAllData() {
+  return confirmDialog(
+    tr('Remplacer TOUTES vos données actuelles par celles de la sauvegarde ? Elles seront définitivement perdues. Exportez une sauvegarde avant si besoin.'),
+    { danger: true, requirePin: true, confirmText: tr('Remplacer tout') },
+  );
 }

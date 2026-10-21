@@ -167,7 +167,7 @@ async function openHistoryModal(inv) {
     const btn = e.target.closest('[data-action="delete-entry"]');
     if (!btn) return;
     const entryId = e.target.closest('[data-entry-id]').dataset.entryId;
-    const ok = await confirmDialog(t("Supprimer cette entrée d'historique ?"), { danger: true, confirmText: t('Supprimer') });
+    const ok = await confirmDialog(t("Supprimer cette entrée d'historique ?"), { danger: true, requirePin: true, confirmText: t('Supprimer') });
     if (ok) {
       await dbDelete(STORES.INVESTMENT_ENTRIES, entryId);
       await logAudit({ entityType: 'investmentEntry', entityId, action: 'delete' });
@@ -275,7 +275,7 @@ export function initInvestmentsModule() {
     } else if (btn.dataset.action === 'edit') {
       openInvestmentModal(inv);
     } else if (btn.dataset.action === 'delete') {
-      const ok = await confirmDialog(t('Supprimer l\'investissement "{name}" et tout son historique ?', { name: inv.name }), { danger: true, confirmText: t('Supprimer') });
+      const ok = await confirmDialog(t('Supprimer l\'investissement "{name}" et tout son historique ?', { name: inv.name }), { danger: true, requirePin: true, confirmText: t('Supprimer') });
       if (ok) {
         const entries = (await dbGetAll(STORES.INVESTMENT_ENTRIES)).filter((en) => en.investmentId === inv.id);
         for (const en of entries) await dbDelete(STORES.INVESTMENT_ENTRIES, en.id);

@@ -432,7 +432,7 @@ export function initDebtsModule() {
     } else if (btn.dataset.action === 'edit') {
       openDebtModal(d);
     } else if (btn.dataset.action === 'delete') {
-      const ok = await confirmDialog(tr('Supprimer "{name}" et tout son historique de remboursement (et les mouvements de portefeuille associés) ?', { name: d.personName }), { danger: true, confirmText: tr('Supprimer') });
+      const ok = await confirmDialog(tr('Supprimer "{name}" et tout son historique de remboursement (et les mouvements de portefeuille associés) ?', { name: d.personName }), { danger: true, requirePin: true, confirmText: tr('Supprimer') });
       if (ok) {
         const payments = (await dbGetAll(STORES.DEBT_PAYMENTS)).filter((p) => p.debtId === d.id);
         const linkedTx = (await dbGetAll(STORES.TRANSACTIONS)).filter((t) => t.debtId === d.id);

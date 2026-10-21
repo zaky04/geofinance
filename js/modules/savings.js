@@ -146,7 +146,7 @@ export function initSavingsModule() {
       showToast(g.archived ? t('Objectif archivé.') : t('Objectif désarchivé.'));
       notifyDataChanged('savings');
     } else if (btn.dataset.action === 'delete') {
-      const ok = await confirmDialog(t('Supprimer définitivement l\'objectif "{name}" ?', { name: g.name }), { danger: true, confirmText: t('Supprimer') });
+      const ok = await confirmDialog(t('Supprimer définitivement l\'objectif "{name}" ?', { name: g.name }), { danger: true, requirePin: true, confirmText: t('Supprimer') });
       if (ok) {
         await dbDelete(STORES.SAVINGS_GOALS, g.id);
         await logAudit({ entityType: 'savingsGoal', entityId: g.id, action: 'delete', before: g });

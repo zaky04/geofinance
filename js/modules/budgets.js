@@ -356,7 +356,7 @@ async function renderCategoriesTab(container) {
     } else if (btn.dataset.action === 'delete') {
       const hasChildren = categories2.some((c) => c.parentId === cat.id);
       if (hasChildren) { showToast(t("Supprimez d'abord les sous-catégories.")); return; }
-      const ok = await confirmDialog(t('Supprimer la catégorie "{name}" ? Les transactions déjà enregistrées resteront mais afficheront "Sans catégorie".', { name: cat.name }), { danger: true, confirmText: t('Supprimer') });
+      const ok = await confirmDialog(t('Supprimer la catégorie "{name}" ? Les transactions déjà enregistrées resteront mais afficheront "Sans catégorie".', { name: cat.name }), { danger: true, requirePin: true, confirmText: t('Supprimer') });
       if (ok) {
         await dbDelete(STORES.CATEGORIES, cat.id);
         await logAudit({ entityType: 'category', entityId: cat.id, action: 'delete', before: cat });
@@ -501,7 +501,7 @@ async function renderRecurringTab(container) {
     } else if (btn.dataset.action === 'edit') {
       openRecurringModal(r);
     } else if (btn.dataset.action === 'delete') {
-      const ok = await confirmDialog(t('Supprimer la récurrence "{name}" ? Les transactions déjà générées seront conservées.', { name: r.name }), { danger: true, confirmText: t('Supprimer') });
+      const ok = await confirmDialog(t('Supprimer la récurrence "{name}" ? Les transactions déjà générées seront conservées.', { name: r.name }), { danger: true, requirePin: true, confirmText: t('Supprimer') });
       if (ok) {
         await dbDelete(STORES.RECURRING, r.id);
         await logAudit({ entityType: 'recurring', entityId: r.id, action: 'delete', before: r });
@@ -565,6 +565,8 @@ async function renderRulesTab(container) {
   container.querySelectorAll('[data-action="delete"]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const ruleId = btn.closest('[data-rule-id]').dataset.ruleId;
+      const ok = await confirmDialog(t('Supprimer cette règle de catégorisation ?'), { danger: true, requirePin: true, confirmText: t('Supprimer') });
+      if (!ok) return;
       await dbDelete(STORES.CATEGORIZATION_RULES, ruleId);
       showToast(t('Règle supprimée.'));
       notifyDataChanged('categorizationRules');

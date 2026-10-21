@@ -963,3 +963,8 @@ body { font-size: 16px; line-height: 1.45; }
 .fw-600 { font-weight: 600 !important; }
 .fw-700 { font-weight: 700 !important; }
 /* ---- Fin des utilitaires ---- */
+
+/* Confirmation sécurisée (PIN / texte à recopier) */
+.confirm-secure { margin-bottom: 4px; }
+.confirm-phrase { margin: 0; padding: 8px 10px; border: 1px dashed var(--border); border-radius: var(--radius-sm, 6px); font-weight: 800; letter-spacing: .04em; user-select: all; }
+.confirm-error { margin: 0 0 8px; font-size: 13px; font-weight: 700; }

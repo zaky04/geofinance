@@ -147,7 +147,7 @@ async function renderAccountDetail(container, account) {
     btn.addEventListener('click', async () => {
       const entryId = btn.closest('[data-entry-id]').dataset.entryId;
       const target = entries.find((e) => e.id === entryId);
-      const ok = await confirmDialog(t('Supprimer ce mouvement ?'), { danger: true, confirmText: t('Supprimer') });
+      const ok = await confirmDialog(t('Supprimer ce mouvement ?'), { danger: true, requirePin: true, confirmText: t('Supprimer') });
       if (!ok) return;
       await dbDelete(STORES.KEPT_ACCOUNT_ENTRIES, entryId);
       await logAudit({ entityType: 'keptAccountEntry', entityId, action: 'delete', before: target });
@@ -203,7 +203,7 @@ export function initKeptAccountsModule() {
       showToast(account.archived ? t('Compte archivé.') : t('Compte désarchivé.'));
       notifyDataChanged('keptAccounts');
     } else if (btn.dataset.action === 'delete') {
-      const ok = await confirmDialog(t('Supprimer le compte gardé de "{name}" et tout son historique de mouvements ?', { name: account.ownerName }), { danger: true, confirmText: t('Supprimer') });
+      const ok = await confirmDialog(t('Supprimer le compte gardé de "{name}" et tout son historique de mouvements ?', { name: account.ownerName }), { danger: true, requirePin: true, confirmText: t('Supprimer') });
       if (!ok) return;
       const entries = (await dbGetAll(STORES.KEPT_ACCOUNT_ENTRIES)).filter((en) => en.accountId === account.id);
       for (const en of entries) await dbDelete(STORES.KEPT_ACCOUNT_ENTRIES, en.id);

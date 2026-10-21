@@ -85,6 +85,25 @@ export async function verifyPin(pin) {
   return ok;
 }
 
+/** Vérifie le PIN pour une action sensible (suppression, réinitialisation) en réutilisant le même
+    blocage anti-brute-force que l'écran de verrouillage (réglages pinThrottledUntil / failedAttempts,
+    persistés : recharger la page ne le remet pas à zéro). */
+export async function verifyPinForAction(pin) {
+  const until = await getSetting('pinThrottledUntil', 0);
+  if (Date.now() < until) return { ok: false, waitSeconds: Math.max(1, Math.ceil((until - Date.now()) / 1000)) };
+  const ok = await verifyPin(pin);
+  if (ok) {
+    await setSetting('pinThrottledUntil', 0);
+    return { ok: true, waitSeconds: 0 };
+  }
+  const attempts = await getSetting('failedAttempts', 0);
+  if (attempts >= MAX_ATTEMPTS_BEFORE_THROTTLE) {
+    await setSetting('pinThrottledUntil', Date.now() + THROTTLE_MS);
+    return { ok: false, waitSeconds: Math.ceil(THROTTLE_MS / 1000) };
+  }
+  return { ok: false, waitSeconds: 0 };
+}
+
 export async function changePin(oldPin, newPin) {
   const ok = await verifyPin(oldPin);
   if (!ok) throw new Error(t('Ancien code PIN incorrect.'));

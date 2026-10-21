@@ -296,7 +296,7 @@ export function initWalletsModule() {
     } else if (btn.dataset.action === 'archive') {
       const txCount = (await dbGetAllByIndex(STORES.TRANSACTIONS, 'byWallet', walletId)).length;
       if (!wallet.archived && txCount === 0) {
-        const ok = await confirmDialog(t('Supprimer définitivement "{name}" ? Ce portefeuille n\'a aucune transaction, la suppression est possible.', { name: wallet.name }), { danger: true, confirmText: t('Supprimer') });
+        const ok = await confirmDialog(t('Supprimer définitivement "{name}" ? Ce portefeuille n\'a aucune transaction, la suppression est possible.', { name: wallet.name }), { danger: true, requirePin: true, confirmText: t('Supprimer') });
         if (ok) {
           await dbDelete(STORES.WALLETS, walletId);
           await logAudit({ entityType: 'wallet', entityId: walletId, action: 'delete', before: wallet });
