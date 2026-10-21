@@ -14,6 +14,7 @@ import { extractReceiptDataFromImage } from '../ocr.js';
 // plusieurs fonctions (txRowHtml(t), reconTxRowHtml(t), et une const t locale dans le handler de
 // clic de initTransactionsModule) — voir le même piège documenté dans dashboard.js.
 import { t as tr, applyStaticTranslations } from '../i18n.js';
+import { icon as svgIcon } from '../icons.js';
 
 const TX_ICONS = {
   income: '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 20V6M6 12l6-6 6 6"/></svg>',
@@ -24,11 +25,11 @@ function parseTags(raw) {
   return [...new Set((raw || '').split(',').map((t) => t.trim()).filter(Boolean))].slice(0, 10);
 }
 
-const CHECK_CIRCLE = '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.5-4.3-4.3 1.4-1.4 2.9 2.9 6.1-6.1 1.4 1.4-7.5 7.5Z"/></svg>';
-const EMPTY_CIRCLE = '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="none" stroke="currentColor" stroke-width="1.6" d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"/></svg>';
-const EDIT_ICON = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25ZM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z"/></svg>';
-const DELETE_ICON = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 7h12l-1 14H7L6 7Zm3-4h6l1 2h4v2H2V5h4l1-2Z"/></svg>';
-const RECEIPT_ICON = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 2h12v20l-3-2-3 2-3-2-3 2V2Zm2 5h8V5H8v2Zm0 4h8V9H8v2Zm0 4h5v-2H8v2Z"/></svg>';
+const CHECK_CIRCLE = svgIcon('checkCircle', 18);
+const EMPTY_CIRCLE = svgIcon('emptyCircle', 18);
+const EDIT_ICON = svgIcon('edit', 16);
+const DELETE_ICON = svgIcon('trash', 16);
+const RECEIPT_ICON = svgIcon('receipt', 16);
 
 /* ==========================================================================
    Modale Saisie express (création + édition)

@@ -2336,6 +2336,33 @@ et « Photos de justificatifs » + bouton « Réduire les photos (N) » avec con
 Testé comme sur Djignan : 17,6 Mo → 2 Mo, photos décodables, annuler = rien ne change, niveaux ok/warn/critical,
 aucune erreur console, 916 clés i18n sans doublon. `CACHE_VERSION` : `v94` → `v95`.
 
+### 21 octobre 2026 — Refonte visuelle (lots 1 à 3) portée depuis `djignan-finance` (`CACHE_VERSION` `v97`)
+
+Même refonte « moins IA, plus fait main » que sur Djignan (détail et raisons dans son CLAUDE.md, entrées du 21 octobre 2026),
+portée ici sans toucher à la marque : le nom, le logo et les icônes d'installation restent ceux de GeoFinance.
+- **`styles.css` et `charts.js` repris tels quels** de Djignan (seul l'en-tête de marque change) : vérifié que toutes les lignes propres à ce
+  dépôt dans ces deux fichiers étaient d'anciens styles remplacés, rien de spécifique à perdre. Palette tirée du logo de Djignan (bleu, or, fond
+  crème), plus de dégradés ni d'ombres, rayons réduits, jeton `--on-accent`, graphiques sobres (barres triées, jauges budget/réel, courbes droites,
+  axes compacts). Le thème sombre est posé sur `<body>` : `cssVar()` lit `body` en premier.
+- **Tableau de bord** : une carte « Reste à vivre » + deux panneaux en lignes de cahier (« Où j'en suis », « Ce mois-ci »), ids conservés ;
+  les courbes de variation mensuelle quittent le tableau de bord (elles restent dans Rapports). **Différence avec Djignan** : ici pas de prévision de
+  trésorerie, donc la courbe de valeur nette reste le 3e graphique (carte pleine largeur `chart-card-full`) et `computeNetWorthHistory(12)` est conservé.
+- **Rapports en 4 onglets** (Bilans · Dépenses et revenus · Budget et patrimoine · Santé et calendrier) sous une barre de période commune ; l'onglet
+  « Bilans » n'a ni bilan à partager, ni résultat par étiquette, ni export d'investissements (ces fonctions n'existent pas ici).
+- **Titres en double supprimés** (le `<h2>` des `.view-header` est retiré, le titre vit dans la barre du haut).
+- **Icônes** : nouveau `js/icons.js` (jeu en traits, `icon(nom, taille)`, importé sous l'alias `svgIcon`) ; `index.html` et les modules convertis par
+  script. Les 3 logos « G » en bouclier (écrans de verrouillage/langue, barre latérale) restent dessinés en ligne : c'est l'identité GeoFinance.
+  Catégories : `DEFAULT_CATEGORIES` porte icône + couleur (`DEFAULT_CATEGORY_LOOK`), apparence de repli à l'affichage pour les catégories déjà en base
+  (`categoryLook()`, `budgets.js`).
+- **Polices embarquées** (`vendor/fonts/`, OFL, précachées et préchargées) : Source Sans 3 (interface) + Source Serif 4 (titres, gros montants).
+- **Motif du cauri** en filigrane derrière les écrans `.lock-screen` et au-dessus des états vides — c'est le coquillage du logo de Djignan ; à retirer
+  (`.lock-screen::before`, `.empty-state::before`, `.tx-empty::before`) si cette version doit garder son propre univers visuel.
+- **« (s) » à l'écran** : `t()` accorde `mot(s)` / `verbe(nt)` d'après `count`/`days`/`years`/`n` (toujours passer le nombre dans `vars`).
+- `manifest.json` et `theme-color` alignés sur la nouvelle palette. Les icônes PNG/SVG d'installation n'ont **pas** changé (toujours violettes) :
+  à redessiner si on veut qu'elles suivent.
+Vérifié (port 8124) : clair, sombre, mobile, aucune erreur console, `test/ledger.test.html` **35/35**, 4 onglets de Rapports (0/4/3/0 canvas),
+3 graphiques sur le tableau de bord, polices chargées sans requête externe. Rien n'est commité.
+
 ## 7. Pistes prioritaires non traitées
 
 Par ordre d'impact estimé, à valider avec l'auteur avant de s'y attaquer :

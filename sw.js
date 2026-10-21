@@ -4,7 +4,7 @@
    en arrière-plan (stale-while-revalidate) pour un fonctionnement 100% hors-ligne.
    ========================================================================== */
 
-const CACHE_VERSION = 'v96';
+const CACHE_VERSION = 'v97';
 const CACHE_NAME = `geofinance-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -21,6 +21,7 @@ const APP_SHELL = [
   './js/auth.js',
   './js/state.js',
   './js/utils.js',
+  './js/icons.js',
   './js/i18n.js',
   './js/charts.js',
   './js/backup.js',
@@ -50,6 +51,8 @@ const APP_SHELL = [
   './vendor/tesseract-core-lstm.js',
   './vendor/tesseract-core-lstm.wasm',
   './vendor/fra.traineddata.gz',
+  './vendor/fonts/source-sans-3-latin-wght-normal.woff2',
+  './vendor/fonts/source-serif-4-latin-wght-normal.woff2',
   './icons/icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',

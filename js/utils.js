@@ -5,6 +5,7 @@
 
 // Aliasé en tr (pas t) : ce fichier utilise `t` comme nom de variable pour un timer dans debounce().
 import { t as tr, getLanguage } from './i18n.js';
+import { icon as svgIcon } from './icons.js';
 
 export function uuid() {
   return crypto.randomUUID();
@@ -285,7 +286,7 @@ export function readFileAsText(file) {
   });
 }
 
-const CLOSE_SVG = '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6Z"/></svg>';
+const CLOSE_SVG = svgIcon('close', 18);
 
 /**
  * Ouvre une modale générique dans #modal-root. Retourne { el, close }.

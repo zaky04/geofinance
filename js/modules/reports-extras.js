@@ -23,7 +23,7 @@ export async function healthScorePanelHtml(monthKey) {
     <div class="panel" style="margin-top:16px;">
       <div class="panel-header"><h3>${tr('Score de santé financière')}</h3></div>
       <div style="display:flex;align-items:center;gap:18px;margin-bottom:14px;">
-        <div style="width:76px;height:76px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:24px;font-weight:800;color:#fff;background:${tier.cls === 'pos' ? 'var(--pos)' : tier.cls === 'warn' ? '#f59e0b' : 'var(--neg)'};">${health.score}</div>
+        <div style="width:76px;height:76px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:24px;font-weight:700;color:var(--on-accent);background:${tier.cls === 'pos' ? 'var(--pos)' : tier.cls === 'warn' ? 'var(--warn)' : 'var(--neg)'};">${health.score}</div>
         <div>
           <div style="font-weight:700;font-size:15px;">${escapeHtml(tier.label)}</div>
           <div style="font-size:12.5px;color:var(--text-muted);">${tr('Indicateur composite indicatif, pas un conseil personnalisé.')}</div>

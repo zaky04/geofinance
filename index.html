@@ -24,8 +24,8 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://apis.google.com https://www.googleapis.com https://accounts.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self' data: https://open.er-api.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://accounts.google.com; frame-src https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="GeoFinance System — gestion complète de vos finances personnelles, 100% locale et hors-ligne.">
-<meta name="theme-color" content="#0B1220" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#F7F8FA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0D0E1C" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F4F2EC" media="(prefers-color-scheme: light)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="GeoFinance">
@@ -33,6 +33,8 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preload" href="vendor/fonts/source-sans-3-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="vendor/fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body data-theme="auto" data-privacy="visible">
@@ -87,11 +89,11 @@
       <button type="button" class="pin-key" data-key="8">8</button>
       <button type="button" class="pin-key" data-key="9">9</button>
       <button type="button" id="pin-biometric" class="pin-key pin-key-ghost" aria-label="Déverrouillage biométrique" data-i18n-aria-label="Déverrouillage biométrique" hidden>
-        <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7v2c0 3.5 1.5 6.5 4 8.5l1.3-1.5C8.3 16.3 7 13.9 7 11V9a5 5 0 0 1 10 0v2c0 1-.1 2-.4 2.9l1.9.6c.3-1.1.5-2.3.5-3.5V9a7 7 0 0 0-7-7Zm0 4a3 3 0 0 0-3 3v2c0 3 1.3 5.6 3.5 7.4l1.3-1.5C12 15.5 11 13.4 11 11V9a1 1 0 1 1 2 0v2c0 3 1.2 5.7 3.4 7.6l1.3-1.5C16 15.6 15 13.4 15 11V9a3 3 0 0 0-3-3Z"/></svg>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10a6 6 0 0 1 12 0v1"/><path d="M12 7.5A2.5 2.5 0 0 0 9.5 10c0 3-.5 5.5-1.8 8M12 10v1.5c0 3-.6 5.6-2 8"/><path d="M14.5 10v1c0 2.6-.4 5-1.4 7.2M17.5 12.5c0 2.2-.3 4.2-1 6M6.5 13c0 1.6-.2 3-.6 4.2"/></svg>
       </button>
       <button type="button" class="pin-key" data-key="0">0</button>
       <button type="button" id="pin-backspace" class="pin-key pin-key-ghost" aria-label="Effacer" data-i18n-aria-label="Effacer">
-        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M9 3a2 2 0 0 0-1.6.8L2.5 11a2 2 0 0 0 0 2.4l4.9 6.6A2 2 0 0 0 9 21h11a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H9Zm3.7 5.3L15 10.6l2.3-2.3 1.4 1.4L16.4 12l2.3 2.3-1.4 1.4L15 13.4l-2.3 2.3-1.4-1.4L13.6 12l-2.3-2.3 1.4-1.4Z"/></svg>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 5H9.5L3.5 12l6 7H20a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1Z"/><path d="m12.5 9.5 5 5m0-5-5 5"/></svg>
       </button>
     </div>
   </div>
@@ -111,58 +113,58 @@
 
     <nav class="sidebar-nav" aria-label="Navigation principale">
       <button class="nav-item is-active" data-view-target="dashboard">
-        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 13h8V3H3v10Zm0 8h8v-6H3v6Zm10 0h8V11h-8v10Zm0-18v6h8V3h-8Z"/></svg>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/></svg>
         <span data-i18n="Tableau de bord">Tableau de bord</span>
       </button>
       <button class="nav-item" data-view-target="wallets">
-        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M20 6H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2Zm-1 8h-3a2 2 0 1 1 0-4h3v4Z"/></svg>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7" width="17" height="12.5" rx="2.5"/><path d="M6.5 7V6a2 2 0 0 1 2-2H17"/><path d="M20.5 12h-4a2 2 0 0 0 0 4h4"/><circle cx="16.8" cy="14" r=".7" fill="currentColor"/></svg>
         <span data-i18n="Portefeuilles">Portefeuilles</span>
       </button>
       <button class="nav-item" data-view-target="transactions">
-        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M7 7h11l-2.5-2.5 1.4-1.4L21.8 7l-4.9 3.9-1.4-1.4L18 7H7V7Zm10 10H6l2.5 2.5-1.4 1.4L2.2 17l4.9-3.9 1.4 1.4L6 17h11Z"/></svg>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h14M14 4l4 4-4 4"/><path d="M20 16H6M10 12l-4 4 4 4"/></svg>
         <span data-i18n="Transactions">Transactions</span>
       </button>
       <button class="nav-item" data-view-target="budgets">
-        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 3h18v4H3V3Zm0 6h12v4H3V9Zm0 6h18v6H3v-6Z"/></svg>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5V12h8.5"/></svg>
         <span data-i18n="Budgets">Budgets</span>
       </button>
       <button class="nav-item" data-view-target="savings">
-        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2c-4 3-9 3.5-9 3.5V12c0 6 4 9.5 9 10.5 5-1 9-4.5 9-10.5V5.5S16 5 12 2Z"/></svg>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3.5h8M7 6.5h10"/><path d="M7.5 6.5C5.5 8 5 10 5 12.5 5 17 7.5 20.5 12 20.5s7-3.5 7-8c0-2.5-.5-4.5-2.5-6"/><circle cx="12" cy="13.5" r="2.6"/></svg>
         <span data-i18n="Épargne">Épargne</span>
       </button>
       <button class="nav-item" data-view-target="investments">
-        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 17l6-6 4 4 8-8 1.4 1.4L14 17.8l-4-4-5 5z"/></svg>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 19.5h17"/><path d="M5 15l4.5-4.5 3.5 3.5L19 8"/><path d="M15 8h4v4"/></svg>
         <span data-i18n="Investissements">Investissements</span>
       </button>
       <button class="nav-item" data-view-target="debts">
-        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 1 3 5v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5l-9-4Zm0 10.9h6C17.5 16.1 15.2 19 12 20V12H6V6.3l6-2.7v8.3Z"/></svg>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12.5v14H6.5A1.5 1.5 0 0 0 5 19V5a1.5 1.5 0 0 1 1-1.5Z"/><path d="M5 19a1.5 1.5 0 0 0 1.5 1.5h12v-3"/><path d="M9 8h6.5M9 11.5h6.5"/></svg>
         <span data-i18n="Dettes &amp; créances">Dettes &amp; créances</span>
       </button>
       <button class="nav-item" data-view-target="tools">
-        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M22.7 19 13.6 9.9c1-2.4.5-5.3-1.5-7.3-2.1-2.1-5.2-2.5-7.7-1.3L9 6 6 9 1.3 4.4C0 6.9.5 10 2.6 12.1c2 2 4.9 2.5 7.3 1.5L19 22.7c.4.4 1 .4 1.4 0l2.3-2.3c.4-.4.4-1.1 0-1.4Z"/></svg>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6.5a4 4 0 0 0-5.2 5.2L4 17l3 3 5.3-5.3a4 4 0 0 0 5.2-5.2l-2.6 2.6-2.4-.6-.6-2.4 2.6-2.6Z"/></svg>
         <span data-i18n="Outils">Outils</span>
       </button>
       <button class="nav-item" data-view-target="reports">
-        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M6 2h9l5 5v15H6V2Zm8 1.5V8h4.5L14 3.5ZM8 13h8v2H8v-2Zm0 4h8v2H8v-2Zm0-8h5v2H8V9Z"/></svg>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h8l4 4V20a.5.5 0 0 1-.5.5h-11A.5.5 0 0 1 6 20V3.5Z"/><path d="M14 3.5V8h4"/><path d="M9 17v-3M12 17v-5M15 17v-2"/></svg>
         <span data-i18n="Rapports">Rapports</span>
       </button>
       <button class="nav-item" data-view-target="shared">
-        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M16 11a4 4 0 1 0-3.999-4A4 4 0 0 0 16 11Zm-8 0a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-2.7 0-8 1.3-8 4v3h9.5a5.5 5.5 0 0 1-.5-2.3c0-2 1.3-3.7 3.2-4.4A11 11 0 0 0 8 13Zm8 0c-.3 0-.6 0-1 .1A6 6 0 0 1 17 17.7c0 .8-.2 1.6-.5 2.3H24v-3c0-2.7-5.3-4-8-4Z"/></svg>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3"/><path d="M3.5 19c.5-3 2.7-5 5.5-5s5 2 5.5 5"/><circle cx="17" cy="9.5" r="2.4"/><path d="M16 14.2c2.5-.3 4.3 1.3 4.8 4.3"/></svg>
         <span data-i18n="Partage">Partage</span>
       </button>
       <button class="nav-item" data-view-target="keptAccounts" id="nav-kept-accounts" hidden>
-        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.4 0-8 2.2-8 5v3h9.3a6.5 6.5 0 0 1-.3-2c0-2.8 1.6-5.2 4-6.4A15 15 0 0 0 12 14Zm7 0a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-.4 0-.8 0-1.2.1a6.5 6.5 0 0 1 2.2 4.9c0 .7-.1 1.4-.3 2H24v-2c0-2.8-2.7-5-5-5Z"/></svg>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="12" r="3.5"/><path d="M11.5 12H21M18 12v3M15 12v2"/></svg>
         <span data-i18n="Comptes gardés">Comptes gardés</span>
       </button>
     </nav>
 
     <div class="sidebar-footer">
       <button class="nav-item" data-view-target="settings">
-        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.7 7.7 0 0 0-1.7-1L15 3h-4l-.3 2.9a7.7 7.7 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1c.5.4 1.1.8 1.7 1L11 21h4l.3-2.9c.6-.2 1.2-.6 1.7-1l2.5 1 2-3.5-2.1-1.6ZM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"/></svg>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>
         <span data-i18n="Paramètres">Paramètres</span>
       </button>
       <button id="lock-now-btn" class="nav-item">
-        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 1a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V11a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5Zm0 2a3 3 0 0 1 3 3v3H9V6a3 3 0 0 1 3-3Z"/></svg>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>
         <span data-i18n="Verrouiller">Verrouiller</span>
       </button>
       <div class="sidebar-credit">
@@ -178,17 +180,17 @@
       <h1 id="page-title" class="page-title" data-i18n="Tableau de bord">Tableau de bord</h1>
       <div class="topbar-actions">
         <button id="search-btn" class="icon-btn" aria-label="Rechercher" title="Rechercher (Ctrl+K)" data-i18n-aria-label="Rechercher" data-i18n-title="Rechercher (Ctrl+K)">
-          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M10 2a8 8 0 1 0 4.9 14.3l5.4 5.4 1.4-1.4-5.4-5.4A8 8 0 0 0 10 2Zm0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12Z"/></svg>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
         </button>
         <button id="privacy-toggle" class="icon-btn" aria-label="Masquer les montants" aria-pressed="false" title="Masquer/afficher les montants" data-i18n-aria-label="Masquer les montants" data-i18n-title="Masquer/afficher les montants">
-          <svg class="icon-eye-open" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 5c-7 0-11 7-11 7s4 7 11 7 11-7 11-7-4-7-11-7Zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9Zm0-7A2.5 2.5 0 1 0 12 14a2.5 2.5 0 0 0 0-4.5Z"/></svg>
-          <svg class="icon-eye-closed" viewBox="0 0 24 24" width="20" height="20" hidden><path fill="currentColor" d="M2.8 2.8 1.4 4.2l3.2 3.2C2.7 9 1.4 10.8 1 12c0 0 4 7 11 7 2 0 3.8-.5 5.3-1.3l3 3 1.4-1.4L2.8 2.8ZM12 16.5c-.6 0-1.2-.1-1.7-.3l-6-6C5.8 8.1 8.5 7.5 12 7.5c1 0 1.9.1 2.7.4l1.7 1.7c.4.6.6 1.3.6 2.1 0 .4-.1.8-.2 1.2l1.5 1.5c.9-.8 1.6-1.7 2.1-2.4 0 0-.9-1.6-2.7-3.1l1.4-1.4C21.3 9.4 23 12 23 12s-4 7-11 7c-1.1 0-2.1-.2-3-.5l1.3-1.3c.5.2 1.1.3 1.7.3 2.5 0 4.5-2 4.5-4.5 0-.5-.1-1-.3-1.4l-2-2c-.7.5-1.2 1.4-1.2 2.4a2.5 2.5 0 0 0 2.5 2.5Z"/></svg>
+          <svg class="icon-eye-open" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.8"/></svg>
+          <svg class="icon-eye-closed" viewBox="0 0 24 24" width="20" height="20" hidden fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 3.5l17 17"/><path d="M10.2 5.7c.6-.1 1.2-.2 1.8-.2 6 0 9.5 6.5 9.5 6.5a16 16 0 0 1-3 3.6M6.6 7.5C4 9.3 2.5 12 2.5 12S6 18.5 12 18.5c1.5 0 2.8-.3 4-.9"/><path d="M9.9 9.9a2.8 2.8 0 0 0 4 4"/></svg>
         </button>
         <button id="theme-toggle" class="icon-btn" aria-label="Changer de thème" title="Mode sombre/clair" data-i18n-aria-label="Changer de thème" data-i18n-title="Mode sombre/clair">
-          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9c0-.5 0-1-.1-1.5A7 7 0 0 1 12 3Z"/></svg>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>
         </button>
         <button id="quick-add-btn" class="btn btn-primary">
-          <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5Z"/></svg>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
           <span data-i18n="Saisie express">Saisie express</span>
         </button>
       </div>
@@ -205,67 +207,76 @@
         <p id="dashboard-greeting" class="tx-sub" style="margin:-4px 0 14px;"></p>
         <div id="dashboard-alerts" class="alert-stack"></div>
 
-        <div class="hero-grid">
-          <div class="hero-card hero-card-budget">
-            <div class="hero-card-label" data-i18n="Budget mensuel alloué">Budget mensuel alloué</div>
-            <div class="hero-card-value">
-              <span id="budget-month-value" class="amount" data-value="0">0&nbsp;€</span>
+        <div class="dash-top">
+          <div class="dash-col">
+            <div class="hero-card hero-card-safe" id="panel-safe-to-spend-dash" hidden>
+              <div class="hero-card-label" data-i18n="Reste à vivre">Reste à vivre</div>
+              <div class="hero-card-value">
+                <span id="dash-safe-to-spend-value" class="amount" data-value="0">0&nbsp;€</span>
+              </div>
+              <div id="dash-safe-to-spend-daily" class="hero-card-daily" hidden></div>
+              <div id="dash-safe-to-spend-trend" class="hero-card-trend">—</div>
             </div>
-            <div id="budget-month-trend" class="hero-card-trend">—</div>
-            <div id="budget-unallocated-badge" class="hero-card-badge" hidden></div>
-            <button type="button" class="hero-card-link" data-view-target="budgets" data-i18n="Voir le détail des budgets →">Voir le détail des budgets →</button>
+
+            <div class="panel ledger" id="panel-position-dash">
+              <div class="panel-header"><h3 data-i18n="Où j'en suis">Où j'en suis</h3></div>
+              <div id="panel-net-worth-dash" class="dash-advanced" hidden>
+                <div class="ledger-row">
+                  <span class="ledger-label" data-i18n="Patrimoine net global">Patrimoine net global</span><span class="ledger-dots"></span>
+                  <span id="dash-net-worth-value" class="ledger-value amount" data-value="0">0&nbsp;€</span>
+                </div>
+                <div id="dash-net-worth-trend" class="ledger-sub">—</div>
+              </div>
+              <div id="panel-debts-balance-dash" hidden>
+                <div class="ledger-row">
+                  <span class="ledger-label" data-i18n="Créances">Créances</span><span class="ledger-dots"></span>
+                  <span id="dash-receivables-value" class="ledger-value amount" data-value="0">0&nbsp;€</span>
+                </div>
+                <div class="ledger-row">
+                  <span class="ledger-label" data-i18n="Dettes">Dettes</span><span class="ledger-dots"></span>
+                  <span id="dash-debts-value" class="ledger-value amount" data-value="0">0&nbsp;€</span>
+                </div>
+                <div class="ledger-row ledger-total">
+                  <span class="ledger-label" data-i18n="Solde net :">Solde net :</span><span class="ledger-dots"></span>
+                  <span id="dash-debts-net-value" class="ledger-value amount" data-value="0">0&nbsp;€</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div class="hero-card hero-card-safe" id="panel-safe-to-spend-dash" hidden>
-            <div class="hero-card-label" data-i18n="Reste à vivre">Reste à vivre</div>
-            <div class="hero-card-value">
-              <span id="dash-safe-to-spend-value" class="amount" data-value="0">0&nbsp;€</span>
+          <div class="panel ledger" id="panel-month-dash">
+            <div class="panel-header"><h3 data-i18n="Ce mois-ci">Ce mois-ci</h3></div>
+            <div class="ledger-row">
+              <span class="ledger-label" data-i18n="Entrées (mois)">Entrées (mois)</span><span class="ledger-dots"></span>
+              <span id="dash-income-value" class="ledger-value amount pos" data-value="0">0&nbsp;€</span>
             </div>
-            <div id="dash-safe-to-spend-trend" class="hero-card-trend">—</div>
-          </div>
-
-          <div class="hero-card" id="panel-net-worth-dash" hidden>
-            <div class="hero-card-label" data-i18n="Patrimoine net global">Patrimoine net global</div>
-            <div class="hero-card-value">
-              <span id="dash-net-worth-value" class="amount" data-value="0">0&nbsp;€</span>
+            <div class="ledger-sub" id="summary-trend-income">—</div>
+            <div class="ledger-row">
+              <span class="ledger-label" data-i18n="Sorties (mois)">Sorties (mois)</span><span class="ledger-dots"></span>
+              <span id="dash-expenses-value" class="ledger-value amount neg" data-value="0">0&nbsp;€</span>
             </div>
-            <div id="dash-net-worth-trend" class="hero-card-trend">—</div>
-          </div>
-
-          <div class="hero-card hero-card-debts" id="panel-debts-balance-dash" hidden>
-            <div class="hero-card-label" data-i18n="Créances &amp; dettes">Créances &amp; dettes</div>
-            <div style="display:flex;justify-content:space-between;align-items:baseline;margin:10px 0 4px;">
-              <span style="font-size:12.5px;opacity:.85;" data-i18n="Créances">Créances</span>
-              <span id="dash-receivables-value" class="amount" data-value="0" style="font-size:19px;font-weight:800;">0&nbsp;€</span>
+            <div class="ledger-sub" id="summary-trend-expenses">—</div>
+            <div class="dash-advanced">
+              <div class="ledger-row">
+                <span class="ledger-label" data-i18n="Épargne nette">Épargne nette</span><span class="ledger-dots"></span>
+                <span id="dash-netsavings-value" class="ledger-value amount" data-value="0">0&nbsp;€</span>
+              </div>
+              <div class="ledger-sub" id="summary-trend-netSavings">—</div>
+              <div class="ledger-row">
+                <span class="ledger-label" data-i18n="Cash-flow">Cash-flow</span><span class="ledger-dots"></span>
+                <span id="dash-cashflow-value" class="ledger-value amount" data-value="0">0&nbsp;€</span>
+              </div>
+              <div class="ledger-sub" id="summary-trend-cashFlow">—</div>
             </div>
-            <div style="display:flex;justify-content:space-between;align-items:baseline;">
-              <span style="font-size:12.5px;opacity:.85;" data-i18n="Dettes">Dettes</span>
-              <span id="dash-debts-value" class="amount" data-value="0" style="font-size:19px;font-weight:800;">0&nbsp;€</span>
+            <div class="dash-advanced ledger-block" id="dash-budget-block">
+              <div class="ledger-row">
+                <span class="ledger-label" data-i18n="Budget mensuel alloué">Budget mensuel alloué</span><span class="ledger-dots"></span>
+                <span id="budget-month-value" class="ledger-value amount" data-value="0">0&nbsp;€</span>
+              </div>
+              <div id="budget-month-trend" class="ledger-sub">—</div>
+              <div id="budget-unallocated-badge" class="hero-card-badge" hidden></div>
+              <button type="button" class="link-btn" data-view-target="budgets" data-i18n="Voir les budgets">Voir les budgets</button>
             </div>
-            <div class="hero-card-trend" style="margin-top:8px;"><span data-i18n="Solde net :">Solde net :</span> <span id="dash-debts-net-value" class="amount" data-value="0">0&nbsp;€</span></div>
-          </div>
-        </div>
-
-        <div class="summary-grid">
-          <div class="summary-card">
-            <div class="summary-card-label" data-i18n="Entrées (mois)">Entrées (mois)</div>
-            <div class="summary-card-value amount pos" data-value="0">0&nbsp;€</div>
-            <div class="summary-card-trend" id="summary-trend-income">—</div>
-          </div>
-          <div class="summary-card">
-            <div class="summary-card-label" data-i18n="Sorties (mois)">Sorties (mois)</div>
-            <div class="summary-card-value amount neg" data-value="0">0&nbsp;€</div>
-            <div class="summary-card-trend" id="summary-trend-expenses">—</div>
-          </div>
-          <div class="summary-card">
-            <div class="summary-card-label" data-i18n="Épargne nette">Épargne nette</div>
-            <div class="summary-card-value amount" data-value="0">0&nbsp;€</div>
-            <div class="summary-card-trend" id="summary-trend-netSavings">—</div>
-          </div>
-          <div class="summary-card">
-            <div class="summary-card-label" data-i18n="Cash-flow">Cash-flow</div>
-            <div class="summary-card-value amount" data-value="0">0&nbsp;€</div>
-            <div class="summary-card-trend" id="summary-trend-cashFlow">—</div>
           </div>
         </div>
 
@@ -291,39 +302,16 @@
             <h3 data-i18n="Dépenses par catégorie">Dépenses par catégorie</h3>
             <div class="chart-canvas-wrap"><canvas id="chart-expenses-category"></canvas></div>
           </div>
-          <div class="chart-card chart-card-wide">
-            <h3 data-i18n="Évolution de la valeur nette">Évolution de la valeur nette</h3>
-            <div class="chart-canvas-wrap"><canvas id="chart-net-worth-trend"></canvas></div>
-          </div>
-          <div class="chart-card chart-card-wide">
+          <div class="chart-card">
             <h3 data-i18n="Budget vs réel">Budget vs réel</h3>
             <div class="chart-canvas-wrap"><canvas id="chart-budget-vs-actual"></canvas></div>
           </div>
-          <div class="chart-card chart-card-wide">
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
-              <h3 style="margin:0;" data-i18n="Variation mensuelle des dépenses">Variation mensuelle des dépenses</h3>
-              <div style="display:flex;align-items:center;gap:6px;">
-                <button type="button" class="icon-btn" id="dash-expenses-trend-prev-year" aria-label="Année précédente" data-i18n-aria-label="Année précédente">‹</button>
-                <strong id="dash-expenses-trend-year-label" style="min-width:44px;text-align:center;display:inline-block;">—</strong>
-                <button type="button" class="icon-btn" id="dash-expenses-trend-next-year" aria-label="Année suivante" data-i18n-aria-label="Année suivante">›</button>
-                <select id="dash-expenses-trend-category"></select>
-              </div>
-            </div>
-            <div class="chart-canvas-wrap"><canvas id="chart-expenses-trend"></canvas></div>
-          </div>
-          <div class="chart-card chart-card-wide">
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
-              <h3 style="margin:0;" data-i18n="Variation mensuelle des entrées">Variation mensuelle des entrées</h3>
-              <div style="display:flex;align-items:center;gap:6px;">
-                <button type="button" class="icon-btn" id="dash-income-trend-prev-year" aria-label="Année précédente" data-i18n-aria-label="Année précédente">‹</button>
-                <strong id="dash-income-trend-year-label" style="min-width:44px;text-align:center;display:inline-block;">—</strong>
-                <button type="button" class="icon-btn" id="dash-income-trend-next-year" aria-label="Année suivante" data-i18n-aria-label="Année suivante">›</button>
-                <select id="dash-income-trend-category"></select>
-              </div>
-            </div>
-            <div class="chart-canvas-wrap"><canvas id="chart-income-trend"></canvas></div>
+          <div class="chart-card chart-card-full">
+            <h3 data-i18n="Évolution de la valeur nette">Évolution de la valeur nette</h3>
+            <div class="chart-canvas-wrap"><canvas id="chart-net-worth-trend"></canvas></div>
           </div>
         </div>
+
 
         <div class="panel" id="panel-recent-transactions">
           <div class="panel-header">
@@ -360,7 +348,6 @@
         </div>
 
         <div class="view-header">
-          <h2 data-i18n="Portefeuilles">Portefeuilles</h2>
           <button id="wallet-add-btn" class="btn btn-primary" data-i18n="+ Nouveau portefeuille">+ Nouveau portefeuille</button>
         </div>
         <div id="wallets-grid" class="grid-cards"></div>
@@ -369,7 +356,6 @@
       <!-- TRANSACTIONS -->
       <section id="view-transactions" class="view" data-view="transactions" hidden>
         <div class="view-header">
-          <h2 data-i18n="Transactions">Transactions</h2>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button id="transaction-bulk-toggle-btn" class="btn btn-ghost" data-i18n="Sélection multiple">Sélection multiple</button>
             <button id="transaction-reconcile-btn" class="btn btn-ghost" data-i18n="Rapprochement">Rapprochement</button>
@@ -384,7 +370,6 @@
       <!-- BUDGETS -->
       <section id="view-budgets" class="view" data-view="budgets" hidden>
         <div class="view-header">
-          <h2 data-i18n="Budgets">Budgets</h2>
           <button id="budget-add-btn" class="btn btn-primary" data-i18n="+ Catégorie de budget">+ Catégorie de budget</button>
         </div>
         <div id="budgets-content"></div>
@@ -393,7 +378,6 @@
       <!-- SAVINGS -->
       <section id="view-savings" class="view" data-view="savings" hidden>
         <div class="view-header">
-          <h2 data-i18n="Épargne">Épargne</h2>
           <button id="savings-add-btn" class="btn btn-primary" data-i18n="+ Objectif d'épargne">+ Objectif d'épargne</button>
         </div>
         <div id="savings-content" class="grid-cards"></div>
@@ -402,7 +386,6 @@
       <!-- INVESTMENTS -->
       <section id="view-investments" class="view" data-view="investments" hidden>
         <div class="view-header">
-          <h2 data-i18n="Investissements">Investissements</h2>
           <button id="investment-add-btn" class="btn btn-primary" data-i18n="+ Investissement">+ Investissement</button>
         </div>
         <div id="investments-content"></div>
@@ -411,7 +394,6 @@
       <!-- DEBTS -->
       <section id="view-debts" class="view" data-view="debts" hidden>
         <div class="view-header">
-          <h2 data-i18n="Dettes &amp; créances">Dettes &amp; créances</h2>
           <button id="debt-add-btn" class="btn btn-primary" data-i18n="+ Dette / créance">+ Dette / créance</button>
         </div>
         <div id="debts-content"></div>
@@ -419,32 +401,22 @@
 
       <!-- TOOLS -->
       <section id="view-tools" class="view" data-view="tools" hidden>
-        <div class="view-header">
-          <h2 data-i18n="Outils stratégiques">Outils stratégiques</h2>
-        </div>
         <div id="tools-content" class="grid-cards"></div>
       </section>
 
       <!-- REPORTS -->
       <section id="view-reports" class="view" data-view="reports" hidden>
-        <div class="view-header">
-          <h2 data-i18n="Rapports">Rapports</h2>
-        </div>
         <div id="reports-content"></div>
       </section>
 
       <!-- SHARED EXPENSES -->
       <section id="view-shared" class="view" data-view="shared" hidden>
-        <div class="view-header">
-          <h2 data-i18n="Partage de dépenses">Partage de dépenses</h2>
-        </div>
         <div id="shared-content"></div>
       </section>
 
       <!-- KEPT ACCOUNTS -->
       <section id="view-keptAccounts" class="view" data-view="keptAccounts" hidden>
         <div class="view-header">
-          <h2 data-i18n="Comptes gardés">Comptes gardés</h2>
           <button id="kept-account-add-btn" class="btn btn-primary" data-i18n="+ Nouveau compte">+ Nouveau compte</button>
         </div>
         <div id="kept-accounts-content"></div>
@@ -452,9 +424,6 @@
 
       <!-- SETTINGS -->
       <section id="view-settings" class="view" data-view="settings" hidden>
-        <div class="view-header">
-          <h2 data-i18n="Paramètres">Paramètres</h2>
-        </div>
         <div id="settings-content"></div>
       </section>
 
@@ -463,22 +432,22 @@
     <!-- Bottom nav (mobile) -->
     <nav class="bottom-nav" aria-label="Navigation mobile">
       <button class="bottom-nav-item is-active" data-view-target="dashboard">
-        <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M3 13h8V3H3v10Zm0 8h8v-6H3v6Zm10 0h8V11h-8v10Zm0-18v6h8V3h-8Z"/></svg>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/></svg>
         <span data-i18n="Accueil">Accueil</span>
       </button>
       <button class="bottom-nav-item" data-view-target="transactions">
-        <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M7 7h11l-2.5-2.5 1.4-1.4L21.8 7l-4.9 3.9-1.4-1.4L18 7H7V7Zm10 10H6l2.5 2.5-1.4 1.4L2.2 17l4.9-3.9 1.4 1.4L6 17h11Z"/></svg>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h14M14 4l4 4-4 4"/><path d="M20 16H6M10 12l-4 4 4 4"/></svg>
         <span data-i18n="Transactions">Transactions</span>
       </button>
       <button id="bottom-nav-add" class="bottom-nav-fab" aria-label="Saisie express" data-i18n-aria-label="Saisie express">
-        <svg viewBox="0 0 24 24" width="26" height="26"><path fill="currentColor" d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5Z"/></svg>
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
       </button>
       <button class="bottom-nav-item" data-view-target="budgets">
-        <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M3 3h18v4H3V3Zm0 6h12v4H3V9Zm0 6h18v6H3v-6Z"/></svg>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5V12h8.5"/></svg>
         <span data-i18n="Budgets">Budgets</span>
       </button>
       <button id="bottom-nav-more" class="bottom-nav-item">
-        <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M5 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/></svg>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="18.5" cy="12" r="1.3" fill="currentColor"/></svg>
         <span data-i18n="Plus">Plus</span>
       </button>
     </nav>
@@ -500,7 +469,7 @@
       <div class="modal-header">
         <h3 id="qa-title" data-i18n="Saisie express">Saisie express</h3>
         <button class="icon-btn modal-close" aria-label="Fermer" data-i18n-aria-label="Fermer">
-          <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6Z"/></svg>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
         </button>
       </div>
       <form id="quick-add-form" class="modal-body">
@@ -570,7 +539,7 @@
       <div class="modal-header">
         <h3 id="backup-title" data-i18n="Sauvegarde hebdomadaire">Sauvegarde hebdomadaire</h3>
         <button class="icon-btn modal-close" aria-label="Fermer" data-i18n-aria-label="Fermer">
-          <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6Z"/></svg>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
         </button>
       </div>
       <div class="modal-body">

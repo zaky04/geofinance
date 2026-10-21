@@ -9,6 +9,7 @@
 
 import { getSetting, setSetting } from './db.js';
 import { t } from './i18n.js';
+import { icon as svgIcon } from './icons.js';
 
 let deferredPrompt = null;
 
@@ -54,16 +55,16 @@ export async function resetInstallPromptSnooze() {
   await setSetting('installPromptSnoozedUntil', null);
 }
 
-const SHARE_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" style="vertical-align:-3px;"><path fill="currentColor" d="M12 2 8 6h2.5v9h3V6H16L12 2Zm7 9v9H5v-9H3v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-9h-2Z"/></svg>';
+const SHARE_ICON = svgIcon('share', 15).replace('<svg ', '<svg style="vertical-align:-3px;" ');
 
 function bannerHtml({ title, body, showInstallBtn }) {
   return `
     <div class="install-banner" id="install-banner" role="dialog" aria-label="${t("Installer l'application")}">
       <button type="button" class="install-banner-close" aria-label="${t('Fermer')}">
-        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6Z"/></svg>
+        ${svgIcon('close', 16)}
       </button>
       <div class="install-banner-icon">
-        <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 2c-4 3-9 3.5-9 3.5V12c0 6 4 9.5 9 10.5 5-1 9-4.5 9-10.5V5.5S16 5 12 2Z"/></svg>
+        ${svgIcon('wallet', 22)}
       </div>
       <div class="install-banner-body">
         <div class="install-banner-title">${title}</div>

@@ -10,6 +10,7 @@ import { uuid, formatCurrency, formatDate, formatPercent, escapeHtml, todayISO, 
 import { notifyDataChanged } from '../state.js';
 import { renderNetWorthTrendChart } from '../charts.js';
 import { t } from '../i18n.js';
+import { icon as svgIcon } from '../icons.js';
 
 // Les valeurs (libellés affichés) sont traduites à l'usage via t(...), jamais les clés
 // (immobilier/actions/...) : ces clés sont les valeurs stockées en base (inv.assetClass), pas du
@@ -34,9 +35,9 @@ let assetFilter = 'all'; // 'all' | 'physical' | 'financial'
 // Mêmes conventions que ASSET_CLASSES ci-dessus : les clés sont stockées en base (entry.type), les
 // valeurs (libellés) sont traduites à l'usage via t(...).
 const ENTRY_TYPE_LABELS = { contribution: 'Apport', withdrawal: 'Retrait', dividend: 'Dividende', valuation: 'Valorisation' };
-const EDIT_ICON = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25ZM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z"/></svg>';
-const DELETE_ICON = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 7h12l-1 14H7L6 7Zm3-4h6l1 2h4v2H2V5h4l1-2Z"/></svg>';
-const HISTORY_ICON = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M13 3a9 9 0 1 0 8.94 10H19.9A7 7 0 1 1 13 5v4l5-4-5-4v2Z"/></svg>';
+const EDIT_ICON = svgIcon('edit', 16);
+const DELETE_ICON = svgIcon('trash', 16);
+const HISTORY_ICON = svgIcon('history', 16);
 
 function computeMetrics(inv, entries) {
   const own = entries.filter((e) => e.investmentId === inv.id);

@@ -14,32 +14,30 @@ import {
 } from '../utils.js';
 import { notifyDataChanged } from '../state.js';
 import { t } from '../i18n.js';
+import { icon as svgIcon, CATEGORY_ICON_KEYS, DEFAULT_CATEGORY_LOOK } from '../icons.js';
 
-const EDIT_ICON = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25ZM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z"/></svg>';
-const DELETE_ICON = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 7h12l-1 14H7L6 7Zm3-4h6l1 2h4v2H2V5h4l1-2Z"/></svg>';
-const PLUS_ICON = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5Z"/></svg>';
-const PAUSE_ICON = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 4h4v16H6V4Zm8 0h4v16h-4V4Z"/></svg>';
-const PLAY_ICON = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M8 5v14l11-7L8 5Z"/></svg>';
+const EDIT_ICON = svgIcon('edit', 16);
+const DELETE_ICON = svgIcon('trash', 16);
+const PLUS_ICON = svgIcon('plus', 16);
+const PAUSE_ICON = svgIcon('pause', 16);
+const PLAY_ICON = svgIcon('play', 16);
 
 const FREQ_LABELS = { weekly: 'Hebdomadaire', monthly: 'Mensuelle', yearly: 'Annuelle' };
 
-const CATEGORY_ICONS = {
-  tag: '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M21.4 12.6 12.6 21.4a2 2 0 0 1-2.8 0l-7.2-7.2a2 2 0 0 1 0-2.8L11.4 2.6A2 2 0 0 1 12.8 2H20a2 2 0 0 1 2 2v7.2a2 2 0 0 1-.6 1.4ZM16 6a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z"/></svg>',
-  cart: '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M7 4h14l-1.6 8.6a2 2 0 0 1-2 1.6H8.9a2 2 0 0 1-2-1.6L5.4 3.4 3 3V1h3a1 1 0 0 1 1 .8L7 4Zm1 16a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm9 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z"/></svg>',
-  home: '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 2 2 10.5V22h6v-7h8v7h6V10.5L12 2Z"/></svg>',
-  car: '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M5 11 6.6 6.2A2 2 0 0 1 8.5 5h7a2 2 0 0 1 1.9 1.2L19 11h1a1 1 0 0 1 1 1v6h-2a2 2 0 1 1-4 0H9a2 2 0 1 1-4 0H3v-6a1 1 0 0 1 1-1h1Zm3-1h8l-1-3H9L8 10Z"/></svg>',
-  health: '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 21S3 14.9 3 8.5A5.5 5.5 0 0 1 12 5a5.5 5.5 0 0 1 9 3.5C21 14.9 12 21 12 21Z"/></svg>',
-  food: '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M6 2v8a2 2 0 0 0 2 2v10h2V12a2 2 0 0 0 2-2V2H8v7H7V2H6Zm11 0c-2 0-3 3-3 6v3h2v11h2V2Z"/></svg>',
-  travel: '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2.5 1.8V22l3.5-1 3.5 1v-1.2L13 19v-5.5l8 2.5Z"/></svg>',
-  education: '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 2 1 8l11 6 9-4.9V17h2V8L12 2ZM5 13.2V18c0 2 3.1 4 7 4s7-2 7-4v-4.8l-7 3.8-7-3.8Z"/></svg>',
-  fun: '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M7 4h10a4 4 0 0 1 4 4v3a6 6 0 0 1-5 5.9V19h2v2H6v-2h2v-2.1A6 6 0 0 1 3 11V8a4 4 0 0 1 4-4Zm2 5.5A1.5 1.5 0 1 0 9 12a1.5 1.5 0 0 0 0-2.5Zm6 0a1.5 1.5 0 1 0 0 2.5 1.5 1.5 0 0 0 0-2.5Z"/></svg>',
-  salary: '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3 7h18v12H3V7Zm2 2v8h14V9H5Zm7 1a3 3 0 1 1 0 6 3 3 0 0 1 0-6ZM3 4h18v2H3V4Z"/></svg>',
-  gift: '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M20 7h-2.2a3 3 0 0 0-5.8-1.8A3 3 0 0 0 6.2 7H4a1 1 0 0 0-1 1v3h18V8a1 1 0 0 0-1-1ZM3 12v9a1 1 0 0 0 1 1h7v-10H3Zm10 0v10h7a1 1 0 0 0 1-1v-9h-8Z"/></svg>',
-  phone: '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm0 4v12h10V6H7Zm5 13.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4Z"/></svg>',
-};
-const CATEGORY_COLORS = ['#4f5bff', '#16a34a', '#f59e0b', '#e11d48', '#7c3aed', '#0891b2', '#84cc16', '#ea580c', '#64748b', '#db2777'];
+const CATEGORY_ICONS = Object.fromEntries(CATEGORY_ICON_KEYS.map((k) => [k, svgIcon(k, 18)]));
+const CATEGORY_COLORS = ['#1f5fa6', '#2d8a7a', '#c9a24a', '#b3382c', '#6a5f9e', '#7b8794', '#4f8a3c', '#b9663a'];
 const DEFAULT_CATEGORY_ICON = 'tag';
 const DEFAULT_CATEGORY_COLOR = CATEGORY_COLORS[0];
+
+/** Icône et couleur d'une catégorie. Celles créées avant l'arrivée des icônes (sans icône ni couleur) prennent
+    l'apparence de leur catégorie par défaut d'après leur nom (français ou traduit) — rien n'est réécrit en base. */
+function categoryLook(cat) {
+  const byName = Object.entries(DEFAULT_CATEGORY_LOOK).find(([fr]) => cat.name === fr || cat.name === t(fr));
+  return {
+    icon: CATEGORY_ICONS[cat.icon] ? cat.icon : (byName ? byName[1].icon : DEFAULT_CATEGORY_ICON),
+    color: cat.color || (byName ? byName[1].color : DEFAULT_CATEGORY_COLOR),
+  };
+}
 
 let activeTab = 'monthly';
 let monthKey = currentMonthKey();
@@ -51,8 +49,9 @@ function budgetCategoryCardHtml(cat, actual, limit, currency, carryover = null) 
   const effectiveLimit = carryover != null ? Math.max(0, (limit || 0) + carryover) : limit;
   const pct = effectiveLimit ? percentage(actual, effectiveLimit) : 0;
   const cls = budgetProgressClass(pct);
-  const color = cat.color || DEFAULT_CATEGORY_COLOR;
-  const icon = CATEGORY_ICONS[cat.icon] || CATEGORY_ICONS[DEFAULT_CATEGORY_ICON];
+  const look = categoryLook(cat);
+  const color = look.color;
+  const icon = CATEGORY_ICONS[look.icon];
   const carryText = carryover != null
     ? (limit
       ? t('Enveloppe : {sign}{amount} reporté du mois dernier · budget effectif {effective}', {
@@ -236,17 +235,17 @@ function categoryFormHtml(category, presetParentId, presetType) {
         <label>${t('Icône')}</label>
         <div class="icon-picker">
           ${Object.entries(CATEGORY_ICONS).map(([key, svg]) => `
-            <button type="button" class="icon-picker-btn ${(category?.icon || DEFAULT_CATEGORY_ICON) === key ? 'is-active' : ''}" data-icon="${key}">${svg}</button>
+            <button type="button" class="icon-picker-btn ${categoryLook(category || {}).icon === key ? 'is-active' : ''}" data-icon="${key}">${svg}</button>
           `).join('')}
         </div>
-        <input type="hidden" name="icon" value="${category?.icon || DEFAULT_CATEGORY_ICON}">
+        <input type="hidden" name="icon" value="${categoryLook(category || {}).icon}">
       </div>
       <div class="form-row">
         <label>${t('Couleur')}</label>
         <div class="color-picker">
-          ${CATEGORY_COLORS.map((c) => `<button type="button" class="color-picker-btn ${(category?.color || DEFAULT_CATEGORY_COLOR) === c ? 'is-active' : ''}" data-color="${c}" style="background:${c};"></button>`).join('')}
+          ${CATEGORY_COLORS.map((c) => `<button type="button" class="color-picker-btn ${categoryLook(category || {}).color === c ? 'is-active' : ''}" data-color="${c}" style="background:${c};"></button>`).join('')}
         </div>
-        <input type="hidden" name="color" value="${category?.color || DEFAULT_CATEGORY_COLOR}">
+        <input type="hidden" name="color" value="${categoryLook(category || {}).color}">
       </div>
       <div data-field="envelopeRow" ${type !== 'expense' ? 'hidden' : ''}>
         <label style="display:flex;align-items:center;gap:10px;padding:8px 0 14px;font-size:13.5px;cursor:pointer;">
@@ -328,8 +327,9 @@ function openCategoryModal(category = null, presetParentId = null, presetType = 
 }
 
 function categoryRowHtml(cat, isChild = false) {
-  const color = cat.color || DEFAULT_CATEGORY_COLOR;
-  const icon = CATEGORY_ICONS[cat.icon] || CATEGORY_ICONS[DEFAULT_CATEGORY_ICON];
+  const look = categoryLook(cat);
+  const color = look.color;
+  const icon = CATEGORY_ICONS[look.icon];
   return `
     <div class="tx-row" data-category-id="${cat.id}" style="${isChild ? 'padding-left:24px;' : ''}">
       <div class="tx-icon" style="color:${color};background:${color}22;">${icon}</div>

@@ -22,6 +22,7 @@ import { openDebtModal } from './debts.js';
 import { openGoalModal } from './savings.js';
 import { openInvestmentModal } from './investments.js';
 import { openAccountModal } from './kept-accounts.js';
+import { icon as svgIcon } from '../icons.js';
 
 // Valeurs traduites à l'usage via tr(...) (voir resultRowHtml ci-dessous), jamais ici — mêmes
 // conventions que ASSET_CLASSES (investments.js) : les clés sont des identifiants internes de type,
@@ -163,7 +164,7 @@ function resultRowHtml(item, i) {
         ${item.amount ? `<span class="search-result-amount">${escapeHtml(item.amount)}</span>` : ''}
       </button>
       ${EDITORS[item.type] ? `<button type="button" class="icon-btn search-result-go" data-go-index="${i}" aria-label="${tr('Ouvrir dans son écran')}" title="${tr('Ouvrir dans son écran')}">
-        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M14 3v2h3.6l-9.3 9.3 1.4 1.4L19 6.4V10h2V3h-7ZM5 5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5h-2v5H5V7h5V5H5Z"/></svg>
+        ${svgIcon('external', 16)}
       </button>` : ''}
     </div>`;
 }
@@ -178,13 +179,13 @@ export function openGlobalSearch() {
   backdrop.innerHTML = `
     <div class="modal-card search-modal" role="dialog" aria-modal="true" aria-label="${tr('Rechercher')}">
       <div class="search-input-row">
-        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M10 2a8 8 0 1 0 4.9 14.3l5.4 5.4 1.4-1.4-5.4-5.4A8 8 0 0 0 10 2Zm0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12Z"/></svg>
+        ${svgIcon('search', 18)}
         <input type="text" id="search-input" placeholder="${tr('Rechercher une transaction, un portefeuille, une dette…')}" autocomplete="off">
         <button type="button" class="icon-btn" id="search-filters-toggle" aria-label="${tr('Filtres avancés')}" title="${tr('Filtres avancés (montant, dates)')}">
-          <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M4 5h16v2H4V5Zm3 6h10v2H7v-2Zm3 6h4v2h-4v-2Z"/></svg>
+          ${svgIcon('filter', 18)}
         </button>
         <button type="button" class="icon-btn modal-close" aria-label="${tr('Fermer')}">
-          <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6Z"/></svg>
+          ${svgIcon('close', 18)}
         </button>
       </div>
       <div id="search-advanced-filters" class="filters-bar" hidden style="padding:10px 20px;border-bottom:1px solid var(--border);">

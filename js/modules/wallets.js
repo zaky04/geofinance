@@ -8,6 +8,7 @@ import { uuid, formatCurrency, escapeHtml, todayISO, currentMonthKey, openModal,
 import { notifyDataChanged } from '../state.js';
 import { renderExpensesByCategoryChart } from '../charts.js';
 import { t } from '../i18n.js';
+import { icon as svgIcon } from '../icons.js';
 
 function setAmount(el, value, currency) {
   if (!el) return;
@@ -25,10 +26,10 @@ async function renderWealthHero() {
   ]);
 
   const compositionRows = [
-    { label: t('Liquidités'), value: composition.liquid, color: '#4f5bff' },
-    { label: t('Investissements'), value: composition.invested, color: '#16a34a' },
-    { label: t('Créances'), value: composition.receivables, color: '#0891b2' },
-    { label: t('Dettes'), value: composition.debts, color: '#e11d48' },
+    { label: t('Liquidités'), value: composition.liquid },
+    { label: t('Investissements'), value: composition.invested },
+    { label: t('Créances'), value: composition.receivables },
+    { label: t('Dettes'), value: composition.debts, neg: true },
   ].filter((r) => r.value > 0);
   renderExpensesByCategoryChart('chart-net-worth-composition', compositionRows, composition.currency);
 
@@ -65,11 +66,11 @@ async function renderWealthHero() {
 // jamais ici — mêmes conventions que ASSET_CLASSES (investments.js) : les clés sont les valeurs
 // stockées en base (wallet.type), jamais traduites.
 const WALLET_TYPES = {
-  bank: { label: 'Compte bancaire', icon: '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2 2 8v2h20V8L12 2Zm-7 9v7H3v2h18v-2h-2v-7h-2v7h-3v-7h-2v7H9v-7H7v7H5v-7H3Z"/></svg>' },
-  mobile_money: { label: 'Mobile Money', icon: '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm0 4v12h10V6H7Zm5 13.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4Z"/></svg>' },
-  cash: { label: 'Espèces', icon: '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M2 6h20v12H2V6Zm2 2v8h16V8H4Zm8 1.5A2.5 2.5 0 1 1 9.5 12 2.5 2.5 0 0 1 12 9.5ZM5 8v2a2 2 0 0 0 2-2H5Zm14 0h-2a2 2 0 0 0 2 2V8ZM5 16v-2a2 2 0 0 0-2 2h2Zm14 0h2a2 2 0 0 0-2-2v2Z"/></svg>' },
-  investment: { label: "Portefeuille d'investissement", icon: '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 17l6-6 4 4 8-8 1.4 1.4L14 17.8l-4-4-5 5z"/></svg>' },
-  savings: { label: 'Épargne spécifique', icon: '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2c-4 3-9 3.5-9 3.5V12c0 6 4 9.5 9 10.5 5-1 9-4.5 9-10.5V5.5S16 5 12 2Z"/></svg>' },
+  bank: { label: 'Compte bancaire', icon: svgIcon('bank', 20) },
+  mobile_money: { label: 'Mobile Money', icon: svgIcon('phone', 20) },
+  cash: { label: 'Espèces', icon: svgIcon('banknote', 20) },
+  investment: { label: "Portefeuille d'investissement", icon: svgIcon('chart', 20) },
+  savings: { label: 'Épargne spécifique', icon: svgIcon('jar', 20) },
 };
 
 function walletFormHtml(wallet, defaultCurrency) {
@@ -156,10 +157,10 @@ function walletCardHtml(w) {
         </div>
         <div class="card-actions">
           <button type="button" class="icon-btn" data-action="edit" aria-label="${t('Modifier')}" title="${t('Modifier')}">
-            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25ZM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z"/></svg>
+            ${svgIcon('edit', 16)}
           </button>
           <button type="button" class="icon-btn" data-action="archive" aria-label="${w.archived ? t('Désarchiver') : t('Archiver')}" title="${w.archived ? t('Désarchiver') : t('Archiver')}">
-            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 4h18v4H3V4Zm1 6h16v10H4V10Zm4 3v2h8v-2H8Z"/></svg>
+            ${svgIcon('archive', 16)}
           </button>
         </div>
       </div>

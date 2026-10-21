@@ -3,7 +3,7 @@
    ========================================================================== */
 
 import { formatCurrency, formatDate, formatPercent, escapeHtml, currentMonthKey, monthKeyOffset, percentage, budgetProgressClass } from '../utils.js';
-import { computeNetWorth, computeNetWorthHistory, computeNetWorthComposition, computeMonthSummary, computeExpensesByCategory, computeBudgetVsActual, computeMonthlyBudgetSummary, computeEndOfMonthForecast, getEnrichedTransactions, getUnconfirmedRates, computeMonthlyTypeHistory, getCategoriesByType } from '../ledger.js';
+import { computeNetWorth, computeNetWorthHistory, computeNetWorthComposition, computeMonthSummary, computeExpensesByCategory, computeBudgetVsActual, computeMonthlyBudgetSummary, computeEndOfMonthForecast, getEnrichedTransactions, getUnconfirmedRates } from '../ledger.js';
 import { renderExpensesByCategoryChart, renderNetWorthTrendChart, renderBudgetVsActualChart } from '../charts.js';
 import { getSetting } from '../db.js';
 // Aliasé en tr (pas t) : ce fichier utilise déjà `t` comme nom de paramètre pour une transaction
@@ -14,14 +14,6 @@ import { t as tr } from '../i18n.js';
 
 export const DASHBOARD_PANEL_DEFAULTS = { watchCategories: true, upcomingBills: true, charts: true, recentTransactions: true, safeToSpend: true, netWorth: true, debtsBalance: true };
 export const BUDGET_ALERT_THRESHOLD_DEFAULTS = { warn: 70, danger: 90 };
-
-// État des filtres des courbes de variation mensuelle (année + catégorie) — au niveau module pour
-// persister entre les re-rendus de renderDashboard() (nouvelle transaction, changement de vue…),
-// même principe que reportYear/reportMonthKey dans reports.js.
-let expensesTrendYear = new Date().getFullYear();
-let expensesTrendCategoryId = '';
-let incomeTrendYear = new Date().getFullYear();
-let incomeTrendCategoryId = '';
 
 const TX_ICONS = {
   income: '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 20V6M6 12l6-6 6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -163,46 +155,8 @@ function greetingWord() {
   return tr(hour >= 18 || hour < 5 ? 'Bonsoir' : 'Bonjour');
 }
 
-/** Peuple le filtre de catégorie d'une courbe de variation ; renvoie l'id sélectionné, ramené à ''
-    (« Toutes catégories ») si la catégorie précédemment choisie a été supprimée entretemps. */
-async function populateTrendCategorySelect(selectEl, type, currentId) {
-  const cats = await getCategoriesByType(type);
-  const validId = cats.some((c) => c.id === currentId) ? currentId : '';
-  selectEl.innerHTML = `<option value="">${tr('Toutes catégories')}</option>` +
-    cats.map((c) => `<option value="${c.id}" ${c.id === validId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
-  return validId;
-}
-
-async function refreshExpensesTrend() {
-  const select = document.getElementById('dash-expenses-trend-category');
-  if (select) expensesTrendCategoryId = await populateTrendCategorySelect(select, 'expense', expensesTrendCategoryId);
-  const { points, currency } = await computeMonthlyTypeHistory(expensesTrendYear, 'expense', expensesTrendCategoryId || null);
-  const yearLabel = document.getElementById('dash-expenses-trend-year-label');
-  if (yearLabel) yearLabel.textContent = expensesTrendYear;
-  renderNetWorthTrendChart('chart-expenses-trend', points, currency, tr('Dépenses'));
-}
-
-async function refreshIncomeTrend() {
-  const select = document.getElementById('dash-income-trend-category');
-  if (select) incomeTrendCategoryId = await populateTrendCategorySelect(select, 'income', incomeTrendCategoryId);
-  const { points, currency } = await computeMonthlyTypeHistory(incomeTrendYear, 'income', incomeTrendCategoryId || null);
-  const yearLabel = document.getElementById('dash-income-trend-year-label');
-  if (yearLabel) yearLabel.textContent = incomeTrendYear;
-  renderNetWorthTrendChart('chart-income-trend', points, currency, tr('Entrées'));
-}
-
-/** Câblage une seule fois (année précédente/suivante, sélecteur de catégorie) des deux courbes de
-    variation mensuelle — les éléments concernés sont statiques dans index.html (pas régénérés à
-    chaque renderDashboard()), contrairement au reste du tableau de bord. */
-export function initDashboardModule() {
-  document.getElementById('dash-expenses-trend-prev-year')?.addEventListener('click', () => { expensesTrendYear -= 1; refreshExpensesTrend(); });
-  document.getElementById('dash-expenses-trend-next-year')?.addEventListener('click', () => { expensesTrendYear += 1; refreshExpensesTrend(); });
-  document.getElementById('dash-expenses-trend-category')?.addEventListener('change', (e) => { expensesTrendCategoryId = e.target.value; refreshExpensesTrend(); });
-
-  document.getElementById('dash-income-trend-prev-year')?.addEventListener('click', () => { incomeTrendYear -= 1; refreshIncomeTrend(); });
-  document.getElementById('dash-income-trend-next-year')?.addEventListener('click', () => { incomeTrendYear += 1; refreshIncomeTrend(); });
-  document.getElementById('dash-income-trend-category')?.addEventListener('change', (e) => { incomeTrendCategoryId = e.target.value; refreshIncomeTrend(); });
-}
+/** Rien à câbler une seule fois sur ce tableau de bord (les courbes de variation sont dans Rapports). */
+export function initDashboardModule() {}
 
 export async function renderDashboard() {
   const monthKey = currentMonthKey();
@@ -211,7 +165,7 @@ export async function renderDashboard() {
 
   const profile = await getSetting('userProfile', {});
   const greetingEl = document.getElementById('dashboard-greeting');
-  if (greetingEl) greetingEl.textContent = profile.firstName ? `${greetingWord()}, ${profile.firstName} 👋` : '';
+  if (greetingEl) greetingEl.textContent = profile.firstName ? `${greetingWord()}, ${profile.firstName}` : '';
 
   const watchEl = document.getElementById('panel-watch-categories');
   const billsEl = document.getElementById('panel-upcoming-bills');
@@ -229,6 +183,8 @@ export async function renderDashboard() {
   if (netWorthEl) netWorthEl.hidden = !panels.netWorth;
   const debtsBalanceEl = document.getElementById('panel-debts-balance-dash');
   if (debtsBalanceEl) debtsBalanceEl.hidden = !panels.debtsBalance;
+  const positionEl = document.getElementById('panel-position-dash');
+  if (positionEl) positionEl.hidden = !panels.netWorth && !panels.debtsBalance;
 
   const [summary, prevSummary, expensesByCategory, netWorthHistory, budgetVsActual, monthlyBudget, forecast, recentTx, netWorth, composition, unconfirmedRates] = await Promise.all([
     computeMonthSummary(monthKey),
@@ -312,18 +268,15 @@ export async function renderDashboard() {
     unallocatedBadge.hidden = true;
   }
 
-  const summaryEls = document.querySelectorAll('#view-dashboard .summary-card .summary-card-value');
-  setAmount(summaryEls[0], summary.income, summary.currency);
-  setAmount(summaryEls[1], summary.expenses, summary.currency);
-  setAmount(summaryEls[2], summary.netSavings, summary.currency);
-  setAmount(summaryEls[3], summary.cashFlow, summary.currency);
+  setAmount(document.getElementById('dash-income-value'), summary.income, summary.currency);
+  setAmount(document.getElementById('dash-expenses-value'), summary.expenses, summary.currency);
+  setAmount(document.getElementById('dash-netsavings-value'), summary.netSavings, summary.currency);
+  setAmount(document.getElementById('dash-cashflow-value'), summary.cashFlow, summary.currency);
 
   if (panels.charts) {
     renderExpensesByCategoryChart('chart-expenses-category', expensesByCategory, currency);
     renderNetWorthTrendChart('chart-net-worth-trend', netWorthHistory, currency, tr('Valeur nette'));
     renderBudgetVsActualChart('chart-budget-vs-actual', budgetVsActual, currency);
-    await refreshExpensesTrend();
-    await refreshIncomeTrend();
   }
 
   renderAlerts(budgetVsActual, thresholds, unconfirmedRates);

@@ -12,10 +12,11 @@ import { renderNetWorthTrendChart } from '../charts.js';
 // initDebtsModule() (handler de suppression) — voir le même piège documenté dans dashboard.js/
 // transactions.js.
 import { t as tr } from '../i18n.js';
+import { icon as svgIcon } from '../icons.js';
 
-const EDIT_ICON = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25ZM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z"/></svg>';
-const DELETE_ICON = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 7h12l-1 14H7L6 7Zm3-4h6l1 2h4v2H2V5h4l1-2Z"/></svg>';
-const PAY_ICON = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5Z"/></svg>';
+const EDIT_ICON = svgIcon('edit', 16);
+const DELETE_ICON = svgIcon('trash', 16);
+const PAY_ICON = svgIcon('pay', 16);
 
 function remaining(debt, payments) {
   const paid = payments.filter((p) => p.debtId === debt.id).reduce((s, p) => s + p.amount, 0);

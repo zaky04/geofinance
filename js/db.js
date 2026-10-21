@@ -5,6 +5,8 @@
    l'import/export JSON puisse fusionner ou restaurer sans collision.
    ========================================================================== */
 
+import { DEFAULT_CATEGORY_LOOK } from './icons.js';
+
 // Le nom de la base est normalement fixe ; le seul point d'extension est un test dédié
 // (test/ledger.test.html) qui pose ce global AVANT d'importer ce module pour rediriger toutes
 // les opérations vers une base IndexedDB isolée, jamais celle de l'utilisateur. Sur une page
@@ -49,7 +51,7 @@ export const DEFAULT_CATEGORIES = [
   { name: 'Santé', type: 'expense' },
   { name: 'Abonnements', type: 'expense' },
   { name: 'Autres dépenses', type: 'expense' },
-];
+].map((c) => ({ ...c, ...DEFAULT_CATEGORY_LOOK[c.name] }));
 
 let dbPromise = null;
 

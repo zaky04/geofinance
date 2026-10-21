@@ -10,11 +10,12 @@ import { STORES, dbGetAll, dbPut, dbDelete, logAudit, getSetting } from '../db.j
 import { uuid, formatCurrency, formatDate, escapeHtml, todayISO, percentage, openModal, confirmDialog, showToast, currencySelectHtml, wireCurrencySelect, readCurrencyValue, safeNumber } from '../utils.js';
 import { notifyDataChanged } from '../state.js';
 import { t } from '../i18n.js';
+import { icon as svgIcon } from '../icons.js';
 
-const EDIT_ICON = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25ZM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z"/></svg>';
-const DELETE_ICON = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 7h12l-1 14H7L6 7Zm3-4h6l1 2h4v2H2V5h4l1-2Z"/></svg>';
-const ADD_ICON = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5Z"/></svg>';
-const ARCHIVE_ICON = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 4h18v4H3V4Zm1 6h16v10H4V10Zm4 3v2h8v-2H8Z"/></svg>';
+const EDIT_ICON = svgIcon('edit', 16);
+const DELETE_ICON = svgIcon('trash', 16);
+const ADD_ICON = svgIcon('plus', 16);
+const ARCHIVE_ICON = svgIcon('archive', 16);
 
 function gaugeSvg(pct, color) {
   const r = 32, c = 2 * Math.PI * r;

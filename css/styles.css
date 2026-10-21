@@ -1,15 +1,30 @@
 /* ==========================================================================
    GeoFinance System — Design System
    Aucune dépendance externe (pas de Tailwind CDN) : variables CSS custom
-   inspirées d'une esthétique SaaS financier (Stripe / Revolut).
+   tirées du logo (voir bloc « Design tokens »).
    ========================================================================== */
+
+/* ---------- Polices embarquées (vendor/fonts, licence OFL — aucun appel réseau) ----------
+   Source Sans 3 pour l'interface, Source Serif 4 pour les titres et les gros montants : un peu de
+   caractère « cahier » à la place de la police du système. Variables (graisses 200 à 900), sous-ensemble
+   latin (accents français, œ, €, guillemets) ; les rares symboles hors sous-ensemble (→, ⚠…) retombent sur la police du système. */
+@font-face {
+  font-family: "Source Sans 3"; font-style: normal; font-weight: 200 900; font-display: swap;
+  src: url("../vendor/fonts/source-sans-3-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Source Serif 4"; font-style: normal; font-weight: 200 900; font-display: swap;
+  src: url("../vendor/fonts/source-serif-4-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
 /* ---------- Reset minimal ---------- */
 *, *::before, *::after { box-sizing: border-box; }
 html, body { height: 100%; }
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   color: var(--text);
   background: var(--bg);
@@ -42,32 +57,41 @@ svg { display: block; flex-shrink: 0; }
 [hidden] { display: none !important; }
 
 /* ---------- Design tokens ---------- */
+/* Palette tirée du logo (cauri bleu → vert → or sur fond marine) : bleu cauri pour l'accent, or pour
+   le seul relief décoratif, fond crème au lieu du gris-bleu générique. Aucun dégradé : les aplats
+   suffisent, la couleur ne sert qu'à signaler un état (positif / négatif / alerte). */
 :root {
-  --accent: #4f5bff;
-  --accent-hover: #3f4bf0;
-  --accent-soft: #eef0ff;
-  --pos: #16a34a;
-  --pos-soft: #e8f8ee;
-  --neg: #e11d48;
-  --neg-soft: #fdeaef;
-  --warn: #f59e0b;
-  --warn-soft: #fef3e2;
-  --warn-text: #92620a;
+  --accent: #1f5fa6;
+  --accent-hover: #184e8a;
+  --accent-soft: #e3ebf5;
+  --on-accent: #ffffff;
+  --gold: #c9a24a;
+  --pos: #1b7f4d;
+  --pos-soft: #e3f1e8;
+  --neg: #b3382c;
+  --neg-soft: #f8e6e2;
+  --warn: #b7791f;
+  --warn-soft: #f6ecd3;
+  --warn-text: #7a5210;
 
-  --bg: #f5f6fa;
-  --surface: #ffffff;
-  --surface-alt: #f9fafc;
-  --border: #e7e9f2;
-  --text: #12162b;
-  --text-muted: #6b7086;
-  --text-faint: #9aa0b4;
+  --bg: #f4f2ec;
+  --surface: #fbfaf6;
+  --surface-alt: #efece3;
+  --border: #dfdbcf;
+  --text: #1a1b24;
+  --text-muted: #5d5c66;
+  --text-faint: #75737c;
+  --hero-bg: #131a33;
 
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --shadow-sm: 0 1px 2px rgba(20, 24, 50, .06);
-  --shadow-md: 0 8px 24px rgba(20, 24, 50, .08);
-  --shadow-lg: 0 16px 40px rgba(20, 24, 50, .14);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --shadow-sm: none;
+  --shadow-md: 0 4px 14px rgba(26, 27, 36, .08);
+  --shadow-lg: 0 12px 32px rgba(26, 27, 36, .16);
+
+  --font-sans: "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
 
   --sidebar-w: 248px;
   --bottom-nav-h: 64px;
@@ -75,40 +99,52 @@ svg { display: block; flex-shrink: 0; }
 }
 
 [data-theme="dark"] {
-  --bg: #0b0e1a;
-  --surface: #12162b;
-  --surface-alt: #171c33;
-  --border: #262c48;
-  --text: #eef0fb;
-  --text-muted: #9aa0c0;
-  --text-faint: #6b7096;
-  --accent-soft: #1c2050;
-  --pos-soft: #103322;
-  --neg-soft: #3a1420;
-  --warn-soft: #3a2a0d;
-  --warn-text: #f5b84a;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .3);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, .35);
-  --shadow-lg: 0 16px 40px rgba(0, 0, 0, .5);
+  --bg: #0d0e1c;
+  --surface: #14162a;
+  --surface-alt: #1b1d35;
+  --border: #2a2d4a;
+  --text: #ecebf3;
+  --text-muted: #a7a9c4;
+  --text-faint: #868aa8;
+  --accent: #7fb0ea;
+  --accent-hover: #9bc3f2;
+  --accent-soft: #1a2a42;
+  --on-accent: #0d1220;
+  --pos: #4cc38a;
+  --pos-soft: #123525;
+  --neg: #f08071;
+  --neg-soft: #3b1b19;
+  --warn: #e0b04f;
+  --warn-soft: #36290e;
+  --warn-text: #e8bf6a;
+  --hero-bg: #1c3558;
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, .35);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, .5);
 }
 
 @media (prefers-color-scheme: dark) {
   body[data-theme="auto"] {
-    --bg: #0b0e1a;
-    --surface: #12162b;
-    --surface-alt: #171c33;
-    --border: #262c48;
-    --text: #eef0fb;
-    --text-muted: #9aa0c0;
-    --text-faint: #6b7096;
-    --accent-soft: #1c2050;
-    --pos-soft: #103322;
-    --neg-soft: #3a1420;
-    --warn-soft: #3a2a0d;
-    --warn-text: #f5b84a;
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, .3);
-    --shadow-md: 0 8px 24px rgba(0, 0, 0, .35);
-    --shadow-lg: 0 16px 40px rgba(0, 0, 0, .5);
+    --bg: #0d0e1c;
+    --surface: #14162a;
+    --surface-alt: #1b1d35;
+    --border: #2a2d4a;
+    --text: #ecebf3;
+    --text-muted: #a7a9c4;
+    --text-faint: #868aa8;
+    --accent: #7fb0ea;
+    --accent-hover: #9bc3f2;
+    --accent-soft: #1a2a42;
+    --on-accent: #0d1220;
+    --pos: #4cc38a;
+    --pos-soft: #123525;
+    --neg: #f08071;
+    --neg-soft: #3b1b19;
+    --warn: #e0b04f;
+    --warn-soft: #36290e;
+    --warn-text: #e8bf6a;
+    --hero-bg: #1c3558;
+    --shadow-md: 0 4px 14px rgba(0, 0, 0, .35);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, .5);
   }
 }
 
@@ -149,7 +185,7 @@ body[data-privacy="visible"] #privacy-toggle .icon-eye-closed { display: none; }
 }
 .lock-logo {
   width: 64px; height: 64px; border-radius: var(--radius-lg);
-  background: var(--accent); color: #fff;
+  background: var(--accent); color: var(--on-accent);
   display: flex; align-items: center; justify-content: center;
   margin-bottom: 12px;
   box-shadow: var(--shadow-md);
@@ -176,7 +212,7 @@ body[data-privacy="visible"] #privacy-toggle .icon-eye-closed { display: none; }
 }
 .pin-key {
   width: 72px; height: 72px; border-radius: 50%;
-  background: var(--surface); box-shadow: var(--shadow-sm);
+  background: var(--surface); border: 1px solid var(--border);
   font-size: 24px; font-weight: 600;
   display: flex; align-items: center; justify-content: center;
   transition: transform .1s, background .15s;
@@ -256,11 +292,11 @@ body[data-privacy="visible"] #privacy-toggle .icon-eye-closed { display: none; }
   transition: background .15s, opacity .15s, transform .1s;
 }
 .btn:active { transform: scale(.97); }
-.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary { background: var(--accent); color: var(--on-accent); }
 .btn-primary:hover { background: var(--accent-hover); }
 .btn-ghost { background: var(--surface-alt); color: var(--text); }
 .btn-ghost:hover { background: var(--border); }
-.btn-ghost.is-active { background: var(--accent); color: #fff; }
+.btn-ghost.is-active { background: var(--accent); color: var(--on-accent); }
 .btn-danger { background: var(--neg-soft); color: var(--neg); }
 .btn-block { width: 100%; }
 
@@ -274,7 +310,9 @@ body[data-privacy="visible"] #privacy-toggle .icon-eye-closed { display: none; }
 /* flex-wrap : sur petit écran, le bouton d'action passe sous le titre plutôt
    que d'être coupé au bord de l'écran (ex: "+ Nouveau portefeuille"). */
 .view-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 4px; }
-.view-header h2 { font-size: 20px; font-weight: 800; }
+.view-header h2 { font-size: 20px; font-weight: 700; }
+/* Le titre de la page vit dans la barre du haut : un en-tête réduit à ses boutons les aligne à droite. */
+.view-header > :only-child { margin-left: auto; }
 @media (max-width: 480px) {
   .view-header .btn { flex: 1 1 100%; }
 }
@@ -288,35 +326,66 @@ body[data-privacy="visible"] #privacy-toggle .icon-eye-closed { display: none; }
   padding: 12px 16px; border-radius: var(--radius-sm);
   font-size: 13.5px; font-weight: 600;
 }
-.alert-warn { background: var(--warn-soft); color: #92620a; }
+.alert-warn { background: var(--warn-soft); color: var(--warn-text); }
 .alert-danger { background: var(--neg-soft); color: var(--neg); }
 .alert-info { background: var(--accent-soft); color: var(--accent); }
+.alert .alert-action { margin-left: auto; flex-shrink: 0; }
+
+/* ---------- Export « preuve » PDF / Excel + description d'investissement ---------- */
+.proof-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.proof-actions .btn { flex: 1 1 140px; white-space: normal; }
+.inv-desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 4px; }
+
+/* ---------- Modale « Suggérer des budgets » ---------- */
+.bsug-intro { font-size: 13px; color: var(--text-muted); margin: 0 0 12px; }
+.bsug-list { max-height: 36vh; overflow-y: auto; margin-bottom: 12px; }
+.bsug-row {
+  display: grid; grid-template-columns: auto 1fr minmax(90px, 120px); gap: 10px; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.bsug-label { font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.bsug-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.bsug-trend { font-size: 11px; }
+.bsug-trend.is-up { color: var(--neg); }
+.bsug-trend.is-down { color: var(--pos); }
+.bsug-input { width: 100%; text-align: right; }
+.bsug-summary { font-size: 13px; font-weight: 600; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--surface-alt); margin-bottom: 12px; }
+.bsug-summary.is-over { background: var(--warn-soft); color: var(--warn-text); }
+.bsug-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.bsug-actions .btn { flex: 1 1 200px; white-space: normal; line-height: 1.3; }
 
 .hero-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
 
+/* Cartes de tête : toutes à plat, sur la surface. Une seule se détache (« reste à vivre », le chiffre
+   qu'on regarde le plus) en marine uni, avec l'or du logo pour son libellé. */
 .hero-card {
-  background: linear-gradient(135deg, var(--accent) 0%, #7b5bff 100%);
-  color: #fff; border-radius: var(--radius-lg);
-  padding: 28px 30px; box-shadow: var(--shadow-lg);
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: 22px 24px;
 }
-.hero-card-budget { background: linear-gradient(135deg, #0d9488 0%, #16a34a 100%); }
-.hero-card-safe { background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%); }
-.hero-card-safe.is-negative { background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); }
-.hero-card-debts { background: linear-gradient(135deg, #0891b2 0%, #475569 100%); }
-.hero-card-label { font-size: 13.5px; opacity: .85; font-weight: 600; }
-.hero-card-value { font-size: 38px; font-weight: 800; margin: 6px 0; }
-.hero-card-value .amount { color: #fff; }
-body[data-privacy="hidden"] .hero-card-value .amount::after { color: #fff; }
-.hero-card-trend { font-size: 13px; opacity: .9; }
+.hero-card-safe {
+  --text: #f3efe3; --text-muted: rgba(243, 239, 227, .72);
+  background: var(--hero-bg); border-color: transparent;
+}
+.hero-card-safe .hero-card-label { color: var(--gold); }
+.hero-card-safe.is-negative { background: #8f2f26; }
+.hero-card-safe.is-negative .hero-card-label { color: #f3efe3; }
+.hero-card-label { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+.hero-card-value { font-size: 32px; font-weight: 700; letter-spacing: -.01em; margin: 6px 0; font-variant-numeric: tabular-nums; }
+.hero-card-value .amount { color: inherit; }
+.hero-card-daily { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+.hero-card-trend { font-size: 13px; color: var(--text-muted); }
 .hero-card-badge {
   display: inline-flex; align-items: center; gap: 4px; margin-top: 8px;
-  padding: 3px 10px; border-radius: 99px; font-size: 11.5px; font-weight: 700;
-  background: rgba(255,255,255,.2); color: #fff;
+  padding: 3px 9px; border-radius: 99px; font-size: 11.5px; font-weight: 600;
+  background: var(--warn-soft); color: var(--warn-text);
 }
+.hero-card-safe .hero-card-badge { background: rgba(255, 255, 255, .16); color: #f3efe3; }
 .hero-card-link {
-  display: inline-block; margin-top: 10px; color: #fff; font-weight: 600;
-  font-size: 13px; opacity: .95; text-decoration: none; cursor: pointer;
+  display: inline-block; margin-top: 10px; color: var(--accent); font-weight: 600;
+  font-size: 13px; text-decoration: none; cursor: pointer;
 }
+.hero-card-safe .hero-card-link { color: var(--gold); }
 .hero-card-link:hover { text-decoration: underline; }
 
 .dashboard-panels-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -327,7 +396,7 @@ body[data-privacy="hidden"] .hero-card-value .amount::after { color: #fff; }
   padding: 18px 20px; box-shadow: var(--shadow-sm); border: 1px solid var(--border);
 }
 .summary-card-label { font-size: 13px; color: var(--text-muted); font-weight: 600; margin-bottom: 6px; }
-.summary-card-value { font-size: 21px; font-weight: 800; }
+.summary-card-value { font-size: 21px; font-weight: 700; }
 .summary-card-trend { font-size: 11.5px; color: var(--text-faint); font-weight: 600; margin-top: 4px; }
 .summary-card-trend.pos { color: var(--pos); }
 .summary-card-trend.neg { color: var(--neg); }
@@ -346,7 +415,6 @@ body[data-privacy="hidden"] .hero-card-value .amount::after { color: #fff; }
 .chart-canvas-wrap canvas { max-width: 100%; }
 @media (min-width: 980px) {
   .charts-grid { grid-template-columns: 1fr 1fr; }
-  .chart-card:first-child { grid-row: span 2; }
 }
 
 .panel {
@@ -445,7 +513,7 @@ body[data-privacy="hidden"] .hero-card-value .amount::after { color: #fff; }
 .bottom-nav-item.is-active { color: var(--accent); }
 .bottom-nav-fab {
   width: 52px; height: 52px; border-radius: 50%;
-  background: var(--accent); color: #fff;
+  background: var(--accent); color: var(--on-accent);
   display: flex; align-items: center; justify-content: center;
   margin-top: -24px; box-shadow: var(--shadow-md);
 }
@@ -557,7 +625,6 @@ body[data-privacy="hidden"] .hero-card-value .amount::after { color: #fff; }
   .summary-grid { grid-template-columns: 1fr 1fr; }
   .charts-grid { grid-template-columns: 1fr; }
   .dashboard-panels-grid { grid-template-columns: 1fr; }
-  .chart-card:first-child { grid-row: auto; }
   /* Cibles tactiles agrandies (min. ~40-44px recommandé) et espacement accru
      pour éviter les appuis sur le mauvais bouton. */
   .card-actions { gap: 6px; }
@@ -646,3 +713,125 @@ body[data-privacy="hidden"] .hero-card-value .amount::after { color: #fff; }
   }
   .is-app img, .is-app svg { -webkit-user-drag: none; user-drag: none; }
 }
+
+/* ==========================================================================
+   Saisie rapide : favoris, dictée, SMS (voir quick-templates.js, voice-input.js, sms-import.js)
+   ========================================================================== */
+.qa-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.qa-chip-wrap { display: inline-flex; align-items: stretch; }
+.qa-chip {
+  border: 1px solid var(--border); background: var(--surface-alt); color: var(--text);
+  border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer;
+  max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.qa-chip:hover { border-color: var(--accent); }
+.qa-chip.is-suggestion { border-style: dashed; font-weight: 500; color: var(--text-muted); }
+.qa-chip-wrap .qa-chip:not(:last-child) { border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: 0; }
+.qa-chip-x {
+  border: 1px solid var(--border); border-left: 0; background: var(--surface-alt); color: var(--text-muted);
+  border-radius: 0 999px 999px 0; padding: 0 9px; font-size: 11px; cursor: pointer;
+}
+.qa-chip-x:hover { color: var(--neg); }
+.qa-tools { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.qa-tools .btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 13px; }
+.qa-tools .btn[hidden] { display: none; }
+.qa-tools .btn.is-listening { border-color: var(--neg); color: var(--neg); }
+.qa-voice-status { font-size: 12.5px; color: var(--text-muted); margin: -4px 0 10px; font-style: italic; }
+.sms-row select { max-width: 100%; }
+
+/* Fiche par personne (Dettes & créances) */
+.person-row { width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--border); cursor: pointer; font: inherit; color: inherit; }
+.person-row:hover { background: var(--surface-alt); }
+
+/* ==========================================================================
+   Mode simple (« comme un cahier ») — voir ui-mode.js. Masque ce qui n'est pas : entrées, sorties,
+   solde, favoris, dettes & créances. Les écrans masqués restent accessibles en repassant en mode complet.
+   ========================================================================== */
+body[data-ui-mode="simple"] .sidebar-nav [data-view-target="budgets"],
+body[data-ui-mode="simple"] .sidebar-nav [data-view-target="savings"],
+body[data-ui-mode="simple"] .sidebar-nav [data-view-target="investments"],
+body[data-ui-mode="simple"] .sidebar-nav [data-view-target="tools"],
+body[data-ui-mode="simple"] .sidebar-nav [data-view-target="reports"],
+body[data-ui-mode="simple"] .sidebar-nav [data-view-target="shared"],
+body[data-ui-mode="simple"] .dash-advanced,
+body[data-ui-mode="simple"] #dashboard-charts-grid,
+body[data-ui-mode="simple"] #dashboard-panels-grid { display: none !important; }
+
+/* ==========================================================================
+   Tableau de bord : une carte de tête + des lignes de cahier (libellé ...... montant). Remplace les
+   quatre cartes de tête et les quatre cartes de synthèse, toutes de même poids.
+   ========================================================================== */
+.dash-top { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.dash-col { display: flex; flex-direction: column; gap: 16px; }
+.dash-top .hero-card-value { font-size: 40px; }
+.ledger .panel-header { margin-bottom: 4px; }
+.ledger-row { display: flex; align-items: baseline; gap: 8px; padding-top: 10px; font-size: 14px; }
+.ledger-label { color: var(--text-muted); }
+.ledger-dots { flex: 1; min-width: 12px; border-bottom: 1px dotted var(--text-faint); transform: translateY(-3px); opacity: .7; }
+.ledger-value { font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ledger-sub { font-size: 11.5px; color: var(--text-faint); text-align: right; margin-top: 1px; }
+.ledger-sub.pos { color: var(--pos); }
+.ledger-sub.neg { color: var(--neg); }
+.ledger-total { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.ledger-block { margin-top: 14px; padding-top: 4px; border-top: 1px solid var(--border); }
+.ledger-block .link-btn { margin-top: 8px; }
+@media (max-width: 900px) {
+  .dash-top { grid-template-columns: 1fr; }
+  .dash-top .hero-card-value { font-size: 34px; }
+}
+
+/* Rapports : barre de période commune + onglets, cartes de graphique à en-tête compact. */
+.report-period { display: flex; flex-wrap: wrap; gap: 4px 28px; align-items: center; margin-bottom: 8px; }
+.report-period-group { display: flex; align-items: center; gap: 4px; }
+.report-period-label { font-size: 12.5px; font-weight: 600; color: var(--text-muted); margin-right: 4px; }
+.report-period-value { min-width: 96px; text-align: center; font-size: 14px; }
+.report-body { display: flex; flex-direction: column; gap: 16px; padding-top: 12px; }
+.report-links { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 14px; }
+.chart-card-period { font-weight: 500; color: var(--text-muted); }
+.chart-card-full { grid-column: 1 / -1; }
+.chart-card-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+.chart-card-head h3 { margin: 0; }
+.chart-card-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.chart-card-check { display: flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 400; }
+
+/* ==========================================================================
+   Motif du cauri (le coquillage du logo) : en filigrane sur les écrans de verrouillage / de choix, et en
+   petit signe au-dessus des messages « rien ici ». Dessiné en masque pour suivre le thème (clair / sombre).
+   ========================================================================== */
+:root {
+  --cauri-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cg fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'%3E%3Cg transform='rotate(22 24 24)'%3E%3Cellipse cx='24' cy='24' rx='13' ry='18'/%3E%3Cpath d='M24 11 C18.2 18 18.2 30 24 37 C29.8 30 29.8 18 24 11Z'/%3E%3Cpath d='M20.7 15 L17.7 15 M27.3 15 L30.3 15 M19.6 18 L16.6 18 M28.4 18 L31.4 18 M19 21 L16 21 M29 21 L32 21 M18.8 24 L15.8 24 M29.2 24 L32.2 24 M19 27 L16 27 M29 27 L32 27 M19.6 30 L16.6 30 M28.4 30 L31.4 30 M20.7 33 L17.7 33 M27.3 33 L30.3 33'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  --cauri-tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round'%3E%3Cg transform='translate(8 6) scale(.95)'%3E%3Cg transform='rotate(22 24 24)'%3E%3Cellipse cx='24' cy='24' rx='13' ry='18'/%3E%3Cpath d='M24 11 C18.2 18 18.2 30 24 37 C29.8 30 29.8 18 24 11Z'/%3E%3Cpath d='M20.7 15 L17.7 15 M27.3 15 L30.3 15 M19.6 18 L16.6 18 M28.4 18 L31.4 18 M19 21 L16 21 M29 21 L32 21 M18.8 24 L15.8 24 M29.2 24 L32.2 24 M19 27 L16 27 M29 27 L32 27 M19.6 30 L16.6 30 M28.4 30 L31.4 30 M20.7 33 L17.7 33 M27.3 33 L30.3 33'/%3E%3C/g%3E%3C/g%3E%3Cg transform='translate(66 62) scale(.95) rotate(180 24 24)'%3E%3Cg transform='rotate(22 24 24)'%3E%3Cellipse cx='24' cy='24' rx='13' ry='18'/%3E%3Cpath d='M24 11 C18.2 18 18.2 30 24 37 C29.8 30 29.8 18 24 11Z'/%3E%3Cpath d='M20.7 15 L17.7 15 M27.3 15 L30.3 15 M19.6 18 L16.6 18 M28.4 18 L31.4 18 M19 21 L16 21 M29 21 L32 21 M18.8 24 L15.8 24 M29.2 24 L32.2 24 M19 27 L16 27 M29 27 L32 27 M19.6 30 L16.6 30 M28.4 30 L31.4 30 M20.7 33 L17.7 33 M27.3 33 L30.3 33'/%3E%3C/g%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+.lock-screen { overflow: hidden; }
+.lock-screen::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: var(--text); opacity: .05;
+  -webkit-mask: var(--cauri-tile) 0 0 / 120px 120px repeat; mask: var(--cauri-tile) 0 0 / 120px 120px repeat;
+}
+.lock-card { position: relative; z-index: 1; }
+.empty-state::before, .tx-empty::before {
+  content: ""; display: block; width: 38px; height: 38px; margin: 0 auto 10px;
+  background: var(--text-faint); opacity: .6;
+  -webkit-mask: var(--cauri-glyph) center / contain no-repeat; mask: var(--cauri-glyph) center / contain no-repeat;
+}
+
+/* ==========================================================================
+   Typographie : serif pour les titres et les gros montants, sans-serif pour tout le reste.
+   ========================================================================== */
+body { font-size: 16px; line-height: 1.45; }
+.page-title, .panel-header h3, .chart-card h3, .view-header h2, .modal-header h3, .lock-title, .sidebar-brand, .hero-card-value {
+  font-family: var(--font-serif);
+}
+.page-title { font-size: 21px; font-weight: 600; }
+.panel-header h3, .chart-card h3 { font-size: 16px; font-weight: 600; }
+.view-header h2 { font-weight: 600; }
+.modal-header h3 { font-weight: 600; font-size: 18px; }
+.lock-title { font-weight: 600; font-size: 23px; }
+.sidebar-brand { font-weight: 700; font-size: 19px; }
+.hero-card-value { font-weight: 600; font-variant-numeric: lining-nums tabular-nums; }
+.nav-item { font-weight: 600; font-size: 15px; }
+
+/* Réponse à une question en langage naturel (recherche globale, voir nl-query.js) */
+.search-answer { background: var(--accent-soft); color: var(--text); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+.search-answer-text { font-weight: 700; font-size: 14.5px; }
+.search-answer-lines { margin: 8px 0 0; padding-left: 18px; font-size: 13px; color: var(--text-muted); }
