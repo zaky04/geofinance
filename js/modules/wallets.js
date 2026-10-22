@@ -112,6 +112,12 @@ async function openWalletModal(wallet = null, { onDone = null } = {}) {
     const fd = new FormData(e.target);
     const currency = readCurrencyValue(e.target);
     const before = wallet ? { ...wallet } : null;
+    // Changer la devise d'un portefeuille qui a déjà des mouvements réinterpréterait tous ses montants
+    // (100 EUR deviendraient 100 USD) et désynchroniserait dettes et taux liés.
+    if (wallet && currency !== wallet.currency && (await dbGetAllByIndex(STORES.TRANSACTIONS, 'byWallet', wallet.id)).length) {
+      showToast(t('La devise ne peut plus changer : ce portefeuille a déjà des transactions. Créez un nouveau portefeuille dans cette devise.'));
+      return;
+    }
     const record = {
       id: wallet?.id || uuid(),
       name: fd.get('name').trim(),
@@ -294,6 +300,15 @@ export function initWalletsModule() {
     if (btn.dataset.action === 'edit') {
       openWalletModal(wallet);
     } else if (btn.dataset.action === 'archive') {
+      // Archiver ou supprimer un portefeuille le retire de tous les sélecteurs : une récurrence active
+      // qui le débite continuerait à le faire en silence, sans qu'on puisse la voir ni la corriger.
+      if (!wallet.archived) {
+        const linkedRec = (await dbGetAll(STORES.RECURRING)).filter((r) => r.active && r.walletId === walletId);
+        if (linkedRec.length) {
+          showToast(t('Ce portefeuille est utilisé par {count} récurrence(s) active(s) : changez-les ou désactivez-les d\'abord.', { count: linkedRec.length }));
+          return;
+        }
+      }
       const txCount = (await dbGetAllByIndex(STORES.TRANSACTIONS, 'byWallet', walletId)).length;
       if (!wallet.archived && txCount === 0) {
         const ok = await confirmDialog(t('Supprimer définitivement "{name}" ? Ce portefeuille n\'a aucune transaction, la suppression est possible.', { name: wallet.name }), { danger: true, requirePin: true, confirmText: t('Supprimer') });

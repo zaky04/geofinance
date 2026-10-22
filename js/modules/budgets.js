@@ -341,7 +341,9 @@ async function renderCategoriesTab(container) {
   };
   container.innerHTML = group('expense', t('Catégories de dépenses')) + group('income', t('Catégories de recettes'));
 
-  container.addEventListener('click', async function handler(e) {
+  // onclick (et non addEventListener) : ce rendu est rappelé sur le MÊME conteneur après chaque action, un
+  // écouteur ajouté à chaque fois s'accumulait (action exécutée N fois : doublons d'audit, N fenêtres).
+  container.onclick = async function handler(e) {
     const btn = e.target.closest('[data-action]');
     if (!btn || !container.contains(btn)) return;
     const row = e.target.closest('[data-category-id]');
@@ -364,7 +366,7 @@ async function renderCategoriesTab(container) {
         notifyDataChanged('categories');
       }
     }
-  });
+  };
 }
 
 /* ==========================================================================
@@ -484,7 +486,9 @@ async function renderRecurringTab(container) {
 
   container.querySelector('#recurring-add-btn').addEventListener('click', () => openRecurringModal());
 
-  container.addEventListener('click', async function handler(e) {
+  // onclick (et non addEventListener) : ce rendu est rappelé sur le MÊME conteneur après chaque action, un
+  // écouteur ajouté à chaque fois s'accumulait (action exécutée N fois : doublons d'audit, N fenêtres).
+  container.onclick = async function handler(e) {
     const btn = e.target.closest('[data-action]');
     if (!btn || !container.contains(btn)) return;
     const row = e.target.closest('[data-recurring-id]');
@@ -495,6 +499,17 @@ async function renderRecurringTab(container) {
     if (btn.dataset.action === 'toggle') {
       const before = { ...r };
       r.active = !r.active;
+      // Réactivation : on reprend à partir de MAINTENANT. Sans ça, generateDueRecurring() rattrapait
+      // toutes les échéances passées pendant la pause (une dépense ou une entrée mise en pause pendant
+      // des mois réapparaissait d'un coup, en double de la réalité). Une échéance qui tombe aujourd'hui
+      // reste due ; seules celles déjà dépassées sont sautées.
+      if (r.active && r.nextDate) {
+        if (r.anchorDay == null) r.anchorDay = Number(r.nextDate.slice(8, 10));
+        const today = todayISO();
+        let guard = 0;
+        while (r.nextDate < today && guard < 2000) { r.nextDate = advanceDate(r.nextDate, r.frequency, r.anchorDay); guard++; }
+        if (r.nextDate !== before.nextDate) showToast(t('Récurrence réactivée : prochaine échéance le {date}.', { date: formatDate(r.nextDate) }));
+      }
       await dbPut(STORES.RECURRING, r);
       await logAudit({ entityType: 'recurring', entityId: r.id, action: 'update', before, after: r });
       renderRecurringTab(container);
@@ -509,7 +524,7 @@ async function renderRecurringTab(container) {
         notifyDataChanged('recurring');
       }
     }
-  });
+  };
 }
 
 /* ==========================================================================
@@ -610,13 +625,45 @@ export async function generateDueRecurring() {
   const todayStr = todayISO();
   let generated = false;
 
+  // Idempotence : une restauration/fusion de sauvegarde plus ancienne peut ramener nextDate en arrière
+  // alors que les transactions de ces échéances existent déjà sur cet appareil. On ne recrée pas ce qui
+  // est déjà là (même portefeuille, date, montant et note) : on avance juste la date.
+  let existingKeys = null;
+  let walletById = null;
+  const txKey = (walletId, date, amount, note) => `${walletId}|${date}|${Number(amount).toFixed(4)}|${note}`;
+
   for (const r of recurring) {
     if (!r.active || !r.nextDate) continue;
+    if (r.nextDate > todayStr) continue;
+    if (!walletById) walletById = new Map((await dbGetAll(STORES.WALLETS)).map((w) => [w.id, w]));
+    // Portefeuille supprimé ou archivé : la récurrence se mettrait à débiter/créditer en silence un
+    // portefeuille que l'utilisateur ne voit plus. On la met en pause (elle reprendra d'aujourd'hui).
+    const recWallet = walletById.get(r.walletId);
+    if (!recWallet || recWallet.archived) {
+      r.active = false;
+      await dbPut(STORES.RECURRING, r);
+      continue;
+    }
+    if (!existingKeys) {
+      existingKeys = new Set();
+      for (const t of await dbGetAll(STORES.TRANSACTIONS)) {
+        if (typeof t.note === 'string') existingKeys.add(txKey(t.walletId, t.date, t.amount, t.note));
+      }
+    }
     // Auto-guérison pour les récurrences créées avant l'ajout d'anchorDay : on fige le jour du
     // mois voulu à partir de la prochaine échéance déjà enregistrée, une fois pour toutes.
     if (r.anchorDay == null) r.anchorDay = Number(r.nextDate.slice(8, 10));
     let guard = 0;
     while (r.nextDate <= todayStr && guard < 60) {
+      const note = t('Récurrence : {name}', { name: r.name });
+      const key = txKey(r.walletId, r.nextDate, r.amount, note);
+      if (existingKeys.has(key)) {
+        r.nextDate = advanceDate(r.nextDate, r.frequency, r.anchorDay);
+        generated = true;
+        guard++;
+        continue;
+      }
+      existingKeys.add(key);
       const tx = {
         id: uuid(), type: r.type, walletId: r.walletId, targetWalletId: null,
         categoryId: r.categoryId, amount: r.amount, date: r.nextDate,
@@ -624,7 +671,7 @@ export async function generateDueRecurring() {
         // "Recurrence: ") doit rester reconnu par RECURRING_NOTE_PREFIXES (ledger.js,
         // detectRecurringCandidates) quelle que soit la langue active à la création — les deux
         // variantes y sont vérifiées, voir le commentaire à cet endroit.
-        note: t('Récurrence : {name}', { name: r.name }), reconciled: false, createdAt: new Date().toISOString(),
+        note, reconciled: false, createdAt: new Date().toISOString(),
       };
       await dbAdd(STORES.TRANSACTIONS, tx);
       await logAudit({ entityType: 'transaction', entityId: tx.id, action: 'create', after: tx, note: t('Générée automatiquement (récurrence)') });

@@ -186,6 +186,7 @@ export async function openDebtModal(d = null) {
     if (movesMoneyNow && !walletSelect.value) { showToast(tr('Choisissez un portefeuille, ou décochez "Cet argent bouge aujourd\'hui".')); return; }
 
     const record = {
+      ...(d || {}),
       id: d?.id || uuid(),
       type: currentType,
       personName: fd.get('personName').trim(),
@@ -200,6 +201,31 @@ export async function openDebtModal(d = null) {
     };
 
     if (!(record.principal > 0)) { showToast(tr('Saisissez un montant supérieur à 0.')); return; }
+
+    // Modification d'une dette existante : le montant, la date, la devise et le type doivent rester
+    // cohérents avec ce qui a déjà bougé dans les portefeuilles (transaction d'ouverture, remboursements),
+    // et le statut « soldée » doit suivre le nouveau montant (sinon une dette relevée restait cachée
+    // des échéances, de la prévision et des rappels, ou une dette abaissée ne se soldait jamais).
+    const extraOps = [];
+    if (d) {
+      const paid = (await dbGetAll(STORES.DEBT_PAYMENTS)).filter((p) => p.debtId === d.id).reduce((sum, p) => sum + p.amount, 0);
+      if ((d.openingTransactionId || paid > 0) && (record.currency !== d.currency || record.type !== d.type)) {
+        showToast(tr('Le type et la devise ne peuvent plus changer : des mouvements de portefeuille y sont liés. Supprimez cette dette et recréez-la.'));
+        return;
+      }
+      record.status = (record.principal - paid) <= 0.005 ? 'paid' : 'active';
+      if (d.openingTransactionId) {
+        const openingTx = (await dbGetAll(STORES.TRANSACTIONS)).find((x) => x.id === d.openingTransactionId);
+        if (openingTx) {
+          extraOps.push({ store: STORES.TRANSACTIONS, type: 'put', value: {
+            ...openingTx,
+            amount: record.principal,
+            date: record.startDate,
+            note: record.type === 'debt' ? tr('Prêt reçu de {name}', { name: record.personName }) : tr('Prêt accordé à {name}', { name: record.personName }),
+          } });
+        }
+      }
+    }
 
     if (movesMoneyNow) {
       const txType = currentType === 'debt' ? 'income' : 'expense';
@@ -222,11 +248,11 @@ export async function openDebtModal(d = null) {
       record.openingTransactionId = openingTx.id;
     }
 
-    await dbPut(STORES.DEBTS, record);
+    await dbWriteBatch([...extraOps, { store: STORES.DEBTS, type: 'put', value: record }]);
     await logAudit({ entityType: 'debt', entityId: record.id, action: d ? 'update' : 'create', before, after: record });
     modal.close();
     showToast(d ? tr('Mis à jour.') : tr('Créé.'));
-    notifyDataChanged(movesMoneyNow ? 'all' : 'debts');
+    notifyDataChanged(movesMoneyNow || extraOps.length ? 'all' : 'debts');
   });
 }
 
