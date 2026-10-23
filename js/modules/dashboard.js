@@ -3,7 +3,7 @@
    ========================================================================== */
 
 import { formatCurrency, formatDate, formatPercent, escapeHtml, currentMonthKey, monthKeyOffset, percentage, budgetProgressClass } from '../utils.js';
-import { computeNetWorth, computeNetWorthHistory, computeNetWorthComposition, computeMonthSummary, computeExpensesByCategory, computeBudgetVsActual, computeMonthlyBudgetSummary, computeEndOfMonthForecast, getEnrichedTransactions, getUnconfirmedRates } from '../ledger.js';
+import { computeNetWorth, computeNetWorthHistory, computeNetWorthComposition, computeMonthSummary, computeExpensesByCategory, computeBudgetVsActual, computeMonthlyBudgetSummary, computeSafeToSpend, computeEndOfMonthForecast, getEnrichedTransactions, getUnconfirmedRates } from '../ledger.js';
 import { renderExpensesByCategoryChart, renderNetWorthTrendChart, renderBudgetVsActualChart, trimLeadingZeros } from '../charts.js';
 import { getSetting } from '../db.js';
 // Aliasé en tr (pas t) : ce fichier utilise déjà `t` comme nom de paramètre pour une transaction
@@ -211,9 +211,7 @@ export async function renderDashboard() {
   const currency = summary.currency;
 
   if (panels.safeToSpend) {
-    const upcomingBillsTotal = forecast.upcoming.filter((u) => u.type === 'expense').reduce((sum, u) => sum + u.amountBase, 0);
-    const reservedBudget = Math.max(0, monthlyBudget.remaining);
-    const safeToSpend = forecast.current - upcomingBillsTotal - reservedBudget;
+    const { safeToSpend } = computeSafeToSpend(forecast, budgetVsActual);
     setAmount(document.getElementById('dash-safe-to-spend-value'), safeToSpend, forecast.currency);
     safeToSpendEl?.classList.toggle('is-negative', safeToSpend < 0);
     const safeTrendEl = document.getElementById('dash-safe-to-spend-trend');

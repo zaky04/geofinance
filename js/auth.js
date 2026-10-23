@@ -105,8 +105,10 @@ export async function verifyPinForAction(pin) {
 }
 
 export async function changePin(oldPin, newPin) {
-  const ok = await verifyPin(oldPin);
-  if (!ok) throw new Error(t('Ancien code PIN incorrect.'));
+  // Même blocage anti-brute-force que l'écran de verrouillage : sans lui, quelqu'un qui tient le téléphone
+  // déverrouillé pouvait essayer tous les codes à la suite depuis « Changer le code PIN ».
+  const { ok, waitSeconds } = await verifyPinForAction(oldPin);
+  if (!ok) throw new Error(waitSeconds > 0 ? t('Trop de tentatives. Réessayez dans {s}s.', { s: waitSeconds }) : t('Ancien code PIN incorrect.'));
   await setupPin(newPin);
 }
 

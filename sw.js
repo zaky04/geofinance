@@ -4,7 +4,7 @@
    en arrière-plan (stale-while-revalidate) pour un fonctionnement 100% hors-ligne.
    ========================================================================== */
 
-const CACHE_VERSION = 'v103';
+const CACHE_VERSION = 'v105';
 const CACHE_NAME = `geofinance-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -20,6 +20,7 @@ const APP_SHELL = [
   './js/ocr.js',
   './js/auth.js',
   './js/state.js',
+  './js/recurrence.js',
   './js/utils.js',
   './js/icons.js',
   './js/card-actions.js',

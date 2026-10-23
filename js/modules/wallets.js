@@ -3,7 +3,7 @@
    ========================================================================== */
 
 import { STORES, dbGetAll, dbPut, dbAdd, dbDelete, dbGetAllByIndex, logAudit, getSetting, setSetting } from '../db.js';
-import { getAllWalletBalances, computeNetWorth, computeNetWorthHistory, computeNetWorthComposition, computeMonthlyBudgetSummary, computeEndOfMonthForecast } from '../ledger.js';
+import { getAllWalletBalances, computeNetWorth, computeNetWorthHistory, computeNetWorthComposition, computeBudgetVsActual, computeSafeToSpend, computeEndOfMonthForecast } from '../ledger.js';
 import { uuid, formatCurrency, escapeHtml, todayISO, currentMonthKey, openModal, confirmDialog, showToast, currencySelectHtml, wireCurrencySelect, readCurrencyValue, safeNumber } from '../utils.js';
 import { notifyDataChanged } from '../state.js';
 import { renderExpensesByCategoryChart } from '../charts.js';
@@ -17,10 +17,10 @@ function setAmount(el, value, currency) {
 }
 
 async function renderWealthHero() {
-  const [{ total, currency }, netWorthHistory, monthlyBudget, forecast, composition] = await Promise.all([
+  const [{ total, currency }, netWorthHistory, budgetRows, forecast, composition] = await Promise.all([
     computeNetWorth(),
     computeNetWorthHistory(6),
-    computeMonthlyBudgetSummary(currentMonthKey()),
+    computeBudgetVsActual(currentMonthKey()),
     computeEndOfMonthForecast(),
     computeNetWorthComposition(),
   ]);
@@ -47,11 +47,7 @@ async function renderWealthHero() {
     }
   }
 
-  const upcomingBillsTotal = forecast.upcoming
-    .filter((u) => u.type === 'expense')
-    .reduce((sum, u) => sum + u.amountBase, 0);
-  const reservedBudget = Math.max(0, monthlyBudget.remaining);
-  const safeToSpend = forecast.current - upcomingBillsTotal - reservedBudget;
+  const { safeToSpend } = computeSafeToSpend(forecast, budgetRows);
   setAmount(document.getElementById('safe-to-spend-value'), safeToSpend, forecast.currency);
   document.getElementById('hero-safe-to-spend')?.classList.toggle('is-negative', safeToSpend < 0);
   const safeTrendEl = document.getElementById('safe-to-spend-trend');

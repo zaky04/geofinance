@@ -89,12 +89,15 @@ async function renderInflationTool() {
 /* ---------- 3. Calculateur de fonds d'urgence ---------- */
 async function averageMonthlyExpenses(months = 3) {
   let sum = 0;
+  let monthsWithData = 0;
   for (let i = 1; i <= months; i++) {
     const mk = monthKeyOffset(currentMonthKey(), -i);
     const s = await computeMonthSummary(mk);
-    sum += s.expenses;
+    // Un mois sans aucune dépense (avant le début d'utilisation) n'est pas un mois « à 0 » : le compter
+    // tirait la moyenne vers le bas et faisait surestimer l'autonomie du fonds d'urgence.
+    if (s.expenses > 0) { sum += s.expenses; monthsWithData++; }
   }
-  return sum / months;
+  return monthsWithData ? sum / monthsWithData : 0;
 }
 
 async function renderEmergencyFundTool() {

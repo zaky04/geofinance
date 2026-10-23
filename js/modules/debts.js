@@ -272,7 +272,7 @@ async function openPaymentModal(d) {
     const fd = new FormData(e.target);
     const walletId = fd.get('walletId');
     if (!walletId) { showToast(tr("Créez d'abord un portefeuille en {currency}.", { currency: d.currency })); return; }
-    const payment = { id: uuid(), debtId: d.id, amount: safeNumber(parseFloat(fd.get('amount'))), date: fd.get('date'), note: (fd.get('note') || '').trim().slice(0, 140) };
+    const payment = { id: uuid(), debtId: d.id, amount: safeNumber(parseFloat(fd.get('amount'))), date: fd.get('date') || todayISO(), note: (fd.get('note') || '').trim().slice(0, 140) };
     if (!(payment.amount > 0)) { showToast(tr('Saisissez un montant supérieur à 0.')); return; }
     // Rembourser plus que le restant dû fabriquerait une transaction de portefeuille sans contrepartie
     // (la dette passerait en négatif) : on refuse plutôt que de fausser le solde.

@@ -31,10 +31,11 @@
 // test isolée, jamais la vraie base de l'utilisateur.
 window.__GEOFINANCE_TEST_DB_NAME__ = 'geofinance-ledger-test-db';
 
-const { STORES, dbAdd, dbGetAll, wipeAllData, setSetting, exportAllData, importAllData } = await import('../js/db.js');
+const { STORES, dbAdd, dbDelete, dbGetAll, wipeAllData, setSetting, exportAllData, importAllData } = await import('../js/db.js');
 const {
   walletBalancesAsOf, investmentValueAsOf, computeNetWorth, computeMonthSummary,
   computeBudgetVsActual, computeExpensesByCategory, computeFinancialHealthScore, guessCategoryId,
+  computeSafeToSpend, computeEndOfMonthForecast,
 } = await import('../js/ledger.js');
 
 const results = [];
@@ -158,6 +159,28 @@ async function runTests() {
   assertTrue('computeBudgetVsActual : la somme 0.1+0.2 dérive bien de 0.3 en JS (vérifie l\'hypothèse du test)', !!c3Row && c3Row.actual > c3Row.budget, `actual=${c3Row?.actual}`);
   const driftHealth = await computeFinancialHealthScore('2026-07');
   assertEqual('computeFinancialHealthScore : un budget "pile" respecté malgré la dérive flottante compte comme respecté (tolérance 0.005)', driftHealth.budgetAdherencePct, 100);
+
+  // --- computeSafeToSpend (pur) : une facture à venir n'est pas déduite deux fois, un dépassement ne compense pas un reste ---
+  const sts = computeSafeToSpend(
+    { current: 500000, upcoming: [{ type: 'expense', categoryId: 'cat1', amountBase: 100000 }, { type: 'income', categoryId: null, amountBase: 999 }] },
+    [{ categoryId: 'cat1', budget: 100000, actual: 0 }, { categoryId: 'cat2', budget: 50000, actual: 80000 }, { categoryId: 'cat3', budget: 20000, actual: 5000 }],
+  );
+  assertEqual('computeSafeToSpend : facture de 100 000 déjà dans son budget -> déduite une seule fois (500 000 − 100 000 − 15 000)', sts.safeToSpend, 385000);
+
+  // --- computeEndOfMonthForecast : une récurrence hebdomadaire compte TOUTES ses occurrences restantes ce mois-ci ---
+  {
+    const pad = (n) => String(n).padStart(2, '0');
+    const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const now = new Date();
+    const endOfMonth = iso(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+    let expected = 0;
+    for (let d = new Date(now.getFullYear(), now.getMonth(), now.getDate()); iso(d) <= endOfMonth; d.setDate(d.getDate() + 7)) expected++;
+    const anyWallet = (await dbGetAll(STORES.WALLETS))[0];
+    await dbAdd(STORES.RECURRING, { id: 'rec-weekly-test', name: 'Test hebdo', type: 'expense', walletId: anyWallet.id, categoryId: null, amount: 10, frequency: 'weekly', nextDate: iso(now), anchorDay: null, active: true });
+    const fc = await computeEndOfMonthForecast();
+    assertEqual('computeEndOfMonthForecast : récurrence hebdomadaire -> toutes les occurrences restantes du mois', fc.upcoming.filter((u) => u.id === 'rec-weekly-test').length, expected);
+    await dbDelete(STORES.RECURRING, 'rec-weekly-test');
+  }
 
   // --- computeExpensesByCategory ---
   const byCategory = await computeExpensesByCategory('2026-06');

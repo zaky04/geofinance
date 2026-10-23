@@ -12,6 +12,7 @@
    ========================================================================== */
 
 import { STORES, dbGetAll, getSetting } from './db.js';
+import { advanceDate } from './recurrence.js';
 import { convertAmount, currentMonthKey, localISODate, intlLocale } from './utils.js';
 // Aliasé en tr (pas t) : ce fichier utilise `t` comme nom de variable pour une transaction dans
 // plusieurs fonctions — même piège documenté dans dashboard.js/transactions.js/debts.js/tools.js/
@@ -175,7 +176,7 @@ export async function computeNetWorthHistory(months = 6) {
     const d = new Date(now.getFullYear(), now.getMonth() - i + 1, 0); // dernier jour du mois
     const cutoff = localISODate(d);
     const { total } = netWorthAt(cutoff, data);
-    points.push({ label: d.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }), value: Math.round(total * 100) / 100 });
+    points.push({ label: new Intl.DateTimeFormat(intlLocale(), { month: 'short', year: '2-digit' }).format(d), value: Math.round(total * 100) / 100 });
   }
   return points;
 }
@@ -211,7 +212,7 @@ export async function computeInvestmentValueHistory(months = 6) {
       if (inv.createdAt && inv.createdAt.slice(0, 10) > cutoff) continue;
       total += toBase(investmentValueAsOf(inv, investmentEntries, cutoff), inv.currency, ratesForDate, baseCurrency);
     }
-    points.push({ label: d.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }), value: Math.round(total * 100) / 100 });
+    points.push({ label: new Intl.DateTimeFormat(intlLocale(), { month: 'short', year: '2-digit' }).format(d), value: Math.round(total * 100) / 100 });
   }
   return points;
 }
@@ -230,7 +231,7 @@ export async function computeDebtHistory(months = 6) {
     for (const debt of activeDebts) {
       total += toBase(debtRemainingAsOf(debt, debtPayments, cutoff), debt.currency, ratesForDate, baseCurrency);
     }
-    points.push({ label: d.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }), value: Math.round(total * 100) / 100 });
+    points.push({ label: new Intl.DateTimeFormat(intlLocale(), { month: 'short', year: '2-digit' }).format(d), value: Math.round(total * 100) / 100 });
   }
   return points;
 }
@@ -291,7 +292,7 @@ export async function computeExpensesByCategory(monthKey = currentMonthKey()) {
   if (sorted.length <= 8) return sorted;
   const top = sorted.slice(0, 7);
   const autres = sorted.slice(7).reduce((s, r) => s + r.value, 0);
-  top.push({ label: 'Autres', value: autres, color: null });
+  top.push({ label: tr('Autres'), value: autres, color: null });
   return top;
 }
 
@@ -486,17 +487,51 @@ export async function computeEndOfMonthForecast() {
 
   let projected = current;
   const upcoming = [];
+  // TOUTES les occurrences restant à échoir ce mois-ci, pas seulement la prochaine : une récurrence
+  // hebdomadaire tombe 4 à 5 fois dans un mois, la compter une seule fois faisait surestimer le
+  // « reste à vivre » (même parcours que la prévision de trésorerie, forecast.js).
   for (const r of recurring) {
     if (!r.active || !r.nextDate) continue;
-    if (r.nextDate >= todayStr && r.nextDate <= endOfMonthStr) {
-      const cur = walletCurrency[r.walletId] || baseCurrency;
-      const amt = toBase(Number(r.amount) || 0, cur, rates, baseCurrency);
-      projected += (r.type === 'income' ? 1 : -1) * amt;
-      upcoming.push({ ...r, amountBase: amt });
+    const cur = walletCurrency[r.walletId] || baseCurrency;
+    const amt = toBase(Number(r.amount) || 0, cur, rates, baseCurrency);
+    const anchorDay = r.anchorDay ?? Number(r.nextDate.slice(8, 10));
+    let date = r.nextDate;
+    for (let guard = 0; date <= endOfMonthStr && guard < 60; guard++) {
+      if (date >= todayStr) {
+        projected += (r.type === 'income' ? 1 : -1) * amt;
+        upcoming.push({ ...r, nextDate: date, amountBase: amt });
+      }
+      const next = advanceDate(date, r.frequency, anchorDay);
+      if (next <= date) break;
+      date = next;
     }
   }
   upcoming.sort((a, b) => a.nextDate.localeCompare(b.nextDate));
   return { current, projected, currency: baseCurrency, upcoming };
+}
+
+/** « Reste à vivre » : liquidités courantes − échéances de dépense à venir ce mois-ci − budgets encore
+    disponibles. Pur (reçoit la prévision et les lignes budget/réel déjà calculées). Deux corrections par
+    rapport à l'ancienne formule (liquidités − échéances − « reste du budget total ») :
+    - une facture récurrente à venir est déjà DANS le budget de sa catégorie : on la retire du budget
+      réservé de cette catégorie, sinon elle était déduite deux fois (loyer de 100 000 sur un budget
+      « Logement » de 100 000 : 200 000 de moins au lieu de 100 000) ;
+    - le dépassement d'une catégorie ne vient plus « compenser » le reste d'une autre (le reste réservé est
+      la somme des restes positifs, catégorie par catégorie). */
+export function computeSafeToSpend(forecast, budgetRows) {
+  const billsByCategory = new Map();
+  let upcomingBillsTotal = 0;
+  for (const u of forecast.upcoming) {
+    if (u.type !== 'expense') continue;
+    upcomingBillsTotal += u.amountBase;
+    if (u.categoryId) billsByCategory.set(u.categoryId, (billsByCategory.get(u.categoryId) || 0) + u.amountBase);
+  }
+  let reservedBudget = 0;
+  for (const r of budgetRows) {
+    const left = (r.budget || 0) - (r.actual || 0);
+    reservedBudget += Math.max(0, left - (billsByCategory.get(r.categoryId) || 0));
+  }
+  return { safeToSpend: forecast.current - upcomingBillsTotal - reservedBudget, upcomingBillsTotal, reservedBudget };
 }
 
 /** Transactions jointes (portefeuille/catégorie), triées récentes d'abord, avec filtres optionnels. */

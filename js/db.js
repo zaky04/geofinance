@@ -216,6 +216,9 @@ export async function dbBulkPut(store, values) {
   await new Promise((resolve, reject) => {
     t.oncomplete = resolve;
     t.onerror = () => reject(t.error);
+    // Sans onabort, une transaction abandonnée sans événement d'erreur (quota dépassé) laissait la promesse
+    // pendante pour toujours.
+    t.onabort = () => reject(t.error || new Error('Transaction abandonnée'));
   });
 }
 

@@ -70,8 +70,15 @@ async function serializeReceiptsForExport(data) {
 }
 export async function deserializeReceiptsForImport(data) {
   for (const t of data.stores?.[STORES.TRANSACTIONS] || []) {
+    // Un fichier de sauvegarde n'est pas une entrée fiable : un « receiptBlob » qui n'est pas un vrai Blob
+    // (anciennes sauvegardes où il avait été sérialisé en {}, fichier forgé) ferait planter l'affichage du
+    // justificatif ; et seule une vraie image encodée en data: est reconvertie (jamais une URL arbitraire
+    // passée à fetch()).
+    if (t.receiptBlob && !(t.receiptBlob instanceof Blob)) delete t.receiptBlob;
     if (t.receiptDataUrl) {
-      t.receiptBlob = await dataUrlToBlob(t.receiptDataUrl);
+      if (typeof t.receiptDataUrl === 'string' && /^data:image\/[a-z0-9.+-]+;base64,/i.test(t.receiptDataUrl)) {
+        t.receiptBlob = await dataUrlToBlob(t.receiptDataUrl);
+      }
       delete t.receiptDataUrl;
     }
   }

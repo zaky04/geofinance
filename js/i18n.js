@@ -75,7 +75,7 @@ function agree(s, vars) {
 export function t(fr, vars) {
   let s = currentLang === 'en' ? (EN[fr] || fr) : fr;
   s = agree(s, vars);
-  if (vars) for (const [k, v] of Object.entries(vars)) s = s.replaceAll(`{${k}}`, v);
+  if (vars) for (const [k, v] of Object.entries(vars)) s = s.replaceAll(`{${k}}`, () => String(v));
   return s;
 }
 
@@ -376,6 +376,26 @@ const EN = {
   'Récurrence créée.': 'Recurring entry created.',
   'La devise ne peut plus changer : ce portefeuille a déjà des transactions. Créez un nouveau portefeuille dans cette devise.':
     'Currency can no longer change: this wallet already has transactions. Create a new wallet in that currency.',
+  "Cette transaction est liée à {kind} : le montant, la date, le portefeuille et le type ne se modifient que depuis son écran d'origine.":
+    "This transaction is linked to {kind}: amount, date, wallet and type can only be changed from its original screen.",
+  "{count} transaction(s) liée(s) à une dette, un investissement, une tontine ou une dépense partagée ne peuvent pas être supprimées ici : supprimez l'élément d'origine.":
+    "{count} transaction(s) linked to a debt, an investment, a tontine or a shared expense can't be deleted here: delete the original item.",
+  "Cette transaction est liée à {kind} : supprimez l'élément d'origine (elle sera retirée avec lui).":
+    "This transaction is linked to {kind}: delete the original item (it will be removed with it).",
+  "une dette ou créance":
+    "a debt or receivable",
+  "un investissement":
+    "an investment",
+  "une tontine":
+    "a tontine",
+  "une dépense partagée":
+    "a shared expense",
+  "Cette catégorie a des sous-catégories : elle ne peut pas devenir elle-même une sous-catégorie.":
+    "This category has sub-categories: it can't become a sub-category itself.",
+  "Le type ne peut plus changer : cette catégorie a des sous-catégories ou des transactions.":
+    "The type can no longer change: this category has sub-categories or transactions.",
+  "Autres":
+    "Others",
   'Récurrence réactivée : prochaine échéance le {date}.': 'Recurring entry resumed: next occurrence on {date}.',
   'Le type et la devise ne peuvent plus changer : des mouvements de portefeuille y sont liés. Supprimez cette dette et recréez-la.':
     'Type and currency can no longer change: wallet movements are linked to it. Delete this debt and recreate it.',

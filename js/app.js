@@ -232,7 +232,7 @@ function applyShortcutParams() {
   const params = new URLSearchParams(window.location.search);
   const view = params.get('view');
   const action = params.get('action');
-  if (view && VIEW_RENDERERS[view]) navigateTo(view);
+  if (view && Object.hasOwn(VIEW_RENDERERS, view)) navigateTo(view);
   if (action === 'quick-add') openQuickAdd();
   if (view || action) window.history.replaceState({}, '', window.location.pathname);
 }

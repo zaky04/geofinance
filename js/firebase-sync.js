@@ -246,6 +246,12 @@ export async function pushBackupToCloud(passphrase, onProgress = () => {}) {
 
   const chunksRef = firestoreMod.collection(firebaseDb, 'backups', user.uid, 'chunks');
   const backupDocRef = firestoreMod.doc(firebaseDb, 'backups', user.uid);
+  // Chaque envoi écrit ses morceaux sous une NOUVELLE « génération » (identifiants distincts des précédents) :
+  // l'ancienne sauvegarde reste intacte tant que le pointeur du document parent ne bascule pas. Avec des
+  // identifiants numériques réutilisés (0, 1, 2…), un envoi interrompu au 2e lot avait déjà écrasé les premiers
+  // morceaux de l'ancienne sauvegarde, alors que le parent la désignait encore : sauvegarde illisible.
+  const generation = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const chunkId = (i) => `${generation}_${i}`;
   let sent = 0;
   const reportSent = () => onProgress(t('Envoi vers Google… {done}/{total}', { done: sent, total: chunks.length }));
   reportSent();
@@ -266,7 +272,7 @@ export async function pushBackupToCloud(passphrase, onProgress = () => {}) {
       batchBytes = 0;
       batchChunks = 0;
     }
-    batch.set(firestoreMod.doc(chunksRef, String(i)), { data: chunks[i] });
+    batch.set(firestoreMod.doc(chunksRef, chunkId(i)), { data: chunks[i] });
     batchBytes += chunks[i].length;
     batchChunks++;
   }
@@ -281,11 +287,13 @@ export async function pushBackupToCloud(passphrase, onProgress = () => {}) {
   onProgress(t('Finalisation…'));
   // Ancien nombre de morceaux, pour la phase 3 (lecture du seul petit document parent).
   let previousChunkCount = 0;
+  let previousGeneration = null;
   try {
     const prevSnap = await withTimeout(firestoreMod.getDoc(backupDocRef), 20000);
     previousChunkCount = Number(prevSnap.data()?.chunkCount) || 0;
+    previousGeneration = prevSnap.data()?.generation || null;
   } catch { /* au pire, d'anciens morceaux orphelins restent en place : sans effet sur la restauration */ }
-  await withTimeout(firestoreMod.setDoc(backupDocRef, { chunkCount: chunks.length, updatedAt: firestoreMod.serverTimestamp() }));
+  await withTimeout(firestoreMod.setDoc(backupDocRef, { chunkCount: chunks.length, generation, updatedAt: firestoreMod.serverTimestamp() }));
 
   // Phase 3 : nettoyage des anciens morceaux en trop, désignés par leur NUMÉRO (previousChunkCount)
   // au lieu de relire toute la sous-collection : getDocs() téléchargeait le CONTENU de chaque ancien
@@ -293,7 +301,9 @@ export async function pushBackupToCloud(passphrase, onProgress = () => {}) {
   // doit pas faire échouer une sauvegarde réussie.
   try {
     const staleIds = [];
-    for (let i = chunks.length; i < previousChunkCount; i++) staleIds.push(String(i));
+    // Toute l'ancienne génération (ses identifiants diffèrent de ceux qu'on vient d'écrire). Une sauvegarde
+    // antérieure à ce mécanisme n'a pas de génération : ses morceaux s'appellent 0, 1, 2…
+    for (let i = 0; i < previousChunkCount; i++) staleIds.push(previousGeneration ? `${previousGeneration}_${i}` : String(i));
     for (let i = 0; i < staleIds.length; i += 400) {
       const cleanupBatch = firestoreMod.writeBatch(firebaseDb);
       for (const id of staleIds.slice(i, i + 400)) cleanupBatch.delete(firestoreMod.doc(chunksRef, id));
@@ -396,10 +406,10 @@ export async function pullBackupFromCloud(passphrase, { merge = false } = {}) {
   if (!user) throw new Error(t('Non connecté.'));
   const snap = await firestoreMod.getDoc(firestoreMod.doc(firebaseDb, 'backups', user.uid));
   if (!snap.exists()) throw new Error(t('Aucune sauvegarde cloud trouvée pour ce compte.'));
-  const { chunkCount, updatedAt } = snap.data();
+  const { chunkCount, updatedAt, generation } = snap.data();
   const chunksRef = firestoreMod.collection(firebaseDb, 'backups', user.uid, 'chunks');
   const chunkDocs = await Promise.all(
-    Array.from({ length: chunkCount }, (_, i) => firestoreMod.getDoc(firestoreMod.doc(chunksRef, String(i))))
+    Array.from({ length: chunkCount }, (_, i) => firestoreMod.getDoc(firestoreMod.doc(chunksRef, generation ? `${generation}_${i}` : String(i))))
   );
   const payloadStr = chunkDocs.map((d) => d.data().data).join('');
   const payload = JSON.parse(payloadStr);

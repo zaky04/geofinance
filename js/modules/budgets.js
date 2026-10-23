@@ -6,13 +6,14 @@
    de fin de mois).
    ========================================================================== */
 
-import { STORES, dbGetAll, dbPut, dbAdd, dbDelete, logAudit, getSetting } from '../db.js';
+import { STORES, dbGetAll, dbPut, dbAdd, dbDelete, dbWriteBatch, logAudit, getSetting } from '../db.js';
 import { computeCategoryActuals, computeEndOfMonthForecast, computeEnvelopeCarryover, computeAnnualCategoryActuals } from '../ledger.js';
 import {
   uuid, formatCurrency, formatDate, formatMonthLabel, formatPercent, escapeHtml, todayISO, localISODate,
   currentMonthKey, monthKeyOffset, percentage, budgetProgressClass, openModal, confirmDialog, showToast, safeNumber,
 } from '../utils.js';
 import { notifyDataChanged } from '../state.js';
+import { advanceDate } from '../recurrence.js';
 import { t } from '../i18n.js';
 import { icon as svgIcon, CATEGORY_ICON_KEYS, categoryLook } from '../icons.js';
 
@@ -298,6 +299,15 @@ function openCategoryModal(category = null, presetParentId = null, presetType = 
     e.preventDefault();
     const fd = new FormData(form);
     const before = category ? { ...category } : null;
+    if (category) {
+      // Une catégorie qui a des sous-catégories ne peut pas devenir elle-même une sous-catégorie (3 niveaux :
+      // les petits-enfants n'apparaîtraient nulle part), et son type ne change pas tant que des
+      // transactions ou sous-catégories s'y rattachent (une dépense passerait sous une catégorie de recettes).
+      const [allCategories, allTransactions] = await Promise.all([dbGetAll(STORES.CATEGORIES), dbGetAll(STORES.TRANSACTIONS)]);
+      const hasChildren = allCategories.some((c) => c.parentId === category.id);
+      if (hasChildren && fd.get('parentId')) { showToast(t("Cette catégorie a des sous-catégories : elle ne peut pas devenir elle-même une sous-catégorie.")); return; }
+      if (fd.get('type') !== category.type && (hasChildren || allTransactions.some((x) => x.categoryId === category.id))) { showToast(t('Le type ne peut plus changer : cette catégorie a des sous-catégories ou des transactions.')); return; }
+    }
     const record = {
       id: category?.id || uuid(),
       name: fd.get('name').trim(),
@@ -360,7 +370,16 @@ async function renderCategoriesTab(container) {
       if (hasChildren) { showToast(t("Supprimez d'abord les sous-catégories.")); return; }
       const ok = await confirmDialog(t('Supprimer la catégorie "{name}" ? Les transactions déjà enregistrées resteront mais afficheront "Sans catégorie".', { name: cat.name }), { danger: true, requirePin: true, confirmText: t('Supprimer') });
       if (ok) {
-        await dbDelete(STORES.CATEGORIES, cat.id);
+        // Une catégorie supprimée ne doit laisser derrière elle ni budget fantôme (limite sans catégorie),
+        // ni règle d'auto-catégorisation qui continuerait à assigner une catégorie inexistante, ni
+        // récurrence pointant dessus : on les nettoie dans la même transaction que la suppression.
+        const [allBudgets, allRules, allRecurring] = await Promise.all([dbGetAll(STORES.BUDGETS), dbGetAll(STORES.CATEGORIZATION_RULES), dbGetAll(STORES.RECURRING)]);
+        await dbWriteBatch([
+          { store: STORES.CATEGORIES, type: 'delete', value: cat.id },
+          ...allBudgets.filter((x) => x.categoryId === cat.id).map((x) => ({ store: STORES.BUDGETS, type: 'delete', value: x.id })),
+          ...allRules.filter((x) => x.categoryId === cat.id).map((x) => ({ store: STORES.CATEGORIZATION_RULES, type: 'delete', value: x.id })),
+          ...allRecurring.filter((x) => x.categoryId === cat.id).map((x) => ({ store: STORES.RECURRING, type: 'put', value: { ...x, categoryId: null } })),
+        ]);
         await logAudit({ entityType: 'category', entityId: cat.id, action: 'delete', before: cat });
         showToast(t('Catégorie supprimée.'));
         notifyDataChanged('categories');
@@ -593,33 +612,6 @@ async function renderRulesTab(container) {
 /* ==========================================================================
    Génération automatique des transactions dues (appelée au démarrage)
    ========================================================================== */
-function advanceDate(dateStr, frequency, anchorDay) {
-  const [y, m, day] = dateStr.split('-').map(Number);
-  if (frequency === 'weekly') {
-    const d = new Date(y, m - 1, day);
-    d.setDate(d.getDate() + 7);
-    return localISODate(d);
-  }
-  // Mensuel/annuel : on avance en mois/année calendaires, PAS en ajoutant à la date précédente
-  // via setMonth/setFullYear (ces derniers débordent silencieusement sur le mois suivant quand
-  // le jour d'origine — 29, 30, 31 — n'existe pas dans le mois cible, ex: 31 janvier + 1 mois
-  // devient le 3 mars au lieu du 28/29 février : un mois entier de récurrence est alors sauté et
-  // toutes les échéances suivantes restent décalées en permanence). `anchorDay` est le jour du
-  // mois voulu par l'utilisateur (ex: loyer le 31) : on clampe seulement quand le mois cible est
-  // trop court, et on revient à `anchorDay` dès que le mois suivant le permet à nouveau, comme
-  // le ferait une vraie échéance de facturation.
-  const targetDay = anchorDay ?? day;
-  let targetYear = y;
-  let targetMonth = m - 1;
-  if (frequency === 'yearly') targetYear += 1;
-  else targetMonth += 1;
-  targetYear += Math.floor(targetMonth / 12);
-  targetMonth = ((targetMonth % 12) + 12) % 12;
-  const lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
-  const d = new Date(targetYear, targetMonth, Math.min(targetDay, lastDayOfTargetMonth));
-  return localISODate(d);
-}
-
 export async function generateDueRecurring() {
   const recurring = await dbGetAll(STORES.RECURRING);
   const todayStr = todayISO();
