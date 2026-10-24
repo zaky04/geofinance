@@ -61,7 +61,7 @@ function openCsvMappingModal(analysis) {
     const wallets = (await dbGetAll(STORES.WALLETS)).filter((w) => !w.archived);
     const walletSelect = modal.el.querySelector('#csv-map-wallet');
     walletSelect.innerHTML = wallets.length
-      ? wallets.map((w) => `<option value="${w.id}">${escapeHtml(w.name)} (${escapeHtml(w.currency)})</option>`).join('')
+      ? wallets.map((w) => `<option value="${escapeHtml(w.id)}">${escapeHtml(w.name)} (${escapeHtml(w.currency)})</option>`).join('')
       : `<option value="">${t("Créez un portefeuille d'abord")}</option>`;
   })();
 

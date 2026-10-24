@@ -222,6 +222,13 @@ async function runTests() {
   assertEqual('import : un stores non tableau est refusé', await tryImport((d) => { d.stores[STORES.WALLETS] = {}; }, { merge: false }), 'refusé');
   await importAllData({ stores: { [STORES.SETTINGS]: [{ key: 'pinHash', value: 'evil' }] } }, { merge: true });
   assertTrue('import : un pinHash forgé est ignoré', !(await dbGetAll(STORES.SETTINGS)).some((r) => r.key === 'pinHash'));
+  assertEqual("import : un identifiant qui sortirait d'un attribut HTML est refusé", await tryImport((d) => { d.stores[STORES.WALLETS][0].id = 'w" onmouseover="alert(1)'; }, { merge: true }), 'refusé');
+  assertEqual('import : un champ de référence forgé (categoryId) est refusé', await tryImport((d) => { d.stores[STORES.TRANSACTIONS][0].categoryId = 'c"><img src=x onerror=alert(1)>'; }, { merge: true }), 'refusé');
+  assertEqual('import : une liste de références forgée (walletIds) est refusée', await tryImport((d) => { d.stores[STORES.TRANSACTIONS][0].walletIds = ['ok', 'w" x="']; }, { merge: true }), 'refusé');
+  await setSetting('pinHash', 'real-hash');
+  await tryImport(() => {}, { merge: false });
+  assertTrue('import « remplacer » : le PIN de CET appareil n\'est pas effacé', (await dbGetAll(STORES.SETTINGS)).some((r) => r.key === 'pinHash' && r.value === 'real-hash'));
+  await dbDelete(STORES.SETTINGS, 'pinHash');
 
   render();
 }

@@ -148,7 +148,7 @@ async function ensureExchangeRateRow(currency) {
 function walletCardHtml(w) {
   const meta = WALLET_TYPES[w.type] || WALLET_TYPES.bank;
   return `
-    <div class="summary-card" data-wallet-id="${w.id}">
+    <div class="summary-card" data-wallet-id="${escapeHtml(w.id)}">
       <div class="card-title-row">
         <div style="display:flex;align-items:center;gap:10px;">
           <div class="tx-icon" style="color:${meta.color};background:${meta.color}22;">${meta.icon}</div>

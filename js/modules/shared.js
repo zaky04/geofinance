@@ -21,7 +21,7 @@ const DELETE_ICON = svgIcon('trash', 16);
 /* ---------- Participants ---------- */
 function participantRowHtml(p) {
   return `
-    <div class="tx-row" data-participant-id="${p.id}">
+    <div class="tx-row" data-participant-id="${escapeHtml(p.id)}">
       <div class="tx-main">
         <div class="tx-title">${escapeHtml(p.name)} ${p.isMe ? `<span class="badge badge-accent">${t('Moi')}</span>` : ''}</div>
       </div>
@@ -83,9 +83,9 @@ function categoryOptionsHtml(categories) {
   const roots = categories.filter((c) => c.type === 'expense' && !c.parentId);
   let html = `<option value="">${t('Sans catégorie')}</option>`;
   for (const r of roots) {
-    html += `<option value="${r.id}">${escapeHtml(r.name)}</option>`;
+    html += `<option value="${escapeHtml(r.id)}">${escapeHtml(r.name)}</option>`;
     for (const child of categories.filter((c) => c.parentId === r.id)) {
-      html += `<option value="${child.id}">— ${escapeHtml(child.name)}</option>`;
+      html += `<option value="${escapeHtml(child.id)}">— ${escapeHtml(child.name)}</option>`;
     }
   }
   return html;
@@ -94,7 +94,7 @@ function categoryOptionsHtml(categories) {
 function walletOptionsHtml(wallets, currency) {
   const matching = wallets.filter((w) => w.currency === currency);
   if (!matching.length) return `<option value="">${t('Aucun portefeuille en {currency}', { currency: escapeHtml(currency) })}</option>`;
-  return matching.map((w) => `<option value="${w.id}">${escapeHtml(w.name)} (${escapeHtml(w.currency)})</option>`).join('');
+  return matching.map((w) => `<option value="${escapeHtml(w.id)}">${escapeHtml(w.name)} (${escapeHtml(w.currency)})</option>`).join('');
 }
 
 function sharedExpenseFormHtml(participants, defaultCurrency, meParticipant) {
@@ -104,12 +104,12 @@ function sharedExpenseFormHtml(participants, defaultCurrency, meParticipant) {
       <div class="form-row"><label>${t('Montant total')}</label><input type="number" step="0.01" min="0" name="amount" required></div>
       <div class="form-row"><label>${t('Devise')}</label>${currencySelectHtml(defaultCurrency)}</div>
       <div class="form-row"><label>${t('Payé par')}</label>
-        <select name="paidBy" required>${participants.map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}</select>
+        <select name="paidBy" required>${participants.map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('')}</select>
       </div>
       <div class="form-row"><label>${t('Réparti entre (parts égales)')}</label>
         ${participants.map((p) => `
           <label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;" class="fs-14">
-            <input type="checkbox" name="splitAmong" value="${p.id}" ${meParticipant ? `data-is-me="${p.id === meParticipant.id}"` : ''} checked> ${escapeHtml(p.name)}
+            <input type="checkbox" name="splitAmong" value="${escapeHtml(p.id)}" ${meParticipant ? `data-is-me="${p.id === meParticipant.id}"` : ''} checked> ${escapeHtml(p.name)}
           </label>`).join('')}
       </div>
       <div class="form-row"><label>${t('Date')}</label><input type="date" name="date" value="${todayISO()}"></div>
@@ -207,7 +207,7 @@ function sharedExpenseRowHtml(exp, participants) {
   const payer = participants.find((p) => p.id === exp.paidBy);
   const names = exp.splitAmong.map((id) => participants.find((p) => p.id === id)?.name || '?').join(', ');
   return `
-    <div class="tx-row" data-shared-expense-id="${exp.id}">
+    <div class="tx-row" data-shared-expense-id="${escapeHtml(exp.id)}">
       <div class="tx-main">
         <div class="tx-title">${escapeHtml(exp.description)}</div>
         <div class="tx-sub">${t('Payé par {payer} · {date} · Partagé entre {names}', { payer: escapeHtml(payer?.name || '?'), date: formatDate(exp.date), names: escapeHtml(names) })}</div>

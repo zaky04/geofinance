@@ -2429,6 +2429,17 @@ Les builds natifs doivent recevoir `panels.js`, `card-actions.js`, `icons.js`, C
 Vérifié sur des origines de test isolées (serveur statique local, pour ne pas toucher aux données d'une autre session dans le navigateur d'aperçu) :
 clavier aligné, libellés présents, 2 colonnes à 768 px, cauri absent côté gratuite, tests 64/64 + 117/117 (Djignan) et 35/35 (gratuite).
 
+### 24 octobre 2026 — Durcissement de l'import et des identifiants HTML (porté depuis `djignan-finance`) (`CACHE_VERSION` `v107`)
+
+- **`importAllData` (`db.js`)** refuse toute clé primaire ET tout champ de référence (`*Id`, `*Ids` : `categoryId`, `walletId`…) contenant `< > " ' ` & \` ou un espace
+  (ces valeurs finissent dans des attributs HTML `data-…="…"` / `value="…"`) ; `UNSAFE_ID_CHARS` (voir `db.js`). Un vrai UUID n'en contient jamais.
+- **Restauration en « remplacer tout »** : les réglages propres à l'appareil (`DEVICE_LOCAL_SETTING_KEYS`, dont le PIN) sont relus avant l'import puis réécrits —
+  avant, `os.clear()` du store des réglages supprimait le code PIN de l'utilisateur qui restaurait sur son propre téléphone.
+- **`escapeHtml`** sur les 18 `data-…="${x.id}"` et 26 `value="${x.id}"` restants, ainsi que sur l'e-mail / nom Google affiché dans la section sauvegarde cloud
+  (`firebase-sync.js`, import ajouté).
+- Tests : `test/ledger.test.html` **41/41** (+ identifiant forgé, `categoryId` forgé, liste `walletIds` forgée, PIN conservé). Vérifié : 11 vues + Saisie express sans erreur.
+- Rien à porter pour le flux OAuth natif (`state`) : cette version n'a pas de build natif ni de flux PKCE.
+
 ## 7. Pistes prioritaires non traitées
 
 Par ordre d'impact estimé, à valider avec l'auteur avant de s'y attaquer :

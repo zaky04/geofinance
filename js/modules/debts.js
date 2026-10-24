@@ -60,7 +60,7 @@ function debtCardHtml(d, payments) {
   const pct = percentage(paid, d.principal);
   const isDebt = d.type === 'debt';
   return `
-    <div class="summary-card" data-debt-id="${d.id}">
+    <div class="summary-card" data-debt-id="${escapeHtml(d.id)}">
       <div class="card-title-row">
         <div>
           <span class="badge ${isDebt ? 'badge-neg' : 'badge-pos'}">${isDebt ? tr('Dette') : tr('Créance')}</span>
@@ -96,7 +96,7 @@ function latestPaymentDate(d, payments) {
 function paidDebtRowHtml(d, paidDate) {
   const isDebt = d.type === 'debt';
   return `
-    <div class="tx-row" data-debt-id="${d.id}">
+    <div class="tx-row" data-debt-id="${escapeHtml(d.id)}">
       <div class="tx-main">
         <div class="tx-title">${escapeHtml(d.personName)}</div>
         <div class="tx-sub">${formatDate(paidDate)}${d.note ? ' · ' + escapeHtml(d.note) : ''}</div>
@@ -111,7 +111,7 @@ function paidDebtRowHtml(d, paidDate) {
 function walletOptionsHtml(wallets, currency) {
   const matching = wallets.filter((w) => w.currency === currency);
   if (!matching.length) return `<option value="">${tr('Aucun portefeuille en {currency}', { currency: escapeHtml(currency) })}</option>`;
-  return matching.map((w) => `<option value="${w.id}">${escapeHtml(w.name)} (${escapeHtml(w.currency)})</option>`).join('');
+  return matching.map((w) => `<option value="${escapeHtml(w.id)}">${escapeHtml(w.name)} (${escapeHtml(w.currency)})</option>`).join('');
 }
 
 function debtFormHtml(d, defaultCurrency) {

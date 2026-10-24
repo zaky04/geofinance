@@ -56,7 +56,7 @@ function computeMetrics(inv, entries) {
 function investmentCardHtml(inv, metrics) {
   const positive = metrics.gain >= 0;
   return `
-    <div class="summary-card" data-investment-id="${inv.id}">
+    <div class="summary-card" data-investment-id="${escapeHtml(inv.id)}">
       <div class="card-title-row">
         <div>
           <span class="badge badge-accent">${escapeHtml(t(ASSET_CLASSES[inv.assetClass] || inv.assetClass))}</span>
@@ -130,7 +130,7 @@ async function openHistoryModal(inv) {
     </form>
     <div id="entry-list">
       ${entries.length ? entries.map((e) => `
-        <div class="tx-row" data-entry-id="${e.id}">
+        <div class="tx-row" data-entry-id="${escapeHtml(e.id)}">
           <div class="tx-main">
             <div class="tx-title">${t(ENTRY_TYPE_LABELS[e.type])}${e.note ? ' · ' + escapeHtml(e.note) : ''}</div>
             <div class="tx-sub">${formatDate(e.date)}</div>

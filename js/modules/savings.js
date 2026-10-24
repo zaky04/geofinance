@@ -32,7 +32,7 @@ function goalCardHtml(g) {
   const pct = percentage(g.currentAmount, g.targetAmount);
   const color = pct >= 100 ? 'var(--pos)' : 'var(--accent)';
   return `
-    <div class="summary-card" data-goal-id="${g.id}">
+    <div class="summary-card" data-goal-id="${escapeHtml(g.id)}">
       <div style="display:flex;gap:14px;align-items:center;">
         <div style="position:relative;width:72px;height:72px;flex-shrink:0;">
           ${gaugeSvg(pct, color)}

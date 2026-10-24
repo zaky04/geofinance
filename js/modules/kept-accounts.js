@@ -26,7 +26,7 @@ function accountBalance(account, entries) {
 
 function accountCardHtml(account, balance) {
   return `
-    <div class="summary-card" data-account-id="${account.id}">
+    <div class="summary-card" data-account-id="${escapeHtml(account.id)}">
       <div class="card-title-row">
         <div>
           <div class="summary-card-label">${escapeHtml(account.currency)}${account.archived ? ` · ${t('archivé')}` : ''}</div>
@@ -84,7 +84,7 @@ function entryRowHtml(entry, currency) {
   const sign = entry.type === 'in' ? '+' : '−';
   const cls = entry.type === 'in' ? 'pos' : 'neg';
   return `
-    <div class="tx-row" data-entry-id="${entry.id}">
+    <div class="tx-row" data-entry-id="${escapeHtml(entry.id)}">
       <div class="tx-main">
         <div class="tx-title">${entry.type === 'in' ? t('Entrée') : t('Sortie')}</div>
         <div class="tx-sub">${formatDate(entry.date)}${entry.note ? ' · ' + escapeHtml(entry.note) : ''}</div>

@@ -239,9 +239,9 @@ export function openGlobalSearch() {
 
   Promise.all([dbGetAll(STORES.WALLETS), dbGetAll(STORES.CATEGORIES)]).then(([wallets, categories]) => {
     walletEl.innerHTML = `<option value="">${tr('Tous les portefeuilles')}</option>`
-      + wallets.filter((w) => !w.archived).map((w) => `<option value="${w.id}">${escapeHtml(w.name)}</option>`).join('');
+      + wallets.filter((w) => !w.archived).map((w) => `<option value="${escapeHtml(w.id)}">${escapeHtml(w.name)}</option>`).join('');
     categoryEl.innerHTML = `<option value="">${tr('Toutes catégories')}</option>`
-      + categories.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      + categories.map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
   });
 
   function passesAdvancedFilters(item) {

@@ -44,7 +44,7 @@ let repSavingsAsPercent = false;
 async function categoryOptionsHtml(type, selectedId) {
   const cats = await getCategoriesByType(type);
   return `<option value="">${t('Toutes catégories')}</option>` +
-    cats.map((c) => `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
+    cats.map((c) => `<option value="${escapeHtml(c.id)}" ${c.id === selectedId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
 }
 
 /** Onglets « Dépenses et revenus » et « Budget et patrimoine » : les graphiques de Rapports, répartis par

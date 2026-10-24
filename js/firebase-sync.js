@@ -22,7 +22,7 @@
 import { firebaseConfig, isFirebaseConfigured, googleClientId } from './firebase-config.js';
 import { buildEncryptedPayload, decryptPayload, deserializeReceiptsForImport, markBackupDone, estimateBackupSize, formatBytes } from './backup.js';
 import { importAllData, getSetting, setSetting } from './db.js';
-import { openModal, showToast, confirmDialog, confirmReplaceAllData, formatDate } from './utils.js';
+import { openModal, showToast, confirmDialog, confirmReplaceAllData, formatDate, escapeHtml } from './utils.js';
 import { notifyDataChanged } from './state.js';
 import { t } from './i18n.js';
 
@@ -590,7 +590,7 @@ export async function renderCloudBackupSection(container) {
       <div class="panel-header"><h3>${t('Sauvegarde cloud (optionnelle)')}</h3></div>
       <p class="fs-13 c-muted mb-12">${t("Sauvegarde chiffrée sur votre compte Google, pour la récupérer après une réinstallation. Le mot de passe de chiffrement n'est jamais transmis — sans lui, personne (y compris Google) ne peut lire vos données.")}</p>
       ${user ? `
-        <div class="stat-row"><span class="stat-row-label">${t('Connecté')}</span><span>${user.email || user.displayName || ''}</span></div>
+        <div class="stat-row"><span class="stat-row-label">${t('Connecté')}</span><span>${escapeHtml(user.email || user.displayName || '')}</span></div>
         <div class="stat-row mt-6"><span class="stat-row-label">${t('Dernière sauvegarde cloud')}</span><span>${lastCloudBackupAt ? formatDate(lastCloudBackupAt) : t('jamais')}</span></div>
         <div style="display:flex;flex-wrap:wrap;gap:10px;" class="mt-12">
           <button type="button" class="btn btn-primary" id="cloud-push-btn">${t('Sauvegarder maintenant')}</button>

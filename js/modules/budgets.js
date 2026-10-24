@@ -60,7 +60,7 @@ function budgetCategoryCardHtml(cat, actual, limit, currency, carryover = null) 
           <span style="display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:${color}22;color:${color};flex-shrink:0;">${icon}</span>
           ${cat.parentId ? '— ' : ''}${escapeHtml(cat.name)}${cat.envelopeMode ? ` <span class="badge badge-accent ml-4">${t('Enveloppe')}</span>` : ''}
         </div>
-        <input type="number" min="0" step="0.01" data-limit-input="${cat.id}" value="${limit || ''}" placeholder="${t('Budget')}"
+        <input type="number" min="0" step="0.01" data-limit-input="${escapeHtml(cat.id)}" value="${limit || ''}" placeholder="${t('Budget')}"
           style="width:100px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface-alt);text-align:right;">
       </div>
       <div class="progress-track"><div class="progress-fill ${cls}" style="width:${Math.min(pct, 100)}%"></div></div>
@@ -263,7 +263,7 @@ function categoryFormHtml(category, presetParentId, presetType) {
 async function populateParentSelect(select, type, excludeId) {
   const categories = await dbGetAll(STORES.CATEGORIES);
   const roots = categories.filter((c) => c.type === type && !c.parentId && c.id !== excludeId);
-  select.innerHTML = `<option value="">${t('— Catégorie principale —')}</option>` + roots.map((r) => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
+  select.innerHTML = `<option value="">${t('— Catégorie principale —')}</option>` + roots.map((r) => `<option value="${escapeHtml(r.id)}">${escapeHtml(r.name)}</option>`).join('');
 }
 
 function openCategoryModal(category = null, presetParentId = null, presetType = null) {
@@ -331,7 +331,7 @@ function categoryRowHtml(cat, isChild = false) {
   const color = look.color;
   const icon = CATEGORY_ICONS[look.icon];
   return `
-    <div class="tx-row" data-category-id="${cat.id}" style="${isChild ? 'padding-left:24px;' : ''}">
+    <div class="tx-row" data-category-id="${escapeHtml(cat.id)}" style="${isChild ? 'padding-left:24px;' : ''}">
       <div class="tx-icon" style="color:${color};background:${color}22;">${icon}</div>
       <div class="tx-main"><div class="tx-title">${isChild ? '— ' : ''}${escapeHtml(cat.name)}</div></div>
       <div class="card-actions">
@@ -425,14 +425,14 @@ function openRecurringModal(r = null) {
 
   async function populate() {
     const wallets = (await dbGetAll(STORES.WALLETS)).filter((w) => !w.archived);
-    walletSelect.innerHTML = wallets.map((w) => `<option value="${w.id}">${escapeHtml(w.name)} (${escapeHtml(w.currency)})</option>`).join('') || `<option value="">${t("Créez un portefeuille d'abord")}</option>`;
+    walletSelect.innerHTML = wallets.map((w) => `<option value="${escapeHtml(w.id)}">${escapeHtml(w.name)} (${escapeHtml(w.currency)})</option>`).join('') || `<option value="">${t("Créez un portefeuille d'abord")}</option>`;
     if (r?.walletId) walletSelect.value = r.walletId;
 
     const categories = await dbGetAll(STORES.CATEGORIES);
     const roots = categories.filter((c) => c.type === currentType && !c.parentId);
     categorySelect.innerHTML = roots.map((root) => {
-      const children = categories.filter((c) => c.parentId === root.id).map((ch) => `<option value="${ch.id}">— ${escapeHtml(ch.name)}</option>`).join('');
-      return `<option value="${root.id}">${escapeHtml(root.name)}</option>${children}`;
+      const children = categories.filter((c) => c.parentId === root.id).map((ch) => `<option value="${escapeHtml(ch.id)}">— ${escapeHtml(ch.name)}</option>`).join('');
+      return `<option value="${escapeHtml(root.id)}">${escapeHtml(root.name)}</option>${children}`;
     }).join('') || `<option value="">${t('Aucune catégorie')}</option>`;
     if (r?.categoryId) categorySelect.value = r.categoryId;
   }
@@ -476,7 +476,7 @@ function recurringRowHtml(r, wallets, categories) {
   const wallet = wallets.find((w) => w.id === r.walletId);
   const cat = categories.find((c) => c.id === r.categoryId);
   return `
-    <div class="tx-row" data-recurring-id="${r.id}">
+    <div class="tx-row" data-recurring-id="${escapeHtml(r.id)}">
       <div class="tx-main">
         <div class="tx-title">${escapeHtml(r.name)} ${!r.active ? `<span class="badge">${t('Inactif')}</span>` : ''}</div>
         <div class="tx-sub">${escapeHtml(wallet?.name || '—')} · ${escapeHtml(cat?.name || t('Sans catégorie'))} · ${t(FREQ_LABELS[r.frequency])} · ${t('Prochaine échéance : {date}', { date: formatDate(r.nextDate) })}</div>
@@ -554,7 +554,7 @@ async function renderRecurringTab(container) {
 function ruleRowHtml(rule, categories) {
   const cat = categories.find((c) => c.id === rule.categoryId);
   return `
-    <div class="tx-row" data-rule-id="${rule.id}">
+    <div class="tx-row" data-rule-id="${escapeHtml(rule.id)}">
       <div class="tx-main">
         <div class="tx-title">« ${escapeHtml(rule.pattern)} »</div>
         <div class="tx-sub">→ ${escapeHtml(cat?.name || t('Catégorie supprimée'))}</div>
@@ -568,7 +568,7 @@ function ruleRowHtml(rule, categories) {
 async function renderRulesTab(container) {
   const [rules, categories] = await Promise.all([dbGetAll(STORES.CATEGORIZATION_RULES), dbGetAll(STORES.CATEGORIES)]);
   const expenseCats = categories.filter((c) => c.type === 'expense');
-  const catOptionsHtml = expenseCats.map((c) => `<option value="${c.id}">${c.parentId ? '— ' : ''}${escapeHtml(c.name)}</option>`).join('');
+  const catOptionsHtml = expenseCats.map((c) => `<option value="${escapeHtml(c.id)}">${c.parentId ? '— ' : ''}${escapeHtml(c.name)}</option>`).join('');
 
   container.innerHTML = `
     <div class="panel mb-16">
