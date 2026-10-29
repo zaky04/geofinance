@@ -90,6 +90,9 @@ export async function getWalletBalance(walletId) {
     ça, un apport ultérieur sans valorisation immédiate après (cas normal : on ne revalorise pas à
     chaque apport) faisait paraître l'investissement en perte immédiate (valeur < capital investi). */
 export function investmentValueAsOf(investment, entries, cutoffDate) {
+  // Investissement annulé : plus rien à compter à partir de la date d'annulation (aucun remboursement
+  // n'est inscrit dans un portefeuille, voir investments.js) — avant cette date, il comptait normalement.
+  if (investment.status === 'cancelled' && (!cutoffDate || !investment.cancelledAt || investment.cancelledAt <= cutoffDate)) return 0;
   const relevant = entries
     .filter((e) => e.investmentId === investment.id && e.type === 'valuation' && (!cutoffDate || e.date <= cutoffDate))
     .sort((a, b) => (a.date < b.date ? 1 : -1));
@@ -110,6 +113,9 @@ export function investmentValueAsOf(investment, entries, cutoffDate) {
 /** Montant restant dû d'une dette/créance à une date donnée. */
 function debtRemainingAsOf(debt, payments, cutoffDate) {
   if (cutoffDate && debt.startDate && debt.startDate > cutoffDate) return 0;
+  // Dette/créance annulée (remise de dette, sans remboursement) : le restant dû tombe à 0 à partir de la
+  // date d'annulation, sans qu'aucune transaction de portefeuille n'existe pour cela.
+  if (debt.status === 'cancelled' && (!cutoffDate || !debt.cancelledAt || debt.cancelledAt <= cutoffDate)) return 0;
   const paid = payments
     .filter((p) => p.debtId === debt.id && (!cutoffDate || p.date <= cutoffDate))
     .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);

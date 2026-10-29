@@ -2440,6 +2440,24 @@ clavier aligné, libellés présents, 2 colonnes à 768 px, cauri absent côté 
 - Tests : `test/ledger.test.html` **41/41** (+ identifiant forgé, `categoryId` forgé, liste `walletIds` forgée, PIN conservé). Vérifié : 11 vues + Saisie express sans erreur.
 - Rien à porter pour le flux OAuth natif (`state`) : cette version n'a pas de build natif ni de flux PKCE.
 
+### 29 octobre 2026 — Annuler une dette / créance / un investissement sans remboursement (porté depuis `djignan-finance`, version allégée) (`CACHE_VERSION` `v108`)
+
+Annuler efface le restant dû (dette/créance) ou la valeur (investissement) **sans toucher aux portefeuilles** :
+l'emprunt/prêt d'origine et les remboursements déjà faits restent, l'historique aussi. Réversible (« Rétablir »).
+
+- Modèle : `status: 'cancelled'` + `cancelledAt` + `cancelledAmount` (dettes) / `cancelledValue` (investissements)
+  + `cancelNote`. `ledger.js` : `debtRemainingAsOf` et `investmentValueAsOf` renvoient 0 **à partir de
+  `cancelledAt`** seulement (le patrimoine des mois passés reste juste).
+- `debts.js` : `cancelDebt()` / `restoreCancelledDebt()`, bouton ✕ sur les cartes avec restant dû, modale
+  (date + motif), section « Annulées ». `investments.js` : `cancelInvestment()` / `restoreCancelledInvestment()`,
+  section « Annulés ». `notifications.js` ignore les dettes annulées.
+- **Différences avec Djignan** (fonctions absentes ici) : pas de fiche par personne, d'export/PDF, de prévision
+  de trésorerie, de rappels natifs, de prêts à intérêts ni d'apports automatiques d'investissement à mettre en
+  pause. **Piège pour un futur portage de ces fonctions : tout filtre « dette ouverte » doit exclure `paid` ET
+  `cancelled`.**
+- Testé dans le navigateur (vrai clic → vraie modale → soumission) : patrimoine −800 → 0 après annulation,
+  toujours −800 avant la date d'annulation, aucune transaction créée, rétablissement OK, aucune erreur console.
+
 ## 7. Pistes prioritaires non traitées
 
 Par ordre d'impact estimé, à valider avec l'auteur avant de s'y attaquer :

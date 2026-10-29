@@ -94,7 +94,7 @@ export async function checkAndNotify() {
   // ---- Échéances de dettes/créances dans les 3 prochains jours ----
   const [debts, debtPayments] = await Promise.all([dbGetAll(STORES.DEBTS), dbGetAll(STORES.DEBT_PAYMENTS)]);
   for (const d of debts) {
-    if (d.status === 'paid' || !d.dueDate) continue;
+    if (d.status === 'paid' || d.status === 'cancelled' || !d.dueDate) continue;
     if (d.dueDate < today || d.dueDate > horizonStr) continue;
     const key = `${d.id}:${d.dueDate}`;
     if (notifiedDebts[key]) continue;

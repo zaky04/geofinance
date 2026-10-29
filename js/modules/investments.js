@@ -38,6 +38,28 @@ const ENTRY_TYPE_LABELS = { contribution: 'Apport', withdrawal: 'Retrait', divid
 const EDIT_ICON = svgIcon('edit', 16);
 const DELETE_ICON = svgIcon('trash', 16);
 const HISTORY_ICON = svgIcon('history', 16);
+const CANCEL_ICON = svgIcon('close', 16);
+const RESTORE_ICON = svgIcon('repay', 16);
+
+/** Annule un investissement SANS rien inscrire dans un portefeuille : l'historique est conservé, mais la
+    valeur sort du patrimoine à partir de la date d'annulation (voir investmentValueAsOf, ledger.js).
+    `cancelledValue` garde la valeur qu'il avait au moment de l'annulation, pour l'affichage. */
+export async function cancelInvestment(inv, { date = todayISO(), note = '' } = {}) {
+  const entries = await dbGetAll(STORES.INVESTMENT_ENTRIES);
+  const record = { ...inv, status: 'cancelled', cancelledAt: date, cancelledValue: investmentValueAsOf(inv, entries, null), cancelNote: note };
+  await dbPut(STORES.INVESTMENTS, record);
+  await logAudit({ entityType: 'investment', entityId: inv.id, action: 'update', before: inv, after: record, note: t('Annulé sans mouvement de portefeuille') });
+  return record;
+}
+
+/** Annule l'annulation. */
+export async function restoreCancelledInvestment(inv) {
+  const { cancelledAt, cancelledValue, cancelNote, ...rest } = inv;
+  const record = { ...rest, status: 'active' };
+  await dbPut(STORES.INVESTMENTS, record);
+  await logAudit({ entityType: 'investment', entityId: inv.id, action: 'update', before: inv, after: record, note: t('Annulation retirée') });
+  return record;
+}
 
 function computeMetrics(inv, entries) {
   const own = entries.filter((e) => e.investmentId === inv.id);
@@ -65,6 +87,7 @@ function investmentCardHtml(inv, metrics) {
         <div class="card-actions">
           <button type="button" class="icon-btn" data-action="history" aria-label="${t('Historique / Ajouter')}" title="${t('Historique / Ajouter')}">${HISTORY_ICON}</button>
           <button type="button" class="icon-btn" data-action="edit" aria-label="${t('Modifier')}" title="${t('Modifier')}">${EDIT_ICON}</button>
+          <button type="button" class="icon-btn" data-action="cancel" aria-label="${t('Annuler l\'investissement')}" title="${t('Annuler cet investissement sans remboursement')}">${CANCEL_ICON}</button>
           <button type="button" class="icon-btn" data-action="delete" aria-label="${t('Supprimer')}" title="${t('Supprimer')}">${DELETE_ICON}</button>
         </div>
       </div>
@@ -74,6 +97,21 @@ function investmentCardHtml(inv, metrics) {
       <div class="stat-row"><span class="stat-row-label">${t('Plus/moins-value + revenus')}</span><span class="badge ${positive ? 'badge-pos' : 'badge-neg'}">${positive ? '+' : ''}${formatCurrency(metrics.gain, inv.currency)}</span></div>
       <div class="stat-row"><span class="stat-row-label">${t('ROI global')}</span><span class="badge ${metrics.roiPct >= 0 ? 'badge-pos' : 'badge-neg'}">${formatPercent(metrics.roiPct)}</span></div>
       <div class="stat-row"><span class="stat-row-label">${t('Rendement annualisé')}</span><span class="badge ${metrics.annualizedYieldPct >= 0 ? 'badge-pos' : 'badge-neg'}">${formatPercent(metrics.annualizedYieldPct)}</span></div>
+    </div>`;
+}
+
+function cancelledInvestmentRowHtml(inv) {
+  return `
+    <div class="tx-row" data-investment-id="${escapeHtml(inv.id)}">
+      <div class="tx-main">
+        <div class="tx-title">${escapeHtml(inv.name)} <span class="badge">${escapeHtml(t(ASSET_CLASSES[inv.assetClass] || inv.assetClass))}</span></div>
+        <div class="tx-sub">${t('Annulé le {date}', { date: formatDate(inv.cancelledAt || (inv.createdAt || '').slice(0, 10)) })} · ${t('Valeur annulée : {amount}', { amount: formatCurrency(inv.cancelledValue ?? 0, inv.currency) })}${inv.cancelNote ? ' · ' + escapeHtml(inv.cancelNote) : ''}</div>
+      </div>
+      <div class="card-actions">
+        <button type="button" class="icon-btn" data-action="history" aria-label="${t('Historique')}" title="${t('Historique')}">${HISTORY_ICON}</button>
+        <button type="button" class="icon-btn" data-action="restore" aria-label="${t('Rétablir')}" title="${t('Rétablir cet investissement (retirer l\'annulation)')}">${RESTORE_ICON}</button>
+        <button type="button" class="icon-btn" data-action="delete" aria-label="${t('Supprimer')}" title="${t('Supprimer')}">${DELETE_ICON}</button>
+      </div>
     </div>`;
 }
 
@@ -227,12 +265,24 @@ export async function renderInvestments() {
     return;
   }
 
-  const allRows = investments.map((inv) => ({ inv, metrics: computeMetrics(inv, entries) }));
+  const cancelledInvestments = investments.filter((inv) => inv.status === 'cancelled');
+  const allRows = investments.filter((inv) => inv.status !== 'cancelled').map((inv) => ({ inv, metrics: computeMetrics(inv, entries) }));
   const rows = allRows.filter((r) => {
     if (assetFilter === 'physical') return PHYSICAL_ASSET_CLASSES.includes(r.inv.assetClass);
     if (assetFilter === 'financial') return !PHYSICAL_ASSET_CLASSES.includes(r.inv.assetClass);
     return true;
   });
+
+  const cancelledHtml = cancelledInvestments.length
+    ? `<div class="panel mt-20">
+        <div class="panel-header"><h3>${t('Annulés')}</h3></div>
+        <p class="fs-12 c-muted" style="margin:0 0 8px;">${t('Investissements annulés sans remboursement : l\'historique reste, aucun mouvement de portefeuille n\'a été ajouté.')}</p>
+        ${cancelledInvestments
+          .sort((a, b) => (b.cancelledAt || '').localeCompare(a.cancelledAt || ''))
+          .map(cancelledInvestmentRowHtml)
+          .join('')}
+      </div>`
+    : '';
 
   container.innerHTML = `
     <div class="tabs-bar mb-16">
@@ -248,7 +298,7 @@ export async function renderInvestments() {
     <div class="panel">
       <div class="panel-header"><h3>${t("Comparatif de rendement par classe d'actif")}</h3></div>
       ${renderYieldTable(rows, baseCurrency, rates)}
-    </div>`;
+    </div>${cancelledHtml}`;
 
   container.querySelectorAll('[data-asset-filter]').forEach((btn) => {
     btn.addEventListener('click', () => { assetFilter = btn.dataset.assetFilter; renderInvestments(); });
@@ -256,6 +306,28 @@ export async function renderInvestments() {
 
   const history = await computeInvestmentValueHistory(6);
   renderNetWorthTrendChart('chart-investments-trend', history, baseCurrency, t('Valeur du portefeuille'));
+}
+
+/** Annulation d'un investissement : explique ce que ça fait (et ne fait pas) avant de confirmer. */
+async function openCancelInvestmentModal(inv) {
+  const entries = await dbGetAll(STORES.INVESTMENT_ENTRIES);
+  const value = investmentValueAsOf(inv, entries, null);
+  const modal = openModal(`
+    <form id="cancel-investment-form">
+      <p class="fs-13" style="margin:0 0 10px;">${t('« {name} » ne sera plus compté dans votre patrimoine ({amount}).', { name: escapeHtml(inv.name), amount: formatCurrency(value, inv.currency) })}</p>
+      <p class="fs-12 c-muted" style="margin:0 0 12px;">${t('Aucun mouvement n\'est ajouté dans vos portefeuilles : l\'historique reste. Vous pourrez rétablir l\'investissement depuis la liste « Annulés ».')}</p>
+      <div class="form-row"><label>${t('Date d\'annulation')}</label><input type="date" name="date" value="${todayISO()}"></div>
+      <div class="form-row"><label>${t('Motif (optionnel)')}</label><input type="text" name="note" maxlength="140"></div>
+      <button type="submit" class="btn btn-primary btn-block">${t('Annuler l\'investissement')}</button>
+    </form>`, { title: t('Annulation — {name}', { name: inv.name }) });
+  modal.el.querySelector('#cancel-investment-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    await cancelInvestment(inv, { date: fd.get('date') || todayISO(), note: (fd.get('note') || '').trim().slice(0, 140) });
+    modal.close();
+    showToast(t('Investissement annulé.'));
+    notifyDataChanged('investments');
+  });
 }
 
 export function initInvestmentsModule() {
@@ -274,6 +346,12 @@ export function initInvestmentsModule() {
       openHistoryModal(inv);
     } else if (btn.dataset.action === 'edit') {
       openInvestmentModal(inv);
+    } else if (btn.dataset.action === 'cancel') {
+      openCancelInvestmentModal(inv);
+    } else if (btn.dataset.action === 'restore') {
+      await restoreCancelledInvestment(inv);
+      showToast(t('Annulation retirée.'));
+      notifyDataChanged('investments');
     } else if (btn.dataset.action === 'delete') {
       const ok = await confirmDialog(t('Supprimer l\'investissement "{name}" et tout son historique ?', { name: inv.name }), { danger: true, requirePin: true, confirmText: t('Supprimer') });
       if (ok) {
